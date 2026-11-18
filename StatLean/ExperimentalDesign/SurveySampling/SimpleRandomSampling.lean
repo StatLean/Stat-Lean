@@ -1,6 +1,7 @@
 import Mathlib.GroupTheory.Perm.Basic
 import StatLean.ExperimentalDesign.SurveySampling.InclusionProbability
 import StatLean.ExperimentalDesign.SurveySampling.HorvitzThompson
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Simple random sampling without replacement
@@ -63,12 +64,12 @@ theorem samplesOfCard_nonempty {n : ℕ}
 distribution on the `n`-element subsets of the population (`Mead §9.3`). -/
 noncomputable def simpleRandomSampling (n : ℕ) (hn : n ≤ Fintype.card U) :
     SamplingDesign U :=
-  PMF.uniformOfFinset (Finset.powersetCard n Finset.univ) (samplesOfCard_nonempty hn)
+  PMF.uniformOn (Finset.powersetCard n Finset.univ) (samplesOfCard_nonempty hn)
 
 theorem mem_support_simpleRandomSampling {n : ℕ} {hn : n ≤ Fintype.card U}
     {s : Finset U} :
     s ∈ (simpleRandomSampling n hn).support ↔ s.card = n := by
-  rw [simpleRandomSampling, PMF.mem_support_uniformOfFinset_iff, Finset.mem_powersetCard]
+  rw [simpleRandomSampling, PMF.mem_support_uniformOn_iff, Finset.mem_powersetCard]
   exact and_iff_right (Finset.subset_univ s)
 
 /-- **Sampling symmetry**: SRSWOR is invariant under relabelling the units by any
@@ -87,7 +88,7 @@ theorem simpleRandomSampling_map_image (n : ℕ) (hn : n ≤ Fintype.card U)
     rw [h, Finset.image_image]
     simp
   · rw [himg u, ite_eq_left rfl]
-    simp only [simpleRandomSampling, PMF.uniformOfFinset_apply, Finset.mem_powersetCard,
+    simp only [simpleRandomSampling, PMF.uniformOn_apply, Finset.mem_powersetCard,
       Finset.subset_univ, true_and, Finset.card_image_of_injective _ σ.symm.injective]
 
 omit [Fintype U] in

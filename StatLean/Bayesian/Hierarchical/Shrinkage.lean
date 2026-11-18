@@ -712,7 +712,7 @@ theorem jamesStein_risk_difference {p : ℕ}
     integral_sub hf1 (hf2.const_mul _), integral_const_mul, integral_const_mul, hI1, hI2]
   ring
 
-/-- **James–Stein dominates the MLE** (3D.4, stretch): in dimension `p ≥ 3` the James–Stein risk is
+/-- **James–Stein dominates the MLE** (3D.4): in dimension `p ≥ 3` the James–Stein risk is
 strictly below the MLE risk `p·σ²` for every `θ` (the Stein effect). -/
 theorem jamesStein_dominates_mle {p : ℕ}
     -- USER-INPUT: the Stein effect requires dimension ≥ 3; James–Stein 1961

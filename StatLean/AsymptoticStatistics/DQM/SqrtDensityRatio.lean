@@ -87,7 +87,7 @@ lemma dqm_sqrtDensityRatio_l2_linearization
     filter_upwards [hrmem] with θ hmem
     rw [hq_eq θ]
     exact (hmem.const_mul 2).indicator
-      (measurableSet_eq_fun (M.density_meas θ₀) measurable_const).compl
+      (measurableSet_eq_fun (M.density_meas θ₀) measurable_const).compl.nullMeasurableSet
   have hqO : (fun θ => ∫ x, q θ x ^ 2 ∂μ) =o[𝓝 θ₀] (fun θ => s θ ^ 2) := by
     rw [Asymptotics.isLittleO_iff]
     intro c hc

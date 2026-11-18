@@ -26,9 +26,7 @@ hand-rolled through the ε-free witness pattern
 gauge sets (`norm = ⊤` makes the bound trivial). Measurability of ψ and
 a.e.-measurability of X, Y are LEAN-ONLY hypotheses: the plain `lintegral` is
 not subadditive without measurability of the integrands. Constants: exact
-(the triangle inequality carries no constant). Named-sorry fallback of this
-work item: `orliczNorm_add_le` itself, with the ψ₂/ψ₁ instances and the
-finset-sum corollary derived from it.
+(the triangle inequality carries no constant).
 
 **Bibliographic comments.** That the Luxemburg gauge is a norm is Luxemburg's
 thesis (Delft, 1955). See also Rao–Ren, *Theory of Orlicz Spaces*, Dekker
@@ -205,9 +203,9 @@ theorem orliczNorm_finset_sum_le {ψ : ℝ → ℝ}
     -- USER-INPUT: ψ convex on [0,∞); HDP Exercise 2.42 (Orlicz function)
     (hψ_conv : ConvexOn ℝ (Set.Ici 0) ψ)
     -- USER-INPUT: ψ(0) ≤ 0 (book: ψ(0) = 0); HDP Exercise 2.42 — REQUIRED for
-    -- the empty-sum base case (statement fix at the wave-2 gate: without it,
-    -- ψ ≡ 1 is admissible and `orliczNorm ψ 0 μ = ⊤` for `μ univ > 1`, making
-    -- the empty-sum inequality false; caught honestly by the closure session)
+    -- the empty-sum base case (without it, ψ ≡ 1 is admissible and
+    -- `orliczNorm ψ 0 μ = ⊤` for `μ univ > 1`, making the empty-sum
+    -- inequality false)
     (hψ0 : ψ 0 ≤ 0)
     -- LEAN-ONLY: measurability of ψ; inherited from orliczNorm_add_le
     (hψ_meas : Measurable ψ)

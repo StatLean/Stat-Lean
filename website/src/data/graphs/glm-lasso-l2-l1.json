@@ -33,7 +33,7 @@
     {"id":"Submodule.starProjection_apply_eq_zero_iff","label":"starProjection_apply_eq_zero_iff","full":"Submodule.starProjection_apply_eq_zero_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Projection.Basic"},
     {"id":"Submodule.le_orthogonal_orthogonal","label":"le_orthogonal_orthogonal","full":"Submodule.le_orthogonal_orthogonal","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Orthogonal"},
     {"id":"map_zero","label":"map_zero","full":"map_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Hom.Defs"},
-    {"id":"AddGroupSeminormClass.toZeroHomClass","label":"toZeroHomClass","full":"AddGroupSeminormClass.toZeroHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Hom.Basic"},
+    {"id":"AddGroupSeminormClass.toZeroHomClass","label":"toZeroHomClass","full":"AddGroupSeminormClass.toZeroHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Hom.GroupNorm"},
     {"id":"StatLean.HighDimensionalStatistics.linfNorm","label":"linfNorm","full":"StatLean.HighDimensionalStatistics.linfNorm","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},
     {"id":"StatLean.HighDimensionalStatistics.MEstimator.scoreVec","label":"scoreVec","full":"StatLean.HighDimensionalStatistics.MEstimator.scoreVec","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.MEstimator.GLMDefs"},
     {"id":"StatLean.HighDimensionalStatistics.MEstimator.good_event_highProb","label":"good_event_highProb","full":"StatLean.HighDimensionalStatistics.MEstimator.good_event_highProb","kind":"repo","decl":"thm","module":"StatLean.HighDimensionalStatistics.MEstimator.GoodEvent"},

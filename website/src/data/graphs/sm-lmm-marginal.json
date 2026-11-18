@@ -37,6 +37,8 @@
     {"id":"MeasureTheory.Integrable.add","label":"add","full":"MeasureTheory.Integrable.add","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
     {"id":"Matrix.ext","label":"ext","full":"Matrix.ext","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.Defs"},
+    {"id":"MeasureTheory.Measure.bindProd","label":"bindProd","full":"MeasureTheory.Measure.bindProd","kind":"repo","decl":"def","module":"StatLean.ForMathlib.BindProd"},
+    {"id":"MeasureTheory.Measure.bindProd_eq_prod","label":"bindProd_eq_prod","full":"MeasureTheory.Measure.bindProd_eq_prod","kind":"repo","decl":"thm","module":"StatLean.ForMathlib.BindProd"},
     {"id":"StatLean.StatisticalModels.covMatrix_apply","label":"covMatrix_apply","full":"StatLean.StatisticalModels.covMatrix_apply","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.ForMathlib.CovarianceMatrix"},
     {"id":"ProbabilityTheory.covariance_map_fun","label":"covariance_map_fun","full":"ProbabilityTheory.covariance_map_fun","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Covariance"},
     {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
@@ -44,9 +46,7 @@
     {"id":"ProbabilityTheory.covariance_const_add_left","label":"covariance_const_add_left","full":"ProbabilityTheory.covariance_const_add_left","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Covariance"},
     {"id":"ProbabilityTheory.covariance_const_add_right","label":"covariance_const_add_right","full":"ProbabilityTheory.covariance_const_add_right","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Covariance"},
     {"id":"StatLean.StatisticalModels.covMatrix_map_add_prod","label":"covMatrix_map_add_prod","full":"StatLean.StatisticalModels.covMatrix_map_add_prod","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.ForMathlib.CovarianceMatrix"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
-    {"id":"Matrix.transpose_one","label":"transpose_one","full":"Matrix.transpose_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Diagonal"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign"},
@@ -84,6 +84,8 @@
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"MeasureTheory.Integrable.add"},
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"IsTopologicalRing.toIsSemitopologicalRing"},
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"Matrix.ext"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"MeasureTheory.Measure.bindProd"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"MeasureTheory.Measure.bindProd_eq_prod"},
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"StatLean.StatisticalModels.covMatrix_apply"},
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"ProbabilityTheory.covariance_map_fun"},
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"Measurable.aemeasurable"},
@@ -91,8 +93,6 @@
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"ProbabilityTheory.covariance_const_add_left"},
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"ProbabilityTheory.covariance_const_add_right"},
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"StatLean.StatisticalModels.covMatrix_map_add_prod"},
-    {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"one_mul"},
-    {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"Matrix.transpose_one"},
-    {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"mul_one"}
+    {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"one_mul"}
   ]
 }

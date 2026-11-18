@@ -11,11 +11,9 @@ import StatLean.TimeSeries.Process.SampleACF
   object, defined through the AR(∞) inversion `armaPi` truncated to the sample);
 * the **residual correlogram validity** claim (FY §3.5.2): for a correctly specified
   model with `√T`-consistent parameter estimates, the residual sample ACF at a fixed
-  lag admits the same `±1.96/√T` bands as white noise — recorded as a literature
-  DEBT at the granularity FY asserts it ("approximate validity from
-  √T-consistency"; the exact Box–Pierce correction is cited only). **PROVED as of wave
-  `ts/f4a-arma-last` (2026-08-09): this module is `sorry`-free and the headline
-  `residual_acf_asymptotically_standard_debt` is axiom-clean.**
+  lag admits the same `±1.96/√T` bands as white noise — stated at the granularity FY
+  asserts it ("approximate validity from √T-consistency"; the exact Box–Pierce correction
+  is cited only) and proved as `residual_acf_asymptotically_standard_debt`.
 
 FY §3.5.3's formal whiteness tests live in ch. 7 (outside the current scope); no
 portmanteau statistic appears in ch. 3, so none is stated here.
@@ -283,11 +281,11 @@ assembly between them is proved. -/
 
 /-! ### The martingale-difference route to the white-noise sample-ACF CLT (residue (A))
 
-Everything in this block is new in wave `ts/s12b-model-repairs` (2026-08-09) and exists to
-discharge residue (A) *under two moments only*. The spine is: `ξ_i = ε_{i+1} ε_{i+1+k}` is
-a martingale difference for the noise filtration (`k ≥ 1`), Brown's CLT `mds_clt_sequence`
-applies to it, and the passage from the raw cross sum to `√T ρ̂(k)` is three Slutsky steps
-(mean correction, window edge, denominator), each priced in `L¹` by Markov. -/
+This block discharges residue (A) *under two moments only*. The spine is:
+`ξ_i = ε_{i+1} ε_{i+1+k}` is a martingale difference for the noise filtration (`k ≥ 1`),
+Brown's CLT `mds_clt_sequence` applies to it, and the passage from the raw cross sum to
+`√T ρ̂(k)` is three Slutsky steps (mean correction, window edge, denominator), each priced
+in `L¹` by Markov. -/
 
 section Noise
 
@@ -1419,13 +1417,11 @@ private lemma integral_scaledCross_sq_le [IsProbabilityMeasure μ] (hiid : IsIID
 `√T ρ̂_ε(k) →d N(0, 1)` for i.i.d. `ε` with `0 < σ² < ∞` and `k ≥ 1`.
 
 **Why it is not citable from what exists.** `Process/SampleACF.lean` had two statements
-of this shape — its FY Thm 2.8(iii) Bartlett debt and FY eq. (2.27), whose `q = 0` case is
+of this shape — its FY Thm 2.8(iii) Bartlett statement and FY eq. (2.27), whose `q = 0` case is
 exactly this, both since removed — but **both required a finite fourth
 moment** (`MemLp (ε 0) 4 μ`), and the frozen residual-correlogram statement supplies only
 `IsIIDNoise ε σ2 μ`, i.e. two moments. The fourth moment is genuinely unnecessary, which
-is why this was a separate residue rather than a citation, and why the proof is the
-martingale route recorded by wave `ts/s12-model-selection` and executed by
-`ts/s12b-model-repairs` (2026-08-09) in the block above:
+is why the proof is the martingale route of the block above:
 
 * the numerator `T^{-1/2} Σ_t ε_t ε_{t−k}` is a **martingale-difference** sum for
   `𝓕_t = σ(ε_s : s < t)` (`condExp_acfProd`), and `E[(ε_0 ε_k)²] = σ⁴ < ∞` by
@@ -1622,8 +1618,7 @@ end ResidualMeasurability
 
 /-! ### Deterministic and `L²` bricks for the residual-vs-innovation transfer (residue (B))
 
-The stochastic half of residue (B) needs four things that the project did not have, all
-proved here (wave `ts/f4a-arma-last`):
+The stochastic half of residue (B) needs four things, all proved here:
 
 * a **perturbation bound for the lag-`k` sample autocovariance** in the `ℓ²` modulus of
   the window (`abs_sampleACVF_sub_le`, and its un-Cauchy-Schwarzed form
@@ -3138,14 +3133,13 @@ had only `Consistency.exists_armaPi_l1_modulus` (a *modulus of continuity*, from
 compactness), which converts `o_p(T^{−1/2})` into `o_p(1)` — one full factor of `√T`
 short.
 
-**STATUS after wave `ts/s12b-model-repairs` (2026-08-09): the missing brick now EXISTS**,
-as `Consistency.exists_armaPi_l1_lipschitz` (public, axiom-clean), and `Consistency` is
-now in this file's import closure. Two predictions of the paragraph above are
+**The Lipschitz brick** exists as `Consistency.exists_armaPi_l1_lipschitz`, and
+`Consistency` is in this file's import closure. Two predictions of the paragraph above are
 **overturned** by how it was proved: no Cauchy estimate and no `∂π_n/∂θ` is involved — the
 bound comes from the **resolvent identity**
 `π − π′ = ((b − b′) + (a′ − a)·π′)·a⁻¹` together with the `ℓ¹` convolution inequality, the
 two polynomial differences being finitely supported with the parameter differences as
-coefficients. So this residue is now purely the *stochastic* half: turning
+coefficients. So this residue is purely the *stochastic* half: turning
 `‖π(θ̂) − π(θ₀)‖_{ℓ¹} ≤ L·dist(θ̂, θ₀) = o_p(T^{−1/2})` into the `√T`-scaled sample-ACF
 difference (a Cauchy–Schwarz/Markov bookkeeping over the window, plus the geometric
 truncation piece), and the measurability half.
@@ -3154,18 +3148,15 @@ truncation piece), and the measurability half.
 `maPoly_conv_armaPi` are `private`, so the measurability half must be re-derived here or
 they must be un-`private`d.
 
-**STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; the residue above is
-unchanged and remains accurate.** Note for the next wave that the two halves are *not*
-equally sized: the measurability half is plumbing over the two `private` scope items named
-above, while the stochastic half has to control a **ratio** — `sampleACF = γ̂(k)/γ̂(0)` — so
-the Lipschitz bound has to be pushed through both the numerator and the denominator, i.e.
-through a quotient-Slutsky step of the shape already available in this file as
-`tendstoInProb_ratio` (used by residue (A)). That is the natural entry point and is not
-mentioned by the note above.
+The two halves are *not* equally sized: the measurability half is plumbing over the two
+`private` scope items named above, while the stochastic half has to control a **ratio** —
+`sampleACF = γ̂(k)/γ̂(0)` — so the Lipschitz bound seems to have to be pushed through both the
+numerator and the denominator, i.e. through a quotient-Slutsky step of the shape already
+available in this file as `tendstoInProb_ratio` (used by residue (A)). That is the natural
+entry point and is not mentioned by the note above.
 
-**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): NOT attempted, but the previous
-paragraph's diagnosis is REFINED — FINDING 28: the ratio is not an extra difficulty, and
-the denominator leg needs no Lipschitz bound at all.**
+**FINDING 28: the ratio is not an extra difficulty, and the denominator leg needs no
+Lipschitz bound at all.**
 
 `tendstoInProb_ratio` compares `(A + Δ)/D` against `A/σ²` — a *deterministic* denominator.
 Residue (B) is a difference of two ratios with two *random* denominators, so the lemma does
@@ -3198,42 +3189,29 @@ denominator by a factor of `√T` of difficulty. `Δ₂` also splits as
 already-proved `integral_scaledCross_sq_le`. So of the lemma's five inputs, four are in
 hand and only item 1 above is new mathematics.
 
-The measurability half and the two `private` scope items (`Consistency.continuous_armaPi`,
-`maPoly_conv_armaPi`) are unchanged.
-
-**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): the MEASURABILITY HALF is
-CLOSED; the stochastic half is not.** The first conjunct below is now proved by
-`measurable_residual_sampleACF` (section above), so the `sorry` covers the transfer only.
-Both scope items are dissolved by re-derivation, not by a relocation: the recursion
+**The measurability half**, the first conjunct below, is proved by
+`measurable_residual_sampleACF` (section above). Both scope items are dissolved by
+re-derivation, not by a relocation: the recursion
 `Σ_{k≤n}(maPoly a)_k π_{n−k} = (arPoly b)_n` and the continuity of `(b,a) ↦ armaPi b a n`
 are re-proved locally from the public `Stationarity.arPoly_conv_armaPsi`, so no
 un-`private`ing of `ARMA/Consistency.lean` is needed for this file after all — the note's
 "must be re-derived here or they must be un-`private`d" is answered by the first branch,
-at a cost of about forty mechanical lines.
+at a cost of about forty mechanical lines: the only content is that `armaPi` satisfies a
+*finite* recursion with `(maPoly a)_0 = 1` — no analysis, no invertibility, no `𝓑`.
 
-**FINDING 32 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** A recorded "scope blocker"
-that was not one: both `private` items are re-derivable in about forty mechanical lines
-from the public `Stationarity.arPoly_conv_armaPsi`, because the only content is that
-`armaPi` satisfies a *finite* recursion with `(maPoly a)_0 = 1` — no analysis, no
-invertibility, no `𝓑`. Scope notes of the form "X is `private`, so this needs a relocation"
-should be checked against the cost of re-deriving X before they are treated as blockers.
-
-The stochastic half is unchanged and is exactly finding 28's item 1 plus item 2:
+The stochastic half is exactly finding 28's item 1 plus item 2:
 `√T(γ̂_ε̂(k) − γ̂_ε(k)) →p 0` (needs `Consistency.exists_armaPi_l1_lipschitz`) and
 `γ̂_ε̂(0) − γ̂_ε(0) →p 0` (needs only `exists_armaPi_l1_modulus`), after which the two
 `tendstoInProb_ratio` applications finish. One bookkeeping item that finding 28's list does
-not name, and that the newly formalized measurability half makes visible: the *window* of
+not name, and that the formalized measurability half makes visible: the *window* of
 `sampleResiduals` is `Σ_{j≤t} π_j x_{t−j}` with a **`t`-dependent truncation**, so the
 geometric truncation piece is not uniform in `t` over the window and has to be summed as
 `Σ_{t<T} r^t = O(1)` — an `O_p(1/T)` contribution to `γ̂`, as the route paragraph says, but
 the estimate is a sum over the window rather than a single tail bound.
 
-**STATUS after wave `ts/f4a-arma-last` (2026-08-09): CLOSED — this residue is PROVED, and
-with it the headline `residual_acf_asymptotically_standard_debt` (0-sorry, axiom-clean).**
-The route is finding 28's, with one correction and one addition that the previous notes did
-not have:
+**Proof.** The route is finding 28's, with one correction and one addition:
 
-* **FINDING 34 (this wave).** Finding 28's item 2 (`γ̂_ε̂(0) − γ̂_ε(0) →p 0`, said to need
+* **FINDING 34.** Finding 28's item 2 (`γ̂_ε̂(0) − γ̂_ε(0) →p 0`, said to need
   "only `exists_armaPi_l1_modulus`") does **not** have to be proved separately: the lag-`0`
   statement is the `√T`-scaled item 1 at `k = 0` divided by `√T ≥ 1`, so a single lemma
   (`tendstoInProb_residACVF_transfer`, stated at every lag) discharges both, and the
@@ -3444,15 +3422,15 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
 
 end Assembly
 
-/-- **DEBT (FY §3.5.2; Box–Jenkins folklore made precise by Box–Pierce 1970)**: for a
+/-- **Residual correlogram validity (FY §3.5.2; Box–Jenkins folklore made precise by
+Box–Pierce 1970)**: for a
 correctly specified stationary causal invertible ARMA with iid noise and any
 `√T`-consistent estimator sequence, the lag-`k` sample ACF of the fitted residuals is
 asymptotically `N(0, 1)` after `√T`-scaling — the basis of the `±1.96/√T` residual
 correlogram bands. (The exact Box–Pierce variance deflation at small lags is a
 strictly finer statement, cited only.)
 
-**STATUS after wave `ts/s12-model-selection` (2026-08-09).** This is no longer a
-monolithic debt: the statement is **PROVED over the two named residues**
+The statement is proved from the two named residues
 `sampleACF_whiteNoise_clt_residue` (A) and `residual_acf_transfer_residue` (B) above,
 glued by the charFun-Slutsky lemma replayed in the `Assembly` section. Two corrections
 to the reading recorded above, both detailed at the residues:
@@ -3462,7 +3440,7 @@ to the reading recorded above, both detailed at the residues:
   makes the conclusion true: under mere `O_p(T^{−1/2})` it is FALSE, and not by the
   "strictly finer" Box–Pierce correction alone — the limit law is then not determined by
   the rate at all, since it depends on the limit law of `√T(θ̂_T − θ₀)`;
-* residue (A) could not cite `Process/SampleACF.lean`'s Bartlett debt or its FY eq. (2.27)
+* residue (A) could not cite `Process/SampleACF.lean`'s Bartlett statement or its FY eq. (2.27)
   corollary (both since removed): both demanded a finite fourth moment, which `IsIIDNoise`
   does not supply and which the martingale-difference route does not need. -/
 theorem residual_acf_asymptotically_standard_debt {Ω : Type*} [MeasurableSpace Ω]

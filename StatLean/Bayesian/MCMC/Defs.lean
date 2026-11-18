@@ -22,7 +22,7 @@ Stationarity vocabulary is the pinned Mathlib's: `ProbabilityTheory.Kernel.Invar
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §11.1–11.2,
 pp. 276–278.
 
-**Proof formalization notes.** Laptop-only data model — definitions only. On a countable `S` with
+**Proof formalization notes.** Definitions and basic constructions. On a countable `S` with
 measurable singletons the space is discrete, so the MH kernel's coe-measurability is automatic
 (`Measurable.of_discrete`) and the definition carries no side conditions; the rejection mass
 `1 − ∫ α(x, y) q(x, dy)` sits on the Dirac at the current state. `ℝ≥0∞` division junk: where

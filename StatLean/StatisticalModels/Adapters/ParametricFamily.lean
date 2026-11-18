@@ -19,8 +19,7 @@ Interconversion between this area's measure-level dominated models
 The iid agreement `iid (M.toMeasure μ) n = AsymptoticStatistics.productMeasure M μ · n` holds
 definitionally (both sides are `Measure.pi` of `toMeasure`) but is deliberately **not** stated
 here: naming `productMeasure` would import the heavy LAN assembly module
-(`LocalAsymptoticNormality.AsymptoticRepresentation`); the one-line agreement lemma is a
-documented laptop follow-up in that file, not an import here.
+(`LocalAsymptoticNormality.AsymptoticRepresentation`).
 
 **Reference.** Dominated families and their density representations: P. R. Halmos and
 L. J. Savage, "Application of the Radon–Nikodym theorem to the theory of sufficient

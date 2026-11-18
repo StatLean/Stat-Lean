@@ -27,35 +27,21 @@ The quantitative toolbox for α-mixing processes:
   sorted 4-tuple mixing bound `abs_integral_quad_le`, the expansion of `E S_n⁴` over
   4-tuples, and the assembly; its *counting* half `sum_four_le_of_cut_bound` — a purely
   combinatorial statement (no probability) — is proved by `Tuple.sort` symmetrisation
-  (fibres of size `4!`) plus gap parametrisation, see its docstring;
-* **Theorems 2.18/2.19 (Bosq exponential inequalities)** — literature DEBTS (used only
-  by ch. 5 KDE uniform rates, outside the current scope). **Removed**; see below.
+  (fibres of size `4!`) plus gap parametrisation, see its docstring.
 
-**Removed (2026-08-10, user directive).** The module's two sorried declarations were
-deleted. Nothing consumed them, and no helper was left orphaned — every other declaration
-in the file, including the whole Volkonskii–Rozanov decoupling toolbox and the `q = 4`
-Doukhan–Louhichi moment bound, is untouched and remains proved.
-* `bosq_exponential_debt` — Bosq 1998 Thm 1.3 / FY Theorem 2.18: for a bounded, zero-mean,
-  strictly stationary process and `1 ≤ qb ≤ n/2`,
-  `P(|S_n/n| > ε) ≤ 4 exp(−ε² qb/(8 b²)) + 22 (1 + 4b/ε)^{1/2} qb α([n/(2 qb)])`.
-* `bosq_cramer_debt` — Bosq 1998 Thm 1.4 / FY Theorem 2.19, eq. (2.62): the same under
-  Cramér's condition `E|X_t|^k ≤ C^{k−2} k! E X_t²`, with `μ(ε) = ε²/(25 E X_t² + 5Cε)`.
-
-Both had been brick-decomposed in wave `ts/s10` — 2.18 proved in the regimes `b ≤ ε` (null
-event) and "printed bound `≥ 1`", 2.19 in its vacuous regime — leaving in each case the
-single residue **Bradley's coupling lemma** (1983), whose constants are exactly the printed
-`22 (1+4b/ε)^{1/2}` and `11 (…) α^{2k/(2k+1)}`. The finding that this file's
-Volkonskii–Rozanov decoupling **cannot** substitute for it (its error is proportional to the
-*product of the sup norms* of the factors, which for `e^{λ S_i}` is exponentially large in
-the block count at every `λ` reaching the printed exponent) went with the two docstrings.
-
-Recover from `bdc8143f`.
-
-**Scope note.** FY's Theorem 2.17 (Doukhan–Louhichi moment bounds via the
-covariance-decay functional `M_{r,q}`) and the general-`q` Proposition 2.7 are *not*
-stated: their only consumers in scope — Theorems 2.20(i)/2.21(i) — are themselves
-cited-out literature debts carrying their own hypotheses, and the CLT proofs consume
-only the `q = 4` instance stated here.
+**Scope.** The Bosq exponential inequalities (used only by the ch. 5 KDE uniform rates)
+are not stated here: FY Theorem 2.18 (Bosq 1998 Thm 1.3) — for a bounded, zero-mean,
+strictly stationary process and `1 ≤ qb ≤ n/2`,
+`P(|S_n/n| > ε) ≤ 4 exp(−ε² qb/(8 b²)) + 22 (1 + 4b/ε)^{1/2} qb α([n/(2 qb)])` — and
+FY Theorem 2.19, eq. (2.62) (Bosq 1998 Thm 1.4) — the same under Cramér's condition
+`E|X_t|^k ≤ C^{k−2} k! E X_t²`, with `μ(ε) = ε²/(25 E X_t² + 5Cε)`. Their key
+ingredient is **Bradley's coupling lemma** (1983), whose constants are exactly the printed
+`22 (1+4b/ε)^{1/2}` and `11 (…) α^{2k/(2k+1)}`; this file's Volkonskii–Rozanov decoupling
+**cannot** substitute for it, since its error is proportional to the *product of the sup
+norms* of the factors, which for `e^{λ S_i}` is exponentially large in the block count at
+every `λ` reaching the printed exponent. FY's Theorem 2.17 (Doukhan–Louhichi moment bounds
+via the covariance-decay functional `M_{r,q}`) and the general-`q` Proposition 2.7 are
+*not* stated either: the CLT proofs consume only the `q = 4` instance stated here.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.2,
 Propositions 2.5–2.7 and Theorems 2.17–2.19 (pp. 71–73). (`FY §2.6.2`.)
@@ -76,9 +62,8 @@ Propositions 2.5–2.7 and Theorems 2.17–2.19 (pp. 71–73). (`FY §2.6.2`.)
   `Σ_g n g² · g⁻² = O(n²)`, and the paired products contribute `(n Σ α)² = O(n²)`.
   As executed, the split is `abs_integral_quad_le` (proved: the two outer cuts kill the
   product term because `E X_t = 0`, the middle cut pays `E[X_aX_b]·E[X_cX_d]`), and the
-  counting is isolated as `sum_four_le_of_cut_bound`.  The expensive unformalised step
-  there is the symmetrisation `Σ_{(a,b,c,d)} G ≤ 24 Σ_{a≤b≤c≤d} G`, which needs an
-  explicit sorting network on `ℕ⁴` or `Tuple.sort` with a fibre count.
+  counting is isolated as `sum_four_le_of_cut_bound`. The symmetrisation
+  `Σ_{(a,b,c,d)} G ≤ 24 Σ_{a≤b≤c≤d} G` uses `Tuple.sort` with a fibre count.
 
 **Bibliographic comments.** Prop 2.5(i) is Yu. A. Davydov (1968); (ii) is
 P. Billingsley, *Convergence of Probability Measures* (1968), Lemma 1 of §20;
@@ -885,7 +870,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
 
 /-! ### Proposition 2.6: the Volkonskii–Rozanov factorization -/
 
-/-- **FY Proposition 2.6 (Volkonskii–Rozanov), repaired form — PROVED (axiom-clean).**
+/-- **FY Proposition 2.6 (Volkonskii–Rozanov), repaired form — proved.**
 Identical to `norm_integral_prod_sub_prod_integral_le` except for the hypothesis `0 < k`,
 which is exactly what that statement is missing: at `k = 0` its right-hand side
 `16 · (0 − 1) · a = −16a` is negative while its left-hand side is `0` (see there).  Every
@@ -1017,23 +1002,17 @@ The gap hypothesis is abstract: the α-coefficient between the cumulative past
 applications supply it via `IsStrictlyStationary.alphaMixCoeff_shift` and
 monotonicity.
 
-**Status: PROVED — REPAIRED to `0 < k` (laptop, 2026-08-09).** The original frozen form
-quantified over all `k`, and its `k = 0` corner is FALSE (verified):  At `k = 0` the index
-type `Fin 0` is empty, so every hypothesis is vacuous and `a` is unconstrained; the left
-side is exactly `‖1 − 1‖ = 0` (empty products, `∫ 1 = 1`) while the right side is
-`16 · (0 − 1) · a = −16a`, negative for every `a > 0`.  The claim `0 ≤ −16a` is therefore
+**Repaired to `0 < k`.** The original frozen form quantified over all `k`, and its `k = 0`
+corner is FALSE (verified):  At `k = 0` the index type `Fin 0` is empty, so every
+hypothesis is vacuous and `a` is unconstrained; the left side is exactly `‖1 − 1‖ = 0`
+(empty products, `∫ 1 = 1`) while the right side is `16 · (0 − 1) · a = −16a`, negative
+for every `a > 0`.  The claim `0 ≤ −16a` is therefore
 refutable.  **Repair**: add `1 ≤ k`, or replace the factor `(k − 1)` by `(k − 1 : ℕ)` cast
 to `ℝ`, either of which makes the statement true.  The first of those repairs **is**
-available, proved and axiom-clean, as the sibling
+available, proved, as the sibling
 `norm_integral_prod_sub_prod_integral_le_of_pos` immediately above, to which the `k ≥ 1`
 branch below delegates; new consumers should call that one, since no consumer needs
 `k = 0`.
-
-**Repair history.** Wave `ts/s2b` carried out this repair and reverted it because
-`LimitTheorems.lean`'s private `norm_integral_prod_blocks_sub_prod_le` consumed the
-unconstrained form (itself false at `k = 0` the same way). Wave `ts/s5b` then rebuilt that
-consumer with its own `0 < k` hypothesis delegating to `_of_pos`, leaving THIS statement
-consumer-free, so the laptop applied the repair.
 -- USER-INPUT: nonempty block family; FY Prop 2.6 (the k = 0 corner is refutable) -/
 theorem norm_integral_prod_sub_prod_integral_le {k : ℕ} (hk : 0 < k)
     {m : Fin k → MeasurableSpace Ω} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}

@@ -57,7 +57,7 @@ estimator under `θ₀ + h/√n`. (`TSH4 §14.4 Thm 14.4.1`.)
   differentiability) plus Le Cam's third lemma, applied to the pair
   `(⟪I⁻¹(θ₀)Z_n, t⟫, log L_{n,h})`, followed by the Cramér–Wold device.
 * **Status.** The route above is realised for a *fixed* direction by
-  `weak_limit_estimator_under_fixed_local_alternative`, which is axiom-clean and holds for
+  `weak_limit_estimator_under_fixed_local_alternative`, which holds for
   the full sequence (no subsequence extraction: asymptotic linearity identifies the joint
   limit `(J⁻¹Δ, Δ)` outright, so Le Cam 3 in the form
   `Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison` *produces* the limit
@@ -68,7 +68,6 @@ estimator under `θ₀ + h/√n`. (`TSH4 §14.4 Thm 14.4.1`.)
   Hellinger residual (`HellingerProduct.hellinger_product_eLpNorm_le_sqrt_n_per_sample`)
   and feeding it the DQM limit `dqm_sqrt_density_l2_convergence` at the moving sequence and
   at the constant one — both centred at the same `½⟪h, ℓ⟫√p_{θ₀}`, so the centrings cancel.
-  **The file is therefore 0-sorry and every theorem in it is axiom-clean.**
 
 **Bibliographic comments.** Contiguity, local asymptotic normality and the third lemma are
 due to L. Le Cam ("Locally asymptotically normal families of distributions," *Univ.
@@ -811,7 +810,7 @@ private lemma eLpNorm_two_toReal_eq_sqrt_integral_sq {Ω : Type*} [MeasurableSpa
 `P^n_{θ₀+hₙ/√n}` and `P^n_{θ₀+h/√n}` become indistinguishable by bounded continuous test
 functions of the sample.
 
-**Why this is the whole remaining gap.** Everything else in this lane was already proved:
+**Proof reduction.**
 `weak_limit_estimator_under_fixed_local_alternative` closes the *fixed*-direction statement
 for the full sequence, and `weakConverges_of_integral_close` above reduces the varying case
 to the fixed one over exactly this hypothesis.
@@ -1097,7 +1096,7 @@ theorem weak_limit_estimator_under_local_alternatives
         (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)))
       (multivariateGaussian 0 J⁻¹) := by
   -- ROUTE, NOW REALISED. The fixed-direction statement is
-  -- `weak_limit_estimator_under_fixed_local_alternative` above — CLOSED this session, for the
+  -- `weak_limit_estimator_under_fixed_local_alternative` above, proved for the
   -- full sequence, by Le Cam's third lemma in its contiguity-footing form. The previous
   -- note's three obstructions are all discharged:
   --   * the common-support defect of `hL_is_log_ratio` is real (it is recorded, with both
@@ -1120,8 +1119,7 @@ theorem weak_limit_estimator_under_local_alternatives
   -- now PROVED too (see its docstring: tensorisation of the per-sample Hellinger residual
   -- fed by the DQM `L²`-limit at the moving and at the constant sequence, whose common
   -- centring `½⟪h, ℓ⟫√p_{θ₀}` cancels in the difference). The reduction of the varying case
-  -- to the fixed one is `weakConverges_of_integral_close`, spelled out below, so this
-  -- theorem is axiom-clean.
+  -- to the fixed one is `weakConverges_of_integral_close`, spelled out below.
   classical
   have hTmeas : ∀ n : ℕ, Measurable
       (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=

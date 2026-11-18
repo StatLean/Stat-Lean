@@ -24,9 +24,7 @@ to `2`). The tsum/lintegral swap is `MeasureTheory.lintegral_tsum` +
 the ForMathlib brick `pow_div_exp_pow_le_factorial`. The moment hypothesis is
 consumed only at even integers `p = 2n` through the unpacking helper
 `lintegral_pow_le_of_eLpNorm_le`, so the rpow/coercion conversion is confined
-there. Named-sorry fallback of this work item:
-`subGaussianNorm_le_of_eLpNorm_le` (the tsum/geometric-series swap), with the
-unpacking helper closed.
+there.
 
 **Bibliographic comments.** The series argument converting moment growth into
 square-exponential integrability is classical (Khinchin; Buldygin–Kozachenko

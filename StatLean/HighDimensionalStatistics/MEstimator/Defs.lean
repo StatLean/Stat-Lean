@@ -9,7 +9,7 @@ import Mathlib.Analysis.Calculus.Gradient.Basic
 /-!
 # Regularized M-estimators: decomposable regularizers and restricted strong convexity
 
-Concept-layer definitions for the `MEstimator` milestone. Consider a regularized M-estimator
+Concept-layer definitions for the `MEstimator` formalization. Consider a regularized M-estimator
 of the form
 $$\hat\theta \in \arg\min_{\theta}\bigl\{\, \mathcal L_n(\theta) +
 \lambda_n\,\Phi(\theta)\,\bigr\},$$ where $\mathcal L_n$ is an empirical cost (loss) and $\Phi$ is a
@@ -40,7 +40,7 @@ $\lVert\cdot\rVert=\ell_2$). All projections $\Delta_M$, $\Delta_{\bar M}$, $\th
 … are **orthogonal** projections with respect to $\langle\cdot,\cdot\rangle$, realized by
 `Submodule.starProjection` (the `E`-valued orthogonal projection).
 
-Laptop-only shared data model: this file fixes the encodings consumed by the deterministic
+Shared data model: this file fixes the encodings consumed by the deterministic
 assembly (`Deviation`, `Bound`, `DualBound`) and the GLM assembly.
 
 **Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,

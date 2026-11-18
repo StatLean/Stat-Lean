@@ -1667,10 +1667,8 @@ integrality hypothesis `hr`). Then with probability at least `1 − δ`,
   `|μ̂₂ₙ − μ₀| ≤ 9 σ √(log(8/δ)/n)`.
 
 **Constant note.** LM's `9` combines a bias term they bound by `6σ√(log(8/δ)/n)` and a
-Bernstein term bounded by `3σ√(log(8/δ)/n)`; the closure lane must verify the composite
-constant and, per the project constants policy, repair to the provable value (keeping
-the `σ√(log(8/δ)/n)` shape) with a documented deviation if `9` does not survive
-formalization. -/
+Bernstein term bounded by `3σ√(log(8/δ)/n)`. The proof below establishes the
+displayed constant `9` under the stated normalization and trimming hypotheses. -/
 theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
     {a b : Fin n} {μ₀ σ2 δ : ℝ}
     -- LEAN-ONLY: coordinate measurability; LM §2.3 regularity

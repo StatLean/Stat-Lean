@@ -15,36 +15,23 @@ autocorrelation `ρ̂` (divisor-`T`, mean-corrected — FY eq. (2.23), defined i
 
 * the divisor-`T` sample ACVF is a **positive semidefinite sequence** (FY §2.2.2's
   "may be shown" claim; false for the `1/(T−k)` divisor);
-* **FY Theorem 2.8** for two-sided linear processes (eq. (2.24)) with IID innovations —
-  (i) the sample-mean CLT [ledger-(a) debt: B&D §7.3 m-dependent route]. Parts (ii) and
-  (iii), and FY eq. (2.27) which was proved from (iii), have been removed; see **Removed**
-  below.
+* **FY Theorem 2.8(i)**: the sample-mean CLT for a two-sided linear process with
+  i.i.d. innovations, proved by the m-dependent approximation of B&D §7.3;
+* the definition `bartlettW`, moment/covariance identities for finite filters,
+  and Cesàro-limit estimates for the covariance kernels.
 
-**Removed (2026-08-10, user directive).** The module's two sorried declarations, the
-theorem proved from one of them, and six `private` helpers left with no surviving consumer
-were deleted. Everything else — the positive-semidefiniteness of the sample ACVF, the whole
-(R1)–(R4) reduction ledger with its Cesàro/covariance-kernel machinery, and all the
-`acvf`/`acf` identities — is untouched and remains proved.
-* `sampleACVF_zero_clt_debt` — FY Theorem 2.8(ii) (B&D 1991 Prop 7.3.4): the CLT for
-  `γ̂(0)`, with the corrected limiting variance `(η − 3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²`.
-* `sampleACF_bartlett_clt_debt` — FY Theorem 2.8(iii): **Bartlett's formula** (eq. (2.26))
-  in Cramér–Wold form, `√T Σ_i c_i (ρ̂(i) − ρ(i)) →d N(0, cᵀ W c)` with `W = bartlettW`.
-* `IsMA.sampleACF_clt` (**consumer**) — **FY eq. (2.27)**: for an MA(q) process and lag
-  `j > q`, `√T ρ̂(j) →d N(0, 1 + 2Σ_{t=1}^q ρ(t)²)`, the basis of the ±1.96/√T confidence
-  bands and the §3.4.4 ACF order-identification rule. Its proof consumed the Bartlett debt.
-* `private`, proved, left without a consumer: the whole `Degenerate`/`Degenerate2` split-off
-  of the `a ≡ 0` corner — `ae_eq_zero_of_filter_zero`, `acvf_eq_zero_of_ae_zero`,
-  `acf_eq_zero_of_ae_zero`, `sampleACVF_ae_eq_zero`, `acvf_zero_pos_of_ne`,
-  `bartlettW_eq_zero_of_ae_zero`.
+**Scope.** The CLT for the lag-zero sample ACVF (FY Theorem 2.8(ii), B&D 1991
+Prop 7.3.4), Bartlett's formula for the sample ACF (FY Theorem 2.8(iii), eq. (2.26)), and
+its MA(q) corollary (FY eq. (2.27): `√T ρ̂(j) →d N(0, 1 + 2Σ_{t=1}^q ρ(t)²)` for lag
+`j > q`, the basis of the ±1.96/√T confidence bands and the §3.4.4 ACF order-identification
+rule) are not proved here. The auxiliary algebra and limiting-variance constructions are
+proved; see the residue ledger below.
 
-`bartlettW` itself (FY eq. (2.26)) is **kept**: it is a public definition, not a helper.
-
-Recover from `bdc8143f`.
-
-**Misprint corrections (stated as provable, per project policy).**
+**Misprint corrections.**
 * FY eq. (2.25) prints `ν₂² = 2σ⁴ Σ_j ρ(j)²`; dimensional analysis and
   B&D (1991) Prop 7.3.4 give `ν₂² = (η − 3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²` with
-  `η = Eε⁴/σ⁴` — we state the corrected form.
+  `η = Eε⁴/σ⁴` — the corrected form is the limiting variance evaluated by
+  `tendsto_cesaro_covKernel`.
 * FY eq. (2.27) prints `1 + 2Σ_{t=1}^q ρ(q)²`; the correct summand is `ρ(t)²`.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.2.2
@@ -57,8 +44,8 @@ modern proofs via m-dependent truncation are Brockwell & Davis (1991), §7.2–7
 failure for `1/(T−k)` are discussed in B&D (1991), §7.2 and Percival–Walden (1993).
 
 The CLT statements are phrased through pointwise characteristic-function convergence
-(Lévy-equivalent to convergence in distribution), matching the batch-A/B debt
-conventions. The linear-process hypothesis is spelled as an explicit two-sided `L²`
+(Lévy-equivalent to convergence in distribution), matching the conventions of the area.
+The linear-process hypothesis is spelled as an explicit two-sided `L²`
 partial-sum limit — definitionally `IsFilteredBy` (`Spectral/LinearFilter.lean`), which
 this Process-layer file must not import.
 -/
@@ -1108,7 +1095,7 @@ private lemma integral_abs_defect_le [IsProbabilityMeasure μ] {a : ℤ → ℝ}
   exact ⟨(hmemD.integrable one_le_two).abs,
     integral_abs_le_of_eLpNorm_two (by positivity) hmD.aestronglyMeasurable hDle⟩
 
-/-- **FY Theorem 2.8(i) — DEBT (ledger (a); proof route: m-dependent approximation +
+/-- **FY Theorem 2.8(i) (proof route: m-dependent approximation +
 iid CLT, B&D 1991 §7.3)**: sample-mean CLT for a two-sided linear process
 `X_t = m + Σ_{k∈ℤ} a_k ε_{t−k}` with IID(0, σ²) innovations and `Σ_k a_k ≠ 0`:
 `√T (X̄_T − m) →d N(0, σ²(Σ_k a_k)²)`. -/
@@ -1267,7 +1254,7 @@ theorem sampleMean_clt_debt [IsProbabilityMeasure μ] {a : ℤ → ℝ} {m σ2 :
   rw [← hP, ← hS]
   linarith [dist_triangle P Q S, dist_triangle Q R S]
 
-/-! ### Bricks for the lag-0 and Bartlett debts
+/-! ### Bricks for the lag-0 and Bartlett CLTs
 
 The **mean correction** in `γ̂(0)` is asymptotically negligible, and this is already a
 consequence of the sample-mean layer above: the same ℓ¹ energy budget that produced the
@@ -1275,9 +1262,9 @@ consequence of the sample-mean layer above: the same ℓ¹ energy budget that pr
 sum by `√σ² Σ_k|a_k|` uniformly in `T` (`eLpNorm_normalizedSum_le`), whence
 `E|√T X̄_T²| ≤ σ² (Σ_k|a_k|)² / √T → 0` (`tendsto_integral_sqrt_mul_sampleMean_sq`).
 So `√T (γ̂(0) − γ(0))` and `√T (T⁻¹ Σ_t X_t² − γ(0))` have the same limit law, which is
-the reduction the remaining debts start from.
+the reduction a proof of FY Thm 2.8(ii) starts from.
 
-**Named residues of the (since removed) FY Thm 2.8(ii) debt (after this reduction).**
+**Residue ledger for FY Thm 2.8(ii) (after this reduction).**
 * (R1) the CLT for `T^{-1/2} Σ_{t≤T}(X_t² − γ(0))` at a *fixed* truncation level `N`.
   The truncated square is `2N`-dependent, so Bernstein-block `[1,T]` into big blocks of
   a fixed length `L` separated by guard blocks of length `2N`: the big-block sums are
@@ -1286,42 +1273,37 @@ the reduction the remaining debts start from.
   shift-invariant. Constant weights `T^{-1/2}` then feed the *already present*
   `tendsto_charFun_weighted_iid` — **no new CLT engine is needed**, in contrast with the
   MDS route; `L → ∞` after `T → ∞` removes the guard-block loss.
-  **Status (wave `ts/f4b-garch-last`, 2026-08-09): (R1) is the *only* item of the four
-  still carrying analytic content, and it may now be proved against a known target.**
-  Its second-moment side is fully supplied: `cov_sq_truncFilter` shows the truncated
-  covariance depends on `(s, t)` only through the lag `s − t` (so the block scheme's
-  variance bookkeeping is a one-variable computation), `tendsto_cov_sq_truncFilter` sends
-  that lag kernel to `covKernel` as `N → ∞`, and `tendsto_cesaro_covKernel` evaluates the
-  Cesàro mass of `covKernel` as the frozen constant. What (R1) still owes is the
-  *distributional* step alone — the block construction, the independence of the
-  big-block sums, and the guard-block `L²` loss.
+  (R1) is the *only* item of the four still carrying analytic content, and it can be
+  proved against a known target. Its second-moment side is fully supplied:
+  `cov_sq_truncFilter` shows the truncated covariance depends on `(s, t)` only through
+  the lag `s − t` (so the block scheme's variance bookkeeping is a one-variable
+  computation), `tendsto_cov_sq_truncFilter` sends that lag kernel to `covKernel` as
+  `N → ∞`, and `tendsto_cesaro_covKernel` evaluates the Cesàro mass of `covKernel` as the
+  frozen constant. What (R1) still owes is the *distributional* step alone — the block
+  construction, the independence of the big-block sums, and the guard-block `L²` loss.
 * (R2) the fourth-moment covariance `Cov(X_s^{(N)2}, X_t^{(N)2})`, i.e. the partition
   formula for `E[ε_i ε_j ε_k ε_l]` over i.i.d. innovations (`η σ⁴` on the diagonal,
-  `σ⁴` on each pairing, `0` otherwise). This was the only genuinely *missing analytic
-  input* — everything else in (R1)/(R3) reuses machinery in this file. **CLOSED**
-  (wave `ts/f3b-tail`, 2026-08-09): `integral_sq_mul_sq_noiseComb` and its covariance
-  form `cov_sq_noiseComb`, in the `FourthMoment` section below, at arbitrary finitely
-  supported weights `c`, `d` — so at *every* pair of lags `(s, t)` and every truncation
-  level `N` at once, which is what the joint (Bartlett) version needs as well. Two
-  corrections to the plan as stated here are worth recording. First, the *partition
-  formula* is not the right intermediate object: proving it means a four-fold sum split
-  over equality patterns of `(i, j, k, l)`, and the one-coordinate induction of
-  `integral_sq_mul_sq_step` replaces it entirely (the pattern bookkeeping becomes a
-  `ring` identity in one new innovation). Second, no third moment of `ε` is needed and
-  none is available from the hypotheses of the two debts — the `A³` block is killed by
-  `E Q = E R = 0` rather than by `E ε³ = 0`, and the `A¹` block by `E ε = 0`; a route
-  that *did* need `E ε³` would be unprovable from `MemLp (ε 0) 4 μ` alone.
+  `σ⁴` on each pairing, `0` otherwise). **Proved**: `integral_sq_mul_sq_noiseComb` and its
+  covariance form `cov_sq_noiseComb`, in the `FourthMoment` section below, at arbitrary
+  finitely supported weights `c`, `d` — so at *every* pair of lags `(s, t)` and every
+  truncation level `N` at once, which is what the joint (Bartlett) version needs as well.
+  Two remarks. First, the *partition formula* is not the right intermediate object:
+  proving it means a four-fold sum split over equality patterns of `(i, j, k, l)`, and the
+  one-coordinate induction of `integral_sq_mul_sq_step` replaces it entirely (the pattern
+  bookkeeping becomes a `ring` identity in one new innovation). Second, no third moment
+  of `ε` is needed — the `A³` block is killed by `E Q = E R = 0` rather than by
+  `E ε³ = 0`, and the `A¹` block by `E ε = 0`; a route that *did* need `E ε³` would be
+  unprovable from `MemLp (ε 0) 4 μ` alone.
 * (R3) the truncation transfer at the squared level,
   `‖T^{-1/2} Σ_t ((X_t² − EX_t²) − (X_t^{(N)2} − EX_t^{(N)2}))‖₂ → 0` as `N → ∞`,
   uniformly in `T`: factor `X² − X^{(N)2} = (X − X^{(N)})(X + X^{(N)})` and apply
   Cauchy–Schwarz against (R2) together with the ℓ¹ energy budget of
   `eLpNorm_windowSum_le` at the bilinear level.
-  **Correction (wave `ts/f4b-garch-last`, 2026-08-09): (R2) as stated above is not enough
-  for this, and the gap is now filled.** The factorization `(X − X^{(N)})(X + X^{(N)})`
-  produces a product of two *different* linear forms, so what the second moment of
-  `Σ_t (X_t² − X_t^{(N)2})` needs is `Cov(L_c L_d, L_e L_f)` at four independent weight
-  vectors, and `cov_sq_noiseComb` only covers the diagonal `c = d`, `e = f`. It is a
-  genuine strengthening, but a *cheap* one: bilinear polarization
+  (R2) as stated above is not enough for this. The factorization
+  `(X − X^{(N)})(X + X^{(N)})` produces a product of two *different* linear forms, so what
+  the second moment of `Σ_t (X_t² − X_t^{(N)2})` needs is `Cov(L_c L_d, L_e L_f)` at four
+  independent weight vectors, and `cov_sq_noiseComb` only covers the diagonal `c = d`,
+  `e = f`. It is a genuine strengthening, but a *cheap* one: bilinear polarization
   (`4 L_c L_d = L_{c+d}² − L_{c−d}²` in each slot) reduces it to four instances of the
   squared identity, with no new induction and no extra moment hypothesis. Proved as
   `integral_prod_four_noiseComb`/`cov_prod_noiseComb` (Isserlis/Wick plus the
@@ -1330,80 +1312,58 @@ the reduction the remaining debts start from.
 * (R4) the series identity `Σ_h γ(h)² = σ⁴ Σ_h (Σ_k a_k a_{k+h})²` matching the limit
   produced by (R1)+(R2) to the frozen `(η−3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²`.
   (The frozen constant is *confirmed* against B&D (1991) Prop 7.3.4: the printed FY
-  (2.25) is indeed a misprint, and the docstring's correction is the right one — no
-  further amendment is called for.)
-  **Its dependence input is CLOSED** (wave `ts/f3b-tail`, 2026-08-09):
-  `acvf_eq_tsum_of_filter` gives `γ(h) = σ² Σ_k a_k a_{k−h}` at every lag, and at `h = 0`
-  `γ(0) = σ² Σ_k a_k²`, so the frozen constant *is* the (R1)+(R2) constant term by term —
-  squaring and summing the identity is all (R4) is. Three things about it are worth
-  recording, because they change the ledger:
+  (2.25) is indeed a misprint, and the correction in the module docstring is the right
+  one.)
+  **Its dependence input is proved**: `acvf_eq_tsum_of_filter` gives
+  `γ(h) = σ² Σ_k a_k a_{k−h}` at every lag, and at `h = 0` `γ(0) = σ² Σ_k a_k²`, so the
+  frozen constant *is* the (R1)+(R2) constant term by term — squaring and summing the
+  identity is all (R4) is. Three remarks:
   - the identity needs **neither `hσ` nor stationarity nor a decay rate**: it comes out of
     `hfil` and `IsIIDNoise` alone, with `ha` used only to make `k ↦ a_k a_{k−h}` summable;
   - `E X_t = 0` is **derived**, not assumed (`integral_eq_zero_of_filter`), and so is
-    `MemLp (X t) 2 μ` (`memLp_two_of_filter`) — the frozen statement supplies neither, and
-    both are needed before `acvf` can be manipulated at all;
+    `MemLp (X t) 2 μ` (`memLp_two_of_filter`) — the hypotheses supply neither, and both
+    are needed before `acvf` can be manipulated at all;
   - the pairing `Σ_h γ(h)² < ∞` is a *separate* step — the identity alone does not give it.
-    It is **also CLOSED** (`summable_acvf_sq_of_filter`), by Young's inequality
+    It is **also proved** (`summable_acvf_sq_of_filter`), by Young's inequality
     (`ℓ¹ * ℓ¹ ⊆ ℓ¹ ⊆ ℓ²`): the reindexing `(h, k) ↦ (k, k − h)` of `ℤ × ℤ`
     (`shiftPairEquiv`) turns the coefficient double series into a product of two copies of
     `ha`, so it is summable on `ℤ × ℤ` and its `h`-sections sum (`summable_absConv`); then
     `|Σ_k a_k a_{k−h}| ≤ Σ_k |a_k||a_{k−h}| ≤ (Σ|a|)²` upgrades `ℓ¹` to `ℓ²` in `h`
     (`summable_acvfCoeff_sq`). This is what stops the frozen `2 Σ_{j∈ℤ} γ(j)²` from being a
-    junk `tsum`, and it is the only place in the whole reduction where the `ℓ¹` hypothesis
-    `ha` is used for anything other than making a single series converge.
-  **(R4) is now CLOSED outright** (wave `ts/f4b-garch-last`, 2026-08-09):
-  `tendsto_cesaro_covKernel` (section `CesaroKernel` below). The previous reading — "the
-  residual bookkeeping cannot be written down until (R1) fixes the exact shape of the
-  limit it produces" — is **overturned**: the shape is forced by (R2) alone and does not
-  wait on (R1). (R2)'s covariance depends on `(s, t)` only through `h = s − t`, so the
-  variance of the normalized sum is `T⁻¹ Σ_{s,t<T} covKernel(s − t)`, and a Cesàro/Fejér
-  limit at an absolutely summable kernel (`tendsto_cesaro_kernel`, proved there at an
-  abstract `K : ℤ → ℝ`) evaluates it as `Σ_{h∈ℤ} covKernel h`, which is *exactly* the
-  frozen `(η−3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²`. Two things this settled that the plan above had
-  not: the `η`-block needs its own reindexing `Σ_h Σ_i a_i² a_{i−h}² = (Σ_i a_i²)²`
-  (`tsum_sqConv`, Tonelli on `ℤ × ℤ` through `shiftPairEquiv`) — it is *not* a corollary
-  of `summable_acvfCoeff_sq`, which only covers the `γ(h)²` block; and absolute
-  summability of the kernel (`summable_abs_covKernel`) is what licenses the Fejér weights
-  to be dropped, so `ha` is used here a *second* time, contradicting the reading recorded
-  at `summable_acvfCoeff_sq` that Young's inequality is "the only place in the whole
-  reduction where the `ℓ¹` hypothesis `ha` is used for anything other than making a single
-  series converge". So (R1) may now be proved against a *known* target constant: what it
-  owes is the CLT, not the variance.
+    junk `tsum`.
+  **(R4) is proved outright**: `tendsto_cesaro_covKernel` (section `CesaroKernel` below).
+  The shape of the limit is forced by (R2) alone and does not wait on (R1). (R2)'s
+  covariance depends on `(s, t)` only through `h = s − t`, so the variance of the
+  normalized sum is `T⁻¹ Σ_{s,t<T} covKernel(s − t)`, and a Cesàro/Fejér limit at an
+  absolutely summable kernel (`tendsto_cesaro_kernel`, proved there at an abstract
+  `K : ℤ → ℝ`) evaluates it as `Σ_{h∈ℤ} covKernel h`, which is *exactly* the frozen
+  `(η−3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²`. Two further points: the `η`-block needs its own
+  reindexing `Σ_h Σ_i a_i² a_{i−h}² = (Σ_i a_i²)²` (`tsum_sqConv`, Tonelli on `ℤ × ℤ`
+  through `shiftPairEquiv`) — it is *not* a corollary of `summable_acvfCoeff_sq`, which
+  only covers the `γ(h)²` block; and absolute summability of the kernel
+  (`summable_abs_covKernel`) is what licenses the Fejér weights to be dropped, so `ha` is
+  used here a *second* time. So (R1) can be proved against a *known* target constant: what
+  it owes is the CLT, not the variance.
 
-**Named residue of the (since removed) Bartlett debt.** the joint (lags `0..M`) version of
-(R1)–(R4) — the same blocks, assembled through the Cramér–Wold linear combination that
-the frozen statement already exhibits — followed by the ratio delta method
-`ρ̂(i) = γ̂(i)/γ̂(0)`. Its `bartlettW` covariance is the standard Bartlett formula; no
-misprint watch fires there either.
+**The joint (Bartlett) version.** The joint (lags `0..M`) version of (R1)–(R4) — the same
+blocks, assembled through a Cramér–Wold linear combination — followed by the ratio delta
+method `ρ̂(i) = γ̂(i)/γ̂(0)`. Its `bartlettW` covariance is the standard Bartlett formula;
+no misprint watch fires there either.
 
-**Update (wave `ts/f3b-tail`, 2026-08-09).** Two of the four blocks are shared with the
-lag-`0` debt *at full strength*, i.e. nothing lag-`0`-specific was used in closing them:
-`integral_sq_mul_sq_noiseComb`/`cov_sq_noiseComb` take **arbitrary** weight vectors
-`c`, `d`, so (R2) is already the joint statement — the Cramér–Wold combination
-`Σ_i c_i γ̂(i)` is again a quadratic form in the innovations and its fourth moment is the
-same formula; and `acvf_eq_tsum_of_filter` is stated at an arbitrary lag `h`, so it feeds
-`bartlettW`'s `acf` entries directly. What is genuinely joint, and still open, is the
-lag-`0..M` version of (R1) (one Bernstein-block CLT for the *vector* of lag products,
-i.e. the same blocks with the Cramér–Wold coefficient carried through) and the ratio
-delta method, which additionally needs `0 < γ(0)` — available from
-`acvf_eq_tsum_of_filter` at `h = 0` as `σ² Σ_k a_k² > 0`, but only once `a ≠ 0` is
-assumed, which the frozen statement does *not* hypothesize. That is a genuine gap in the
-frozen statement of the Bartlett debt: with `a ≡ 0` the process is `0` a.s., `ρ̂` and `ρ`
-are both junk `0/0 = 0`, and the limit is `δ₀` rather than the stated Gaussian — which is
-consistent only because `bartlettW` is then also `0`. So the statement survives, but the
-delta method cannot be the route in that degenerate corner and must be split off.
-
-**Executed (wave `ts/f4b-garch-last`, 2026-08-09; the two debts and the `Degenerate`
-sections have since been removed).** Both debts `by_cases`d on `∀ k, a k = 0` and **proved**
-the degenerate branch outright: `hfil` with `a ≡ 0` forces `eLpNorm (X t) 2 μ = 0`, so `X`
-is a.e. `0`, whence `acvf`, `acf`, `sampleACVF`, `sampleACF` and `bartlettW` are all the
-junk value `0` and both sides of both statements are `δ₀`'s character. In the surviving
-branch `0 < γ(0)` was *supplied* rather than assumed (from `acvf_eq_tsum_of_filter` at
-`h = 0` plus one nonzero coefficient), so the delta method's nondegeneracy input was no
-longer part of the residue.
-One correction to the reading above: `a ≡ 0` does **not** need `hσ` or any moment
-hypothesis to be handled — it is a statement about `hfil` alone, and the collapse happens
-already at the level of `eLpNorm`, not through the limiting variance. -/
+Two of the four blocks are shared with the lag-`0` case *at full strength*, i.e. nothing
+lag-`0`-specific was used in proving them: `integral_sq_mul_sq_noiseComb`/`cov_sq_noiseComb`
+take **arbitrary** weight vectors `c`, `d`, so (R2) is already the joint statement — the
+Cramér–Wold combination `Σ_i c_i γ̂(i)` is again a quadratic form in the innovations and its
+fourth moment is the same formula; and `acvf_eq_tsum_of_filter` is stated at an arbitrary
+lag `h`, so it feeds `bartlettW`'s `acf` entries directly. What is genuinely joint, and
+still open, is the lag-`0..M` version of (R1) (one Bernstein-block CLT for the *vector* of
+lag products, i.e. the same blocks with the Cramér–Wold coefficient carried through) and
+the ratio delta method, which additionally needs `0 < γ(0)` — available from
+`acvf_eq_tsum_of_filter` at `h = 0` as `σ² Σ_k a_k² > 0` once some `a_k ≠ 0`. With `a ≡ 0`
+the process is `0` a.s. — `hfil` alone forces `eLpNorm (X t) 2 μ = 0`, with no `hσ` or
+moment hypothesis — so `acvf`, `acf`, `sampleACVF`, `sampleACF` and `bartlettW` are all the
+junk value `0` (`0/0 = 0`), and the limit is `δ₀`; the delta method cannot be the route in
+that degenerate corner, which must be split off. -/
 
 /-- The `L²` bound implied by an `eLpNorm` bound (converse of
 `eLpNorm_two_le_of_integral_sq_le`). -/
@@ -2419,7 +2379,7 @@ end LinearAcvf
 
 /-! ### (R4): the limiting variance the block CLT (R1) must produce
 
-The Cesàro/Fejér brick below is the deterministic half of the lag-`0` debt's variance
+The Cesàro/Fejér brick below is the deterministic half of the lag-`0` variance
 identification.  (R2) (`cov_sq_noiseComb`) makes `Cov(X_s², X_t²)` a function of the lag
 `h = s − t` alone — the kernel `covKernel a σ² (Eε⁴) h` — so the variance of the
 normalized sum `T^{-1/2} Σ_{t<T} X_t²` is `T⁻¹ Σ_{s,t<T} covKernel (s − t)`, and
@@ -2580,7 +2540,6 @@ private lemma tendsto_cesaro_kernel {K : ℤ → ℝ} (hK : Summable fun k : ℤ
       · simp only [hgdef, ite_eq_right hk, norm_zero]
         exact abs_nonneg _
   exact (Tendsto.congr (fun n => (hns n).symm) hdom)
-
 
 
 /-- `ℓ¹ ⊆ ℓ²` for the coefficient sequence. -/
@@ -2780,7 +2739,6 @@ private lemma tendsto_cov_sq_truncFilter [IsProbabilityMeasure μ] (hε : IsIIDN
   rw [cov_sq_truncFilter hε hε4 (Finset.Icc (-(N : ℤ)) (N : ℤ)) u v]
 
 end CesaroKernel
-
 
 
 /-- **Bartlett's asymptotic covariance** (FY eq. (2.26)):

@@ -43,8 +43,7 @@ the LEAN-ONLY hypothesis `hint : ∀ t ∈ T, Integrable (X t) μ` ruling out
 Bochner-junk means (a non-integrable `X t` satisfies `∫ X t = 0` vacuously);
 increment means are then derived. The pseudometric chain end is identified
 a.e. via `ae_eq_zero_of_subGaussianNorm_eq_zero` over the finitely many
-points. Named-sorry fallback of this work item: `discrete_dudley_abs_of_finite`
-(the mean-zero headline `discrete_dudley_of_finite` lands first).
+points.
 
 **Bibliographic comments.** Dudley's bound is from R. M. Dudley, "The sizes
 of compact subsets of Hilbert space and continuity of Gaussian processes,"
@@ -76,7 +75,7 @@ private lemma isSubGaussian_mono {Y : Ω → ℝ} {σ2 σ2' : ℝ≥0}
 Eq. (8.2)): `E max_{t ∈ T} X_t ≤ 6√3 · K · dudleySum T`. Book's unnamed
 absolute constant `C` frozen to `6√3` (see file notes for the derivation).
 
-Carrier note (statement fix at the debt gate): the finite maximum is stated
+Carrier note: the finite maximum is stated
 with the junk-free `Finset.sup'` over `hfin.toFinset` — the honest
 `max_{t ∈ T} X_t` of the book. The previous set-bounded `⨆ t ∈ T, X t ω` form
 was **false**: for `ι ⊋ T` that biSup equals `(max_{t ∈ T} X t ω)⁺`, and at

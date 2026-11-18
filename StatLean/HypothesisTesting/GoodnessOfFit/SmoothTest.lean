@@ -946,7 +946,7 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) ''
         {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- CLOSED this batch (the STATEMENT WAS FALSE AS FROZEN — repaired by `hφX` above).
+  -- The STATEMENT WAS FALSE AS FROZEN — repaired by `hφX` above.
   --
   -- COUNTEREXAMPLE to the frozen statement (no `hφX`).  Take `Ω = (ℕ → 𝓧) × ℝ`,
   -- `X n i ω = ω.1 i`, and `Q n h = (i.i.d. sample from `p_{h n^{-1/2}}`) ⊗ δ_{‖h‖}`.  All the
@@ -1913,8 +1913,8 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
 `b ≤ |h| ≤ B`, the minimum power of the smooth test `1{Sₙ > c}` converges to
 `P{χ²_k(b²) > c_{k,1−α}}`.
 
-CLOSED (wave 7), along the route re-derived in wave 6: no uniformity over the shell and no
-Berry–Esseen estimate is needed, because the conclusion is about an *infimum*.
+No uniformity over the shell and no Berry–Esseen estimate is needed, because the conclusion
+is about an *infimum*.
 
 * `scoreVec_weakConverges_drift` supplies the DRIFTING-parameter local limit law: for any
   `hₙ → h₀`, the score vector under `Q n hₙ` converges in law to `N(h₀, Iₖ)`.  It is proved

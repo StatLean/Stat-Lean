@@ -22,8 +22,8 @@ The shared substrate for every sampling and resampling algorithm in the area:
 
 **Proof formalization notes.**
 
-* This is a laptop-only Defs surface: definitions and `rfl`-level lemmas only,
-  0-sorry; all lemma content lives in the sibling files.
+* This is a Defs surface: definitions and `rfl`-level lemmas only;
+  all lemma content lives in the sibling files.
 * Weights are **real** (`w : Fin n → ℝ`), converted by `ENNReal.ofReal`; negative
   weights are silently clipped to `0`, and the probability-measure instance in
   `Core/EmpiricalMeasure.lean` carries the simplex hypotheses explicitly.  This
@@ -33,11 +33,10 @@ The shared substrate for every sampling and resampling algorithm in the area:
   `0` (`(0 : ℝ)⁻¹ = 0`); probability statements carry `[NeZero n]`.
 * `empiricalMeasure` and `mcEstimate` deliberately **coexist** with
   `AsymptoticStatistics.EmpiricalProcess.empiricalMeasure` /
-  `AsymptoticStatistics.empiricalAvg` (vdV lane),
-  `StatLean.HypothesisTesting.empiricalMeasure` (bootstrap-asymptotics lane) and
-  `StatLean.StatisticalLearning.empRisk` (SSBD lane): each area states its book's
-  objects in its own vocabulary, per the per-area-reference convention.  A future
-  promotion to a shared home is deliberately deferred.
+  `AsymptoticStatistics.empiricalAvg` (asymptotic statistics),
+  `StatLean.HypothesisTesting.empiricalMeasure` (bootstrap asymptotics) and
+  `StatLean.StatisticalLearning.empRisk` (statistical learning): each area states
+  its reference text's objects in its own vocabulary.
 
 **Bibliographic comments.** The empirical distribution as a surrogate population
 is Efron's bootstrap principle (B. Efron, "Bootstrap methods: another look at the

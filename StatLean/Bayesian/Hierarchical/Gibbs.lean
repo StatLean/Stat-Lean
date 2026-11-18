@@ -13,12 +13,11 @@ leaves the corresponding marginal posterior invariant.
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §11.1 (Gibbs
 sampler), p. 276; §11.6 (hierarchical-normal example), p. 288.
 
-**Proof formalization notes.** Both are consequences of the pinned invariance calculus reused in
-Batch 2: the two-block sampler is `Kernel.Invariant.comp` of the two full-conditional updates, each
+**Proof formalization notes.** Both are consequences of the pinned invariance calculus: the
+two-block sampler is `Kernel.Invariant.comp` of the two full-conditional updates, each
 invariant for the joint posterior by construction (a conditional-distribution update fixes the
 joint law); the collapsed sampler is the same for the marginal chain. Stated here with the two
-block kernels and their per-block invariance as inputs; the I14 session supplies the concrete
-full-conditional kernels from `Hierarchical.Tower`.
+block kernels and their per-block invariance as inputs.
 
 **Bibliographic comments.** The data-augmentation / block Gibbs sampler for hierarchical models is
 M. A. Tanner and W. H. Wong ("The calculation of posterior distributions by data augmentation,"

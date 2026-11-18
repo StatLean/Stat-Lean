@@ -35,11 +35,9 @@ the book's sample-size constant `C = 100` is provable with large slack)
 closes the bound `≤ 1/100`. Union-bound measurability: only the per-pair
 Hoeffding event needs to be measurable, which it is since `S, T` are.
 Identical distribution is encoded as the map equality `P.map (X i) = μ`
-(the pin's `ProbabilityTheory.HasLaw` is not used, per the batch's frozen
+(the pin's `ProbabilityTheory.HasLaw` is not used, per the formalization's frozen
 interface). Constants: failure probability `1/100` and sample-size constant
-`100` are the book's. Named-sorry fallback of this work item:
-`dimension_reduction` (keep `empFrac_symmDiff_concentration_pair` — the
-Hoeffding reuse — real; sorry only the union-bound + numeric assembly).
+`100` are the book's.
 
 **Bibliographic comments.** The dimension-reduction step is the modern
 streamlining (due to R. Vershynin) of the random-projection idea in
@@ -79,7 +77,7 @@ lemma empFrac_symmDiff_concentration_pair {Ξ : Type*} [MeasurableSpace Ξ]
     -- Lemma 8.3.14 ("i.i.d.").
     (hindep : iIndepFun X P)
     -- USER-INPUT: each X i has law μ; HDP §8.3.5, Lemma 8.3.14 (stated as a
-    -- map equality; `ProbabilityTheory.HasLaw` not used per batch interface).
+    -- map equality; `ProbabilityTheory.HasLaw` not used in this interface).
     (hlaw : ∀ i, P.map (X i) = μ)
     {S T : Set Ω}
     -- LEAN-ONLY: measurability of the class members (implicit in the book's

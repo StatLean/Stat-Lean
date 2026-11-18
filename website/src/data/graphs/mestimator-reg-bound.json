@@ -33,7 +33,7 @@
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
     {"id":"IsOrderedAddMonoid.toAddRightMono","label":"toAddRightMono","full":"IsOrderedAddMonoid.toAddRightMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
     {"id":"map_zero","label":"map_zero","full":"map_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Hom.Defs"},
-    {"id":"AddGroupSeminormClass.toZeroHomClass","label":"toZeroHomClass","full":"AddGroupSeminormClass.toZeroHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Hom.Basic"},
+    {"id":"AddGroupSeminormClass.toZeroHomClass","label":"toZeroHomClass","full":"AddGroupSeminormClass.toZeroHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Hom.GroupNorm"},
     {"id":"norm_zero","label":"norm_zero","full":"norm_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"},
     {"id":"norm_pos_iff","label":"norm_pos_iff","full":"norm_pos_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"},
     {"id":"div_le_iff₀","label":"div_le_iff₀","full":"div_le_iff₀","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
@@ -45,7 +45,7 @@
     {"id":"div_nonneg","label":"div_nonneg","full":"div_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
-    {"id":"AddGroupSeminormClass.toNonnegHomClass","label":"toNonnegHomClass","full":"AddGroupSeminormClass.toNonnegHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Hom.Basic"},
+    {"id":"AddGroupSeminormClass.toNonnegHomClass","label":"toNonnegHomClass","full":"AddGroupSeminormClass.toNonnegHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Hom.GroupNorm"},
     {"id":"norm_nonneg","label":"norm_nonneg","full":"norm_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"}
   ],
   "edges": [

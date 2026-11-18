@@ -31,7 +31,7 @@ precedent): `orliczNorm` is the `⨅`-over-gauge-set of the coercion, so it is
 the gauge condition is excluded by `0 < K`; a.e.-zero `X` has norm `0` (every
 `K > 0` is in the gauge set once `ψ(0) = 0`); the infimum need not be attained
 — attainment under continuity/monotonicity of `ψ` is `Orlicz/Attainment.lean`.
-This file is definitions and `rfl`-level API only (laptop-only surface); all
+This file is definitions and `rfl`-level API only; all
 analytic content lives in the sibling `Orlicz/` files. The identifiers `psi` /
 `psiStar` are already taken by the log-MGF machinery in
 `SubGaussian/Chernoff.lean`, hence `psiTwo` / `psiOne`.
@@ -57,7 +57,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 `ψ`-moment of `|X|/K` is at most `1`. Stated with the lower Lebesgue integral
 of `ENNReal.ofReal ∘ ψ`, so it is meaningful with no integrability hypotheses.
 Edge behavior: negative values of `ψ` are truncated to `0` by
-`ENNReal.ofReal`; for the batch's generators `ψ ≥ 0` on the range of `|·|`,
+`ENNReal.ofReal`; for the generators used here `ψ ≥ 0` on the range of `|·|`,
 so no truncation occurs. -/
 def orliczSet (ψ : ℝ → ℝ) (X : Ω → ℝ) (μ : Measure Ω) : Set ℝ≥0 :=
   {K : ℝ≥0 | 0 < K ∧ ∫⁻ ω, ENNReal.ofReal (ψ (|X ω| / (K : ℝ))) ∂μ ≤ 1}

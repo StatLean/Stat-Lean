@@ -12,7 +12,6 @@ constants): for a family uniformly bounded by `c`, with probability `≥ 1 − �
 * (3) ERM vs any fixed `f⋆`: `≤ 2 R(𝓕∘S) + 5c√(2 ln(8/δ)/n)`.
 
 **Reference.** SSBD §26.1, Theorems 26.3 and 26.5, Lemma 26.4 (McDiarmid).
-Transcription: `notes/statistical_learning/book_statements/ch26-31-appB.md`.
 
 **Formalization notes.** McDiarmid comes from
 `ConcentrationInequalities/McDiarmid/McDiarmid.lean` (bounded differences
@@ -26,7 +25,7 @@ the three deviations are combined by a union bound at `δ/8` each, which lands
 inside the book's frozen `5c√(2 log(8/δ)/n)`. The three high-probability
 statements degenerate at `c = 0` (every loss vanishes, both sides are `0`), a
 case split the McDiarmid tail calibration `exp(−n t²/(2c²)) = δ/a` needs.
-Countable index + `sSup`-image sups + uniform bound per the batch sup policy.
+Countable index (measurable suprema) + `sSup`-image sups + uniform bound.
 -/
 
 open MeasureTheory ProbabilityTheory StatLean.ConcentrationInequalities
@@ -438,7 +437,7 @@ overfitting gap is at most twice the expected Rademacher complexity:
 theorem integral_risk_sub_empRisk_le_two_mul_integral_empRad
     {A : Sample Z n → ι}
     -- USER-INPUT: nonempty family; SSBD §26.1 (implicit)
-    -- LEAN-ONLY: countable family per the batch sup policy
+    -- LEAN-ONLY: countable family, so the supremum is measurable
     (hKc : K.Countable)
     (hK : K.Nonempty)
     -- USER-INPUT: measurability of the family; SSBD Remark 3.1
@@ -472,7 +471,7 @@ competitor `kStar ∈ K`,
 `E_S[L_D(A(S))] − L_D(kStar) ≤ 2 E_S R(F∘S)`. -/
 theorem integral_risk_erm_sub_risk_le_two_mul_integral_empRad
     {A : Sample Z n → ι} {kStar : ι}
-    -- LEAN-ONLY: countable family per the batch sup policy
+    -- LEAN-ONLY: countable family, so the supremum is measurable
     (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
@@ -522,7 +521,7 @@ the ERM excess risk over the best competitor is at most
 `2 E_{S'} R(F∘S')/δ`. -/
 theorem measure_erm_excess_le_two_mul_integral_empRad_div
     {A : Sample Z n → ι} {kStar : ι} {δ : ℝ}
-    -- LEAN-ONLY: countable family per the batch sup policy
+    -- LEAN-ONLY: countable family, so the supremum is measurable
     (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
@@ -559,7 +558,7 @@ theorem measure_erm_excess_le_two_mul_integral_empRad_div
 for every `k ∈ K`,
 `L_D(F k) − L_S(F k) ≤ 2 E_{S'∼Dⁿ} R(F∘S') + c √(2 ln(2/δ)/n)`. -/
 theorem rademacher_generalization_expected {δ : ℝ}
-    -- LEAN-ONLY: countable family per the batch sup policy
+    -- LEAN-ONLY: countable family, so the supremum is measurable
     (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
@@ -631,7 +630,7 @@ theorem rademacher_generalization_expected {δ : ℝ}
 `≥ 1 − δ`, simultaneously for every `k ∈ K`,
 `L_D(F k) − L_S(F k) ≤ 2 R(F∘S) + 4c √(2 ln(4/δ)/n)`. -/
 theorem rademacher_generalization_empirical {δ : ℝ}
-    -- LEAN-ONLY: countable family per the batch sup policy
+    -- LEAN-ONLY: countable family, so the supremum is measurable
     (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
@@ -722,7 +721,7 @@ theorem rademacher_generalization_empirical {δ : ℝ}
 ERM selector `A` and any fixed `kStar ∈ K`, with probability `≥ 1 − δ`,
 `L_D(A(S)) − L_D(kStar) ≤ 2 R(F∘S) + 5c √(2 ln(8/δ)/n)`. -/
 theorem rademacher_erm_excess {A : Sample Z n → ι} {kStar : ι} {δ : ℝ}
-    -- LEAN-ONLY: countable family per the batch sup policy
+    -- LEAN-ONLY: countable family, so the supremum is measurable
     (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))

@@ -4,6 +4,7 @@ import StatLean.MultipleTesting.ForMathlib.EmpiricalCDF
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Order.Group.Lattice
+import StatLean.ForMathlib.BindCDF
 
 /-!
 # The Kolmogorov–Smirnov test: calibration and consistency
@@ -120,7 +121,7 @@ sampling law. Degenerate inputs (`α ≤ 0`) fall back on the junk conventions o
 and `Real.sqrt`; every statement below carries `0 < α < 1`.
 
 COUPLING: the numerals `4` and `16` are the constants `C` and `1/c` of `dkw_uniform` in
-`ForMathlib/DKWUniform`; see the module docstring for the reconciliation rule.
+`ForMathlib/DKWUniform`; see the module docstring for the convention.
 
 DOCUMENTED DEVIATION (constant, not statement). This definition previously read
 `√(8 log(4/α))`, matching the frozen `dkw_uniform` exponent `c = 1/8`. That exponent was
@@ -150,7 +151,7 @@ theorem empiricalCDF_eq_empCDF {n : ℕ} (X : Fin n → Ω → ℝ) (t : ℝ) (�
 Kolmogorov distance of `ForMathlib/DKWUniform`. This is the single bridge through which
 every proof in this file and in `KSLocalPower.lean` reaches the deviation inequality. -/
 theorem ksStat_eq_sqrt_mul_ksDist {n : ℕ} (X : Fin n → Ω → ℝ) (μ : Measure ℝ) (ω : Ω) :
-    ksStat X (fun t => cdf μ t) ω = Real.sqrt (n : ℝ) * ksDist X μ ω := by
+    ksStat X (fun t => bindCDF μ t) ω = Real.sqrt (n : ℝ) * ksDist X μ ω := by
   simp only [ksStat, supCDFDist, ksDist, empiricalCDF_eq_empCDF]
 
 /-- The step indicator `t ↦ 1{a ≤ t}` is right continuous: it is eventually constant on
@@ -282,7 +283,7 @@ theorem ks_dkw_level {n : ℕ} {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure
     -- USER-INPUT: `F₀` is the c.d.f. of the null law
     (hF₀ : ∀ t : ℝ, F₀ t = cdf μ₀ t) :
     P {ω | ksThreshold α < ksStat X F₀ ω} ≤ ENNReal.ofReal α := by
-  have hF : F₀ = fun t => cdf μ₀ t := funext hF₀
+  have hF : F₀ = fun t => bindCDF μ₀ t := funext fun t => by rw [hF₀, bindCDF_eq_cdf]
   have hthr : 0 ≤ ksThreshold α := Real.sqrt_nonneg _
   calc P {ω | ksThreshold α < ksStat X F₀ ω}
       ≤ P {ω | ksThreshold α ≤ Real.sqrt (n : ℝ) * ksDist X μ₀ ω} := by
@@ -385,7 +386,7 @@ theorem ks_power_lower_bound {n : ℕ} {α ε : ℝ} {P : Measure Ω} [IsProbabi
     have hdist : ksDist X μ ω = supCDFDist F (fun t => empCDF X ω t) := by
       rw [supCDFDist_comm]
       unfold ksDist supCDFDist
-      exact iSup_congr fun t => by rw [hF t]
+      exact iSup_congr fun t => by rw [hF t, bindCDF_eq_cdf]
     have hsqrt_nonneg : 0 ≤ Real.sqrt (n : ℝ) := Real.sqrt_nonneg _
     have hchain : ε ≤ Real.sqrt (n : ℝ) * ksDist X μ ω + ksStat X F₀ ω := by
       calc ε ≤ Real.sqrt (n : ℝ) * supCDFDist F F₀ := hfar

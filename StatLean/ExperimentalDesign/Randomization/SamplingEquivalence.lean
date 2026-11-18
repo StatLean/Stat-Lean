@@ -1,5 +1,6 @@
 import StatLean.ExperimentalDesign.Randomization.CompleteRandomization
 import StatLean.ExperimentalDesign.SurveySampling.SimpleRandomSampling
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Each arm of a completely randomised design is a simple random sample
@@ -146,7 +147,7 @@ private lemma eq_uniformOfFinset_of_constant {α : Type*} [Fintype α]
     (p : PMF α) (s : Finset α) (hs : s.Nonempty)
     (hoff : ∀ a ∉ s, p a = 0)
     (hconst : ∀ a ∈ s, ∀ b ∈ s, p a = p b) :
-    p = PMF.uniformOfFinset s hs := by
+    p = PMF.uniformOn s hs := by
   classical
   obtain ⟨a₀, ha₀⟩ := hs
   have hcard0 : ((s.card : ℝ≥0∞)) ≠ 0 := by
@@ -165,7 +166,7 @@ private lemma eq_uniformOfFinset_of_constant {α : Type*} [Fintype α]
     simpa [← mul_assoc, ENNReal.inv_mul_cancel hcard0 (ENNReal.natCast_ne_top _)]
       using h2
   ext a
-  erw [PMF.uniformOfFinset_apply]
+  erw [PMF.uniformOn_apply]
   by_cases ha : a ∈ s
   · rw [ite_eq_left ha, ← hval]
     exact hconst a ha a₀ ha₀
@@ -186,7 +187,7 @@ private lemma map_arm_apply (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U)
         then ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ else 0)
   · refine Finset.sum_congr rfl fun a _ => ?_
     by_cases h1 : X = arm t a <;> by_cases h2 : a ∈ validAllocations (U := U) r <;>
-      simp [completeRandomization, PMF.uniformOfFinset_apply, Finset.mem_filter,
+      simp [completeRandomization, PMF.uniformOn_apply, Finset.mem_filter,
         h1, h2, eq_comm]
   calc ∑ a : Allocation U T,
           (if a ∈ (validAllocations (U := U) r).filter (fun a => arm t a = X)

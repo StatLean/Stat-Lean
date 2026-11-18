@@ -208,8 +208,8 @@ lemma l2_envelope_tail_isLittleO
       abs_of_nonneg (mul_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _))]
     let a : 𝒳 → ℝ := (B t).indicator fun x => |m x|
     let b : 𝒳 → ℝ := (B t).indicator fun _ => 1
-    have ha : MemLp a 2 P := hm.norm.indicator (hBmeas t)
-    have hb : MemLp b 2 P := memLp_indicator_const 2 (hBmeas t) 1
+    have ha : MemLp a 2 P := hm.norm.indicator (hBmeas t).nullMeasurableSet
+    have hb : MemLp b 2 P := memLp_indicator_const 2 (hBmeas t).nullMeasurableSet 1
       (Or.inr (measure_ne_top P _))
     have hcs := abs_integral_mul_le_sqrt_integral_sq P ha hb
     have hab : (∫ x, a x * b x ∂P) = ∫ x in B t, |m x| ∂P := by
@@ -283,7 +283,7 @@ lemma l2_abs_tail_isLittleO
 
 /-- The complete five-part L² tail package used by the integrated logarithmic
 Taylor remainder.  Every clause is explicit so downstream users do not hide
-analytic debt behind a provider predicate. -/
+analytic assumptions behind a provider predicate. -/
 lemma l2_tail_controls_of_approx
     (l : Filter α) (P : Measure 𝒳) [IsFiniteMeasure P]
     (W q z : α → 𝒳 → ℝ) (s : α → ℝ) (g : 𝒳 → ℝ)

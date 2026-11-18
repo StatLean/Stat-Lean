@@ -1252,7 +1252,7 @@ integrable `g`, the integral over the initial segment `[0, α]` is at most `α` 
 integral over the whole interval, and the integral over the final segment `[α, 1]` is at
 least `(1 − α)` times it.
 
-This is brick (c) of the quantile-sweep roadmap recorded at `isUMP_twoSided`: with
+This is brick (c) of the quantile-sweep proof outline recorded at `isUMP_twoSided`: with
 `g = r ∘ Q` — the likelihood ratio `dν₂/dν₁` read along the quantile function of `ν₁`, which
 is nondecreasing because `η₂ > η₁` — and `∫₀¹ g = 1`, it gives `h(0) ≤ α ≤ h(1 − α)` for the
 sliding-window size `h(s) = ∫_s^{s+α} g`, which is what the intermediate value theorem then
@@ -1476,7 +1476,7 @@ private lemma intervalIntegrable_of_Icc01 {g : ℝ → ℝ}
 `a ∈ (0,1)` — the initial-segment integral is *strictly* below its proportional share:
 `∫₀^α g < α ∫₀¹ g` for every `α ∈ (0,1)`.
 
-This is the strict form of brick (c) of the quantile-sweep roadmap at `isUMP_twoSided`, and
+This is the strict form of brick (c) of the quantile-sweep proof outline at `isUMP_twoSided`, and
 it is what places the root of the sweep in the *open* interval `(0, 1−α)`, where the
 quantile pair `(Q s, Q (s+α))` is honest (the junk values `Q 0`, `Q 1` are excluded). The
 separation hypothesis is supplied there by a level `a = F c` of the null law: below it the
@@ -1600,7 +1600,7 @@ two-sided test against any measurable weight `r` is the Lebesgue integral of `r 
 `∫ φ_s·r dν = ∫_s^{s+α} r(Q u) du`.
 
 Applied with `r = dν₂/dν₁` this says the size of the window test at `θ₂` is the sliding
-integral `h(s)` of the roadmap; it is the identity that turns the two-dimensional
+integral `h(s)` of the proof outline; it is the identity that turns the two-dimensional
 root-finding problem of `isUMP_twoSided` into a one-dimensional sweep.
 
 The proof splits the level window at the two atom boundaries `F(C₁) ≤ F(C₂⁻)`. On the two

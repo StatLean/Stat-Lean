@@ -32,14 +32,7 @@ projection satisfies `dist t (π t) = 0` only — the a.e. identification
 `closePairs N M r` — the distance-FILTERED product Finset — so far-apart
 pairs never enter the maximal inequality; `card ≤ |N|·|M|`. `netProj N x` is
 total with junk value `x` for `N = ∅` (documented; all consumers supply
-`N.Nonempty`). Pre-agreed >300-line split plan (design risk register): if
-this file exceeds ~300 lines during proof closure, split into
-`Chaining/DyadicScales.lean` (scale selection: `exists_coarse_scale`,
-`exists_fine_scale`, covering-number facts) and
-`Chaining/NetProjections.lean` (`netProj`, `closePairs`, telescoping,
-sup-exchange) — the `def`s stay byte-identical, only lemma homes move.
-Named-sorry fallback of this work item: `exists_finset_net` (the
-encard-to-Finset plumbing).
+`N.Nonempty`).
 
 **Bibliographic comments.** The dyadic-scale chaining construction goes back
 to A. N. Kolmogorov (continuity criterion, unpublished lectures, 1930s) and
@@ -191,8 +184,8 @@ lemma coveringNumber_eq_one_of_diam_le {T : Set E}
 `𝒩 ≥ 2` below `diam/2` device feeding the diameter lower bounds on the
 entropy sum (HDP §8.1, Remark 8.1.6 absorption). -/
 lemma one_lt_coveringNumber_of_two_mul_lt_dist {T : Set E} {ε : ℝ} {a b : E}
-    -- LEAN-ONLY: nonnegative radius — REQUIRED (statement fix at the debt
-    -- gate: for ε < 0 with a = b coincident the claim is false, e.g.
+    -- LEAN-ONLY: nonnegative radius — REQUIRED (for ε < 0 with a = b
+    -- coincident the claim is false, e.g.
     -- T = {x₀}, ε = −1 gives 𝒩 = 1; the sole consumer supplies 0 < e)
     (hε : 0 ≤ ε)
     -- LEAN-ONLY: the two witnesses live in T

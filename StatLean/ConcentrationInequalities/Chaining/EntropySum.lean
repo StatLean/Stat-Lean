@@ -39,16 +39,7 @@ statement and Eq. (8.13)'s `∫_0^∞` a display corollary
 (`dudleyIntegral_Ioi_eq`). The diameter absorption lemmas
 (`diam·√log2 ≤ 4·dudleySum`, `≤ 8·dudleyIntegral`) are the only places the
 book's constant-free "`𝒩 ≥ 2` below `diam/2`" step becomes a quantitative
-Lean cost. Pre-agreed >300-line split plan (design risk register): if this
-file exceeds ~300 lines during proof closure, split into
-`Chaining/EntropySum.lean` (the ℤ-sum carrier: `dudleySummand`, `dudleySum`,
-summability, window bridges, `diam ≤ 4·dudleySum`) and a new
-`Chaining/DudleyIntegral.lean` (the integral carriers `dudleyIntegral` /
-`dudleyLIntegral`, the `∑ ≤ 2∫` comparison, `dudleyIntegral_Ioi_eq`, and the
-`diam ≤ 8·dudleyIntegral` absorption) — all `def` bodies stay byte-identical,
-only lemma homes move. Named-sorry fallback of this work item:
-`sum_window_le_two_mul_dudleyIntegral` (the block-tiling comparison), with
-both carriers and all other lemmas proved.
+Lean cost.
 
 **Bibliographic comments.** The entropy integral is due to R. M. Dudley,
 "The sizes of compact subsets of Hilbert space and continuity of Gaussian
@@ -194,7 +185,7 @@ Theorem 8.1.3): per dyadic block,
 `2^{−k−1}·sqrtLogCov T (2^{−k}) ≤ ∫_{Ioc(2^{−k−1}, 2^{−k})} sqrtLogCov`
 (constant-on-block lower bound + `sqrtLogCov_anti`); the blocks are pairwise
 disjoint and tile inside `Ioc 0 D`, so any finite window sum is at most
-`2 · dudleyIntegral T D`. This is the file's named-sorry fallback. -/
+`2 · dudleyIntegral T D`. -/
 theorem sum_window_le_two_mul_dudleyIntegral {T : Set E}
     -- LEAN-ONLY: T finite (integrability, antitonicity below ⊤)
     (hfin : T.Finite)

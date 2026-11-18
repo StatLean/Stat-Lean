@@ -101,6 +101,8 @@
     {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"MeasureTheory.integral_add_compl"},
     {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"measurableSet_Iic"},
     {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"Set.compl_Iic"},
-    {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"neg_eq_zero"}
+    {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"neg_eq_zero"},
+    {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"IsOrderedAddMonoid.toAddRightMono"}
   ]
 }

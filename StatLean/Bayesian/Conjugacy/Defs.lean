@@ -1,7 +1,7 @@
-import Mathlib.Probability.Distributions.Poisson.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Kernel.WithDensity
 import Mathlib.MeasureTheory.Measure.Count
+import StatLean.ForMathlib.PoissonPMF
 
 /-!
 # Conjugacy — core data model (likelihood kernels and the exponential-family conjugate prior)
@@ -24,7 +24,7 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 Proposition 3.3.13/eqs. (3.3.4)–(3.3.5) (the natural conjugate family), pp. 115–120; Table 3.3.1,
 p. 121; Appendix A.2/A.3/A.10/A.12 (Gamma, Beta, Binomial, Poisson densities), pp. 519–521.
 
-**Proof formalization notes.** Laptop-only data model — definitions only. Clamping makes every
+**Proof formalization notes.** Definitions and basic constructions. Clamping makes every
 kernel total and (except the Gaussian at `v = 0`) Markov for *all* real parameters, while the
 conjugate identities hold pointwise because the Beta/Gamma prior densities vanish off the
 parameter's support. Discrete kernels are `Kernel.withDensity` of `Kernel.const _ Measure.count`
@@ -84,7 +84,7 @@ noncomputable def binomialKernel (n : ℕ) : Kernel ℝ (Fin (n + 1)) :=
 /-! ### Poisson kernel (Robert Appendix A.12) -/
 
 /-- Poisson density (pmf against counting measure on `ℕ`) with the rate clamped by
-`Real.toNNReal`; reuses the pinned `poissonPMFReal`. -/
+`Real.toNNReal`; reuses `poissonPMFReal`. -/
 noncomputable def poissonDensity : ℝ → ℕ → ℝ≥0∞ :=
   fun θ k => ENNReal.ofReal (poissonPMFReal θ.toNNReal k)
 

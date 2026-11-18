@@ -19,56 +19,30 @@ classical implication chain `ψ-mixing ⇒ φ-mixing ⇒ {β-, ρ-mixing} ⇒ α
 * provable coefficient inequalities: `2α ≤ β`, `α ≤ φ`, `β ≤ φ`, `φ ≤ 2ψ`-form,
   `α ≤ ¼ρ` (FY's display `α(k) ≤ ¼ρ(k)`);
 * the Bradley square-root relation `ρ ≤ 2√φ` (giving FY's `¼ρ(k) ≤ ½φ^{1/2}(k)`) —
-  **PROVED** (2026-08-09) via Ibragimov's covariance inequality
+  proved via Ibragimov's covariance inequality
   `|Cov(f,g)| ≤ 2 φ^{1/2} ‖f‖₂ ‖g‖₂`;
 * heredity under instantaneous measurable transforms;
 * the shift lemma: under strict stationarity the anchored coefficients equal the
   coefficients between any `k`-shifted past/future pair (the property FY uses silently
   in every block argument);
 * the in-text non-example (ix): a deterministic recursion `X_{t+1} = m(X_t)` with a
-  non-degenerate event is not α-mixing;
-* literature statement DEBTS: Pham–Tran (causal ARMA is exponentially β-mixing),
-  Basrak–Davis–Mikosch (GARCH is exponentially α-mixing), Kolmogorov–Rozanov (Gaussian:
-  ρ-mixing ⇔ α-mixing) — **all three removed**; see **Removed** below.
+  non-degenerate event is not α-mixing.
 
-**Removed (2026-08-10, user directive).** The module's four sorried bricks and the three
-headline debts proved from them were deleted, together with three `private` helpers left
-with no surviving consumer. This removes the whole of the module's literature-debt tail; the
-mixing-coefficient theory above it — every inequality, the shift lemma, the non-example, the
-Bradley `ρ ≤ 2√φ` relation — is untouched, as is the Harris/Lyapunov apparatus that was
-built to feed the deleted bricks.
+The state-chain transfer theorems
+`alphaCoeff_exponential_of_hasGeometricStateChain` and
+`betaCoeff_exponential_of_hasGeometricStateChain` derive exponential mixing from an
+explicit state-chain envelope. `exists_invariant_geometric_envelope_of_harris`
+supplies such an integrable envelope from drift and minorization.
 
-*Sorried bricks (the four listed in the directive):*
-* `arma_stateChain_brick` — a stationary causal ARMA with iid innovations of continuous
-  positive density has `HasGeometricStateChain`; residue was model-side (the causal
-  representation, and the two-block state update for `q ≥ 1`).
-* `garch_stateChain_brick` — the same conclusion for a strictly stationary GARCH(p, q).
-* `gaussian_rho_linear_brick` — BRICK 1 of the Gaussian comparison: Gaussian maximal
-  correlation is carried by the linear span (Wiener–Itô/Hermite reduction).
-* `gaussian_pair_corr_le_alpha_brick` — BRICK 2: the two-variable Kolmogorov–Rozanov bound
-  via Sheppard's bivariate orthant identity.
-
-*Headline consumers, deleted because their proofs consume a deleted brick:*
-* `arma_betaCoeff_exponential_debt` — **Pham–Tran 1985 / FY §2.6.1(v)**: a stationary causal
-  ARMA process with iid innovations admitting a continuous positive density is exponentially
-  **β-mixing**.
-* `garch_alphaCoeff_exponential_debt` — **Basrak–Davis–Mikosch 2002 / FY §2.6.1(x)**: a
-  strictly stationary GARCH(p, q) is exponentially **α-mixing**.
-* `gaussian_rho_le_alpha_debt` — **Kolmogorov–Rozanov 1960 / FY §2.6.1(viii)**: for a
-  stationary Gaussian process, `ρ(k) ≤ 2π α(k)`.
-
-*`private`, proved, left without a consumer:* `linComb` (the linear functional
-`∑_{s ∈ S} a_s X_s`) and its two measurability lemmas `measurable_linComb_sigmaLE`,
-`measurable_linComb_sigmaGE`.
-
-*Kept:* the entire coefficient theory, the state-chain transfer machinery
-`alphaCoeff_exponential_of_hasGeometricStateChain` /
-`betaCoeff_exponential_of_hasGeometricStateChain` (which the deleted headlines were the only
-callers of, but which are public and remain usable), and the quantitative Harris envelope
-`exists_invariant_geometric_envelope_of_harris` with
-`lintegral_lyap_le_of_isErgodicWithRate` / `integrable_lyap_of_isErgodicWithRate`.
-
-Recover from `bdc8143f`.
+**Scope.** This module does not construct the model-specific ARMA or GARCH state
+chains needed for the exponential-mixing results of Pham–Tran (1985; FY §2.6.1(v): a
+stationary causal ARMA process with iid innovations admitting a continuous positive density
+is exponentially β-mixing) and Basrak–Davis–Mikosch (2002; FY §2.6.1(x): a strictly
+stationary GARCH(p, q) is exponentially α-mixing). The Gaussian comparison of
+Kolmogorov–Rozanov (1960; FY §2.6.1(viii): `ρ(k) ≤ 2π α(k)` for a stationary Gaussian
+process) is also outside its formalized scope; a proof would reduce the maximal
+correlation to the linear span (Wiener–Itô/Hermite reduction) and then use Sheppard's
+bivariate orthant identity.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.1
 (pp. 68–71). (`FY §2.6.1`.)
@@ -94,10 +68,7 @@ in R. C. Bradley, *Basic properties of strong mixing conditions* (in Eberlein–
 1986) and his 2005 survey; `ρ ≤ 2√φ` is due to Peligrad (after Cogburn and Ibragimov).
 Pham & Tran, *Some mixing properties of time series models*, SPA 1985; Basrak, Davis &
 Mikosch, *Regular variation of GARCH processes*, SPA 2002; Kolmogorov & Rozanov 1960
-for the Gaussian ρ ⇔ α equivalence. The Gaussian comparison `ρ ≤ 2π α` had been reduced
-here to two named bricks — the Wiener–Itô/Hermite reduction of the maximal correlation to
-the linear span, and Sheppard's bivariate orthant identity — both removed with the debt they
-served.
+for the Gaussian ρ ⇔ α equivalence.
 -/
 
 set_option linter.style.longFile 1800
@@ -485,7 +456,7 @@ theorem two_mul_alphaMixCoeff_le_betaMixCoeff {m₁ m₂ mΩ : MeasurableSpace �
 /-- `φ ≤ ψ` in the calibrated form `|P(B) − P(B|A)| = P(B)|1 − P(B|A)/P(B)|`
 (the `P(B) = 0` cell contributes `0` on both sides).
 
-**Statement repaired 2026-08-05**: the unconditional form is FALSE — the classical
+**Statement repair**: the unconditional form is FALSE — the classical
 ψ-coefficient may be `+∞`, the ψ description set is then unbounded, and Lean's
 `Real.sSup` junk convention makes `psiMixCoeff = 0` (formally verified counterexample
 recorded in the proof body below). The finiteness hypothesis `hψbdd` restores the
@@ -498,20 +469,20 @@ theorem phiMixCoeff_le_psiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
       0 < (μ A).toReal ∧ 0 < (μ B).toReal ∧
       r = |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal|}) :
     phiMixCoeff μ m₁ m₂ ≤ psiMixCoeff μ m₁ m₂ := by
-  -- **FALSE AS FROZEN — unplanned debt (formally verified counterexample).**
+  -- **FALSE AS FROZEN without `hψbdd` (formally verified counterexample).**
   -- The ψ description set `{|1 − P(A∩B)/(P(A)P(B))| : P(A)P(B) > 0}` is *unbounded above*
   -- in general (the classical ψ-coefficient may be `+∞`; Bradley, *Introduction to Strong
   -- Mixing Conditions*), and Lean's `Real.sSup` junk convention then returns `0`
   -- (`Real.sSup_of_not_bddAbove`), so `psiMixCoeff μ m₁ m₂ = 0` while `φ` stays positive.
   --
-  -- Witness (checked in Lean, 0 sorries, against these very definitions):
+  -- Witness (checked in Lean against these very definitions):
   --   `μ₀ := volume.restrict (Set.Icc (0:ℝ) 1)` on `Ω = ℝ`, `m₁ = m₂ = mΩ = Borel ℝ`.
   --   * `A = B = Set.Icc 0 (1/(n+2))` gives the ψ-value `|1 − a/(a·a)| = n + 1` for every
   --     `n : ℕ`, so the ψ set is not `BddAbove` and `psiMixCoeff μ₀ = 0`;
   --   * `A = B = Set.Icc 0 (1/2)` gives the φ-value `|1/2 − (1/2)/(1/2)| = 1/2`, and the
   --     φ set *is* bounded by `1`, so `phiMixCoeff μ₀ ≥ 1/2 > 0 = psiMixCoeff μ₀`.
   --
-  -- REPAIR APPLIED (2026-08-05, wave `ts/c-sweep-mixing`): the hypothesis `hψbdd`
+  -- REPAIR APPLIED: the hypothesis `hψbdd`
   -- ("ψ is finite") is now part of the statement, and the intended proof below closes it:
   -- for a φ-witness `(A, B)` with `P(A) > 0`, either `P(B) = 0` (both sides `0`) or
   -- `|P(B) − P(A∩B)/P(A)| = P(B)·|1 − P(A∩B)/(P(A)P(B))| ≤ 1·ψ`.
@@ -626,8 +597,8 @@ theorem alphaMixCoeff_le_quarter_mul_rhoMixCoeff {m₁ m₂ mΩ : MeasurableSpac
   set g : Ω → ℝ := B.indicator (fun _ => (1 : ℝ)) with hgdef
   have hfmeas : Measurable[m₁] f := Measurable.indicator measurable_const hA
   have hgmeas : Measurable[m₂] g := Measurable.indicator measurable_const hB
-  have hfL : MemLp f 2 μ := MemLp.indicator hAm (memLp_const 1)
-  have hgL : MemLp g 2 μ := MemLp.indicator hBm (memLp_const 1)
+  have hfL : MemLp f 2 μ := MemLp.indicator hAm.nullMeasurableSet (memLp_const 1)
+  have hgL : MemLp g 2 μ := MemLp.indicator hBm.nullMeasurableSet (memLp_const 1)
   have hfint : ∫ ω, f ω ∂μ = (μ A).toReal := by
     rw [hfdef]
     simpa using! integral_indicator_const (μ := μ) (1 : ℝ) hAm
@@ -1120,7 +1091,7 @@ private lemma abs_cov_le_of_memLp {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
     ((T5.sub (T1.mul T3)).abs) ((tendsto_const_nhds.mul T2.sqrt).mul T4.sqrt) (fun n => ?_)
   exact abs_cov_le_of_finiteRange h₁ h₂ (hum n) (hvm n) (huf n) (hvf n)
 
-/-- **DEBT (Bradley/Peligrad; FY §2.6.1 display `¼ρ ≤ ½√φ`)**: the square-root
+/-- **Bradley/Peligrad (FY §2.6.1 display `¼ρ ≤ ½√φ`)**: the square-root
 relation `ρ ≤ 2√φ`. Literature-level; the proof needs the L²-duality description of
 `ρ` and a two-sided conditional Cauchy–Schwarz argument. -/
 theorem rhoMixCoeff_le_two_mul_sqrt_phiMixCoeff_debt {m₁ m₂ mΩ : MeasurableSpace Ω}
@@ -1185,7 +1156,7 @@ private lemma sigmaGE_le_ambient {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measur
 
 /-- ψ-mixing ⇒ φ-mixing.
 
-**Statement repaired 2026-08-05**: needs per-lag finiteness of ψ, for the same reason
+**Statement repair**: needs per-lag finiteness of ψ, for the same reason
 as `phiMixCoeff_le_psiMixCoeff` (formally verified counterexample in the proof body:
 constant-in-time process on `[0,1]` has junk `ψ ≡ 0` but `φ ≥ 1/2`). -/
 theorem IsPsiMixing.isPhiMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
@@ -1196,14 +1167,14 @@ theorem IsPsiMixing.isPhiMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → �
       0 < (μ A).toReal ∧ 0 < (μ B).toReal ∧
       r = |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal|}) :
     IsPhiMixing X μ := by
-  -- **FALSE AS FROZEN — unplanned debt (formally verified counterexample).** The process
+  -- **FALSE AS FROZEN without `hψbdd` (formally verified counterexample).** The process
   -- shadow of `phiMixCoeff_le_psiMixCoeff`'s falsity: with `μ₀ = volume.restrict (Icc 0 1)`
   -- on `Ω = ℝ` and the constant-in-time process `X t ω = ω`, both flanking σ-algebras are
   -- the full Borel σ-algebra (`sigmaLE X c = sigmaGE X c = Borel ℝ`), so
   -- `psiCoeff X μ₀ n = 0` for every `n` (junk value of an unbounded `Real.sSup`) — hence
   -- `IsPsiMixing X μ₀` holds — while `phiCoeff X μ₀ n ≥ 1/2` for every `n`, so
-  -- `IsPhiMixing X μ₀` fails. Checked in Lean with 0 sorries.
-  -- REPAIR APPLIED (2026-08-05, wave `ts/c-sweep-mixing`): with `hψbdd` in the statement,
+  -- `IsPhiMixing X μ₀` fails. Checked in Lean.
+  -- REPAIR APPLIED: with `hψbdd` in the statement,
   -- `phiMixCoeff_le_psiMixCoeff` gives `φ(n) ≤ ψ(n)` at every lag and the squeeze against
   -- `0 ≤ φ(n)` closes this.
   have hnn : ∀ n : ℕ, (0 : ℝ) ≤ phiMixCoeff μ (sigmaLE X 0) (sigmaGE X (n : ℤ)) :=
@@ -1498,48 +1469,39 @@ theorem not_isAlphaMixing_of_deterministic [IsProbabilityMeasure μ]
     mul_nonneg (by linarith) (by linarith)
   nlinarith
 
-/-! ### Literature statement DEBTS (FY §2.6.1(v), (viii), (x))
+/-! ### Mixing bounds from an explicit geometric state chain (FY §2.6.1(v), (x))
 
-**Import note (2026-08-09, wave 5, authorized).** This file now imports
-`Mixing/MarkovBridge.lean` and the `ForMathlib/Markov` stack. The earlier
-`USER-INPUT` comment on `hroot` recorded a *deliberate separation* of this concept-layer
-file from the model/Markov layers; that separation is **superseded** — importing an
-area-`ForMathlib` stack from a concept file is charter-legal, and every ingredient of the
-two model debts below lives on the other side of that edge, so keeping the edge unbuilt
-served no purpose. (The `hroot` hypothesis is still stated inline rather than imported from
-`Stationarity/ARMAExistence`, which is a *concept-to-concept* edge and stays closed.)
+**Import note.** This file imports `Mixing/MarkovBridge.lean` and the `ForMathlib/Markov`
+stack, on which every ingredient of the state-chain route below lives. A model-side
+`USER-INPUT` hypothesis such as an ARMA root condition is stated inline rather than imported
+from `Stationarity/ARMAExistence`, which is a *concept-to-concept* edge and stays closed.
 
-### The engine now available
+### The engine
 
-Wave 5 built, `sorry`-free and axiom-clean, everything that the two model statements need
-*outside the models themselves*:
+Everything that the model statements need *outside the models themselves* is available:
 
 * `MarkovBridge.IsMarkovOf` and the whole Bradley/Davydov bridge, over an **arbitrary
-  measurable state space** (`Kernel E E`) — this removes, verbatim, the "vector-valued
-  bridge" gap that wave 4 recorded as a prerequisite for both debts;
+  measurable state space** (`Kernel E E`);
 * `MarkovBridge.alphaMixCoeff_two_marginal_le_of_envelope` — an *inequality* form of
-  Davydov's (2.58) at the α level, which needs **no** measurable Hahn selection and is
-  therefore independent of the one still-open brick of `MarkovBridge.lean`;
+  Davydov's (2.58) at the α level, which needs **no** measurable Hahn selection;
 * `MarkovBridge.alphaMixCoeff_le_of_measurable_state` /
   `MarkovBridge.betaMixCoeff_le_of_measurable_state` — the process-vs-state comparison
   `α_X(n) ≤ α_V(n−1)` (resp. β), for `X_s` a measurable function of the state `V_{s+1}`;
 * `MarkovBridge.alphaCoeff_le_of_state_envelope` — their composite:
   `α_X(n) ≤ (∫ A dF) ρ^{n−1}`;
 * `ForMathlib/Markov/IFSMinorization.lean` — `hasMinorization_sclAR_pow`, the minorization
-  for the **multiplicative** recursion `X_t = f(𝐗) + s(𝐗)·ε_t`, which is what the GARCH
-  obstruction note identified as the sharp missing ingredient. (Its docstring records that
-  ARCH(p) is covered verbatim in *signed* coordinates and that GARCH(p, q) with `q ≥ 1`
-  additionally needs a two-block state update.)
+  for the **multiplicative** recursion `X_t = f(𝐗) + s(𝐗)·ε_t`, the sharp ingredient a
+  GARCH state chain needs. (Its docstring records that ARCH(p) is covered verbatim in
+  *signed* coordinates and that GARCH(p, q) with `q ≥ 1` additionally needs a two-block
+  state update.)
 
-Consequently each of the two debts is now reduced to **one named model-side brick**: the
-existence of the state chain together with its geometric total-variation envelope. The
-step from that brick to the frozen FY statement is proved below. -/
+Consequently each model statement reduces to **one model-side input**: the existence of
+the state chain together with its geometric total-variation envelope
+(`HasGeometricStateChain`). The step from that input to exponential mixing is proved
+below; establishing the representation is a separate, model-specific hypothesis. -/
 
-
-/-! #### The state-chain brick, and the two model debts over it -/
-
-/-- The *shape* of the model-side input that both debts now reduce to: the model's **state
-chain**, together with its geometric total-variation envelope. Concretely: a state process
+/-- A model's **state chain** with an integrable geometric total-variation envelope.
+Concretely: a state process
 `V` with values in some `ℝ^k`, whose one-step law is a Markov kernel `κ`, whose observed
 series `X_s` is a measurable function of the *next* state `V_{s+1}` (that is where the
 fresh innovation is recorded), whose one-dimensional marginals do not depend on time, and
@@ -1633,14 +1595,11 @@ theorem betaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure μ
     rw [hpr]
     field_simp
 
-/-! #### The invariant moment bound of a Lyapunov drift (wave 6)
+/-! #### The invariant moment bound of a Lyapunov drift
 
-The one *genuinely new* ingredient of the named follow-up
-*"`IsGeometricallyErgodic` with a Lyapunov envelope"*, which the two (since removed)
-state-chain bricks listed as an open input. The other ingredient — the envelope proper — is
-already proved inside `harris_theorem` and only needs exporting; wave 5 was wrong to treat
-this one as free. Proved here, axiom-clean, so that only the *export* is left outside this
-lane's touch set. -/
+The truncation argument below derives a finite invariant moment from a Lyapunov
+drift inequality. Together with the envelope exported from Harris' theorem
+(`harris_theorem_envelope`), it gives the integrable Lyapunov envelope used below. -/
 
 /-- Truncations of a finite `ℝ≥0∞` value exhaust it. -/
 private lemma iSup_min_natCast_of_ne_top {a : ENNReal} (ha : a ≠ ⊤) :
@@ -1750,9 +1709,7 @@ Drift + minorization give an invariant probability measure `π` together with an
 **`π`-integrable** dominating constant `A` and a rate `r < 1` such that
 `‖κᵐ(x, ·) − π‖_TV ≤ A(x) rᵐ` for every state `x` and every `m`.
 
-This closes, as one theorem, the named follow-up *"`IsGeometricallyErgodic` with a Lyapunov
-envelope"* that the two (since removed) state-chain bricks, for ARMA and for GARCH, listed
-as an open input. Its two parts:
+The construction has two parts:
 
 * the envelope itself — `harris_theorem_envelope`, the statement-level export (added in
   `ForMathlib/Markov/HarrisTheorem.lean`) of the step `hbound` that Harris' theorem already

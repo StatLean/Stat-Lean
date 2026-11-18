@@ -12,6 +12,7 @@
     {"id":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","label":"of_completeSpace_metrizable","full":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.CompletelyMetrizable"},
     {"id":"PiLp.completeSpace","label":"completeSpace","full":"PiLp.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
     {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
+    {"id":"completableTopField_of_complete","label":"completableTopField_of_complete","full":"completableTopField_of_complete","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.UniformField"},
     {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
     {"id":"StatLean.StatisticalModels.sumMeasEquivProd","label":"sumMeasEquivProd","full":"StatLean.StatisticalModels.sumMeasEquivProd","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Gaussian.BlockIndex"},
     {"id":"StatLean.StatisticalModels.blockPair","label":"blockPair","full":"StatLean.StatisticalModels.blockPair","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Gaussian.BlockIndex"},
@@ -45,8 +46,7 @@
     {"id":"StatLean.StatisticalModels.posSemidef_condCovMatrix","label":"posSemidef_condCovMatrix","full":"StatLean.StatisticalModels.posSemidef_condCovMatrix","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Gaussian.Conditioning"},
     {"id":"Matrix.PosDef.posSemidef","label":"posSemidef","full":"Matrix.PosDef.posSemidef","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
     {"id":"MeasurableEquiv.measurable","label":"measurable","full":"MeasurableEquiv.measurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Embedding"},
-    {"id":"MeasureTheory.Measure.ext_of_charFun","label":"ext_of_charFun","full":"MeasureTheory.Measure.ext_of_charFun","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic"},
-    {"id":"Continuous.cexp","label":"cexp","full":"Continuous.cexp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Exp"}
+    {"id":"MeasureTheory.Measure.ext_of_charFun","label":"ext_of_charFun","full":"MeasureTheory.Measure.ext_of_charFun","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.condKernel_ae_eq_gaussianCondKernel","target":"standardBorel_of_polish"},
@@ -59,6 +59,7 @@
     {"source":"StatLean.StatisticalModels.condKernel_ae_eq_gaussianCondKernel","target":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable"},
     {"source":"StatLean.StatisticalModels.condKernel_ae_eq_gaussianCondKernel","target":"PiLp.completeSpace"},
     {"source":"StatLean.StatisticalModels.condKernel_ae_eq_gaussianCondKernel","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.StatisticalModels.condKernel_ae_eq_gaussianCondKernel","target":"completableTopField_of_complete"},
     {"source":"StatLean.StatisticalModels.condKernel_ae_eq_gaussianCondKernel","target":"EMetricSpace.metrizableSpace"},
     {"source":"StatLean.StatisticalModels.condKernel_ae_eq_gaussianCondKernel","target":"StatLean.StatisticalModels.sumMeasEquivProd"},
     {"source":"StatLean.StatisticalModels.condKernel_ae_eq_gaussianCondKernel","target":"StatLean.StatisticalModels.blockPair"},
@@ -111,7 +112,6 @@
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"ProbabilityTheory.isGaussian_multivariateGaussian"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel"},
-    {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"Continuous.cexp"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"PseudoEMetricSpace.pseudoMetrizableSpace"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"MeasureTheory.sigmaFinite_of_locallyFinite"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"MeasureTheory.isLocallyFiniteMeasure_of_isFiniteMeasureOnCompacts"},
@@ -123,6 +123,7 @@
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"TopologicalSpace.IsCompletelyMetrizableSpace.toIsCompletelyPseudoMetrizableSpace"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"TopologicalSpace.SecondCountableTopology.to_separableSpace"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable"},
+    {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"completableTopField_of_complete"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"EMetricSpace.metrizableSpace"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"StatLean.StatisticalModels.blockSnd"},
     {"source":"StatLean.StatisticalModels.compProd_gaussianCondKernel","target":"StatLean.StatisticalModels.condMeanMatrix"},

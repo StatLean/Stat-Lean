@@ -9,8 +9,7 @@ SSBD Lemma 26.9 (Kakade–Tewari form of Talagrand's contraction): applying a
 Rademacher complexity by more than the factor `ρ`:
 `R(φ ∘ A) ≤ ρ R(A)`.
 
-**Reference.** SSBD §26.1, Lemma 26.9. Transcription:
-`notes/statistical_learning/book_statements/ch26-31-appB.md`.
+**Reference.** SSBD §26.1, Lemma 26.9.
 
 **Formalization notes.** This is **not** the coefficient contraction already in
 `ConcentrationInequalities/Symmetrization/Contraction.lean` (HDP Thm 6.6.1,
@@ -21,7 +20,7 @@ two sups, pair maximizers `a, a'` and use
 `φᵢ(aᵢ) − φᵢ(a'ᵢ) ≤ ρ|aᵢ − a'ᵢ|`, absorbing the absolute value by the
 `a ↔ a'` symmetry (SSBD Eqs. (26.12)–(26.13)). The finite-average `signAvg`
 makes the conditioning a literal finite-sum split. Stated for a `Finset` class
-per the sup policy (sups must be attained). The book's display has a typo
+(sups must be attained). The book's display has a typo
 (`φ_m(y_m)` for `φ_m(a_m)`) — statement follows the corrected reading. -/
 
 open scoped BigOperators

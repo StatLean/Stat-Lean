@@ -32,7 +32,7 @@
     {"id":"ProbabilityTheory.Kernel.deterministic.congr_simp","label":"congr_simp","full":"ProbabilityTheory.Kernel.deterministic.congr_simp","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Basic"},
     {"id":"ProbabilityTheory.Kernel.prod_of_not_isSFiniteKernel_right","label":"prod_of_not_isSFiniteKernel_right","full":"ProbabilityTheory.Kernel.prod_of_not_isSFiniteKernel_right","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.Prod"},
     {"id":"ProbabilityTheory.Kernel.map_zero","label":"map_zero","full":"ProbabilityTheory.Kernel.map_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.MapComap"},
-    {"id":"zero_apply","label":"zero_apply","full":"zero_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Data.FunLike.IsApply"},
+    {"id":"zero_apply","label":"zero_apply","full":"zero_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.IsApply"},
     {"id":"MeasureTheory.Measure.ext","label":"ext","full":"MeasureTheory.Measure.ext","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"MeasureTheory.Measure.bind_apply","label":"bind_apply","full":"MeasureTheory.Measure.bind_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.GiryMonad"},
     {"id":"ProbabilityTheory.Kernel.aemeasurable","label":"aemeasurable","full":"ProbabilityTheory.Kernel.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},

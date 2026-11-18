@@ -6,6 +6,7 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.Independence.Integration
 import Mathlib.Probability.ConditionalExpectation
+import StatLean.ForMathlib.ENNRealTsum
 
 /-!
 # Stationary ARCH(∞) processes: the Volterra construction (FY §2.1.5, Theorem 2.5)
@@ -16,18 +17,12 @@ mean `a/(1 − Σ_j b_j)` — the **Volterra series**
 `Y_t = a ξ_t (1 + Σ_{k≥1} Σ_{j₁,…,j_k} b_{j₁} ⋯ b_{j_k} ξ_{t−ℓ₁} ⋯ ξ_{t−ℓ_k})`
 (`ℓ_m = (j₁+1) + ⋯ + (j_m+1)` partial sums of lags) — and it is the a.e.-unique
 integrable solution; if `a = 0`, the only solution is `Y ≡ 0`.
-Also: FY Theorem 2.5(ii) (finite second moment under eq. (2.16)). FY Theorem 2.6 (the
-finite-dimensional invariance principle) was carried here as a statement-level DEBT and
-has been removed — see **Removed** below.
+Also: FY Theorem 2.5(ii), the finite-second-moment conclusion under eq. (2.16).
 
-**Removed (2026-08-10, user directive).** The one sorried declaration of this module was
-deleted; all of its supporting machinery (the α-mixing, strict-stationarity and acvf-recursion
-bricks below) is kept and remains proved.
-* `archInf_clt_debt` — asserted FY Theorem 2.6: under eq. (2.16) the normalized partial sums
-  of a stationary ARCH(∞) process converge (at the level of characteristic functions) to
-  `N(0, σ²)` with long-run variance `σ² = Σ_k γ(k)`.
-
-Recover from `bdc8143f`.
+**Scope.** The module includes supporting α-mixing, strict-stationarity and
+ACVF-recursion results. The invariance principle of FY Theorem 2.6 (under eq. (2.16) the
+normalized partial sums of a stationary ARCH(∞) process converge to `N(0, σ²)` with
+long-run variance `σ² = Σ_k γ(k)`) is not stated here.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.1.5
 (Theorem 2.5, eqs. (2.15)–(2.16), Theorem 2.6, pp. 37–38) and §2.7.1 (proof of Thm
@@ -139,14 +134,14 @@ private lemma measurable_archLayer (bc : ℕ → ℝ) (k : ℕ) : Measurable (ar
   | zero => simpa only [archLayer] using measurable_const
   | succ k ih =>
     simp only [archLayer]
-    refine Measurable.ennreal_tsum fun j => ?_
+    refine ENNReal.measurable_tsum fun j => ?_
     exact (measurable_const.mul
       ((measurable_pi_apply _).ennreal_ofReal)).mul
       (ih.comp (Measurable.of_eval fun s => measurable_pi_apply _))
 
 private lemma measurable_archFun (a : ℝ) (bc : ℕ → ℝ) : Measurable (archFun a bc) :=
   (((measurable_const.mul ((measurable_pi_apply _).ennreal_ofReal)).mul
-    (Measurable.ennreal_tsum fun k => measurable_archLayer bc k)).ennreal_toReal)
+    (ENNReal.measurable_tsum fun k => measurable_archLayer bc k)).ennreal_toReal)
 
 /-- **Causality of a Volterra layer**: `archLayer bc k p` reads `p` only at coordinates
 `≤ 0` (indeed only at `< 0` for `k ≥ 1`), because every recursion step steps back by at
@@ -217,7 +212,7 @@ private lemma measurable_archLayer_sigmaLT {ξ : ℤ → Ω → ℝ}
   | succ k ih =>
     intro t
     simp only [archLayer_succ_path]
-    refine Measurable.ennreal_tsum fun j => ?_
+    refine ENNReal.measurable_tsum fun j => ?_
     have hlt : t - 1 - (j : ℕ) < t := by
       have : (0 : ℤ) ≤ (j : ℤ) := Int.natCast_nonneg j
       omega
@@ -306,18 +301,18 @@ private lemma lintegral_archZ [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → 
     ∫⁻ ω, archZ a bc ξ t ω ∂μ = ENNReal.ofReal a * (1 - archS bc)⁻¹ := by
   simp only [archZ, mul_assoc]
   erw [lintegral_const_mul _ (((hm t).ennreal_ofReal).mul
-      (Measurable.ennreal_tsum fun k => measurable_archLayer_path hm bc k t)),
+      (ENNReal.measurable_tsum fun k => measurable_archLayer_path hm bc k t)),
     lintegral_mul_eq_lintegral_mul_lintegral_of_independent_measurableSpace
       (hm t).comap_le (sigmaLT_le hm t) (indep_xi_sigmaLT hm hi t)
       (Measurable.of_comap_le le_rfl).ennreal_ofReal
-      (Measurable.ennreal_tsum fun k => measurable_archLayer_sigmaLT bc k t),
+      (ENNReal.measurable_tsum fun k => measurable_archLayer_sigmaLT bc k t),
     lintegral_ofReal_xi hnn hid hint hmean, one_mul,
     lintegral_archW hm hi hnn hid hint hmean]
 
 private lemma measurable_archZ {a : ℝ} {bc : ℕ → ℝ} {ξ : ℤ → Ω → ℝ}
     (hm : ∀ t, Measurable (ξ t)) (t : ℤ) : Measurable (archZ a bc ξ t) :=
   (measurable_const.mul ((hm t).ennreal_ofReal)).mul
-    (Measurable.ennreal_tsum fun k => measurable_archLayer_path hm bc k t)
+    (ENNReal.measurable_tsum fun k => measurable_archLayer_path hm bc k t)
 
 omit [MeasurableSpace Ω] in
 /-- **The Volterra series solves the ARCH(∞) equation** in `ℝ≥0∞` (FY §2.7.1): peeling the
@@ -470,7 +465,7 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
       exact ENNReal.tsum_mul_right
     have hTae : ∀ᵐ ω ∂μ,
         (∑' j : ℕ, ENNReal.ofReal (bc j) * archZ a bc ξ (t - 1 - (j : ℕ)) ω) < ∞ := by
-      refine ae_lt_top (Measurable.ennreal_tsum fun j =>
+      refine ae_lt_top (ENNReal.measurable_tsum fun j =>
         measurable_const.mul (measurable_archZ hm (t - 1 - (j : ℕ)))) ?_
       rw [hTint]
       exact ENNReal.mul_ne_top hS1.ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hinvfin)
@@ -490,7 +485,7 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
     refine Measurable.ennreal_toReal ?_
     change Measurable[sigmaLT ξ t] fun ω => ENNReal.ofReal a * ENNReal.ofReal (ξ s ω)
       * ∑' k : ℕ, archLayer bc k (archPath ξ s ω)
-    refine (measurable_const.mul ?_).mul (Measurable.ennreal_tsum fun k =>
+    refine (measurable_const.mul ?_).mul (ENNReal.measurable_tsum fun k =>
       (measurable_archLayer_sigmaLT bc k s).mono (sigmaLT_mono hst.le) le_rfl)
     exact ((Measurable.of_comap_le
       (le_refl (MeasurableSpace.comap (ξ s) inferInstance))).mono
@@ -603,7 +598,7 @@ theorem archInf_tsum_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ →
     {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     ∀ᵐ ω ∂μ, (∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) < ∞ := by
-  refine ae_lt_top (Measurable.ennreal_tsum fun j =>
+  refine ae_lt_top (ENNReal.measurable_tsum fun j =>
     measurable_const.mul ((h.measurableY _).ennreal_ofReal)) ?_
   have hterm : ∀ j : ℕ, ∫⁻ ω, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω) ∂μ
       = ENNReal.ofReal (bc j) * ENNReal.ofReal (∫ ω, Y 0 ω ∂μ) := fun j => by
@@ -709,7 +704,7 @@ private lemma archInf_eq_archSol [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ �
     have hm := lintegral_ofReal_sol h hint hstat t
     have hGm : Measurable[sigmaLT Y t] fun ω => ENNReal.ofReal a
         + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω) := by
-      refine measurable_const.add (Measurable.ennreal_tsum fun j => measurable_const.mul ?_)
+      refine measurable_const.add (ENNReal.measurable_tsum fun j => measurable_const.mul ?_)
       have hlt' : t - 1 - (j : ℕ) < t := by
         have : (0 : ℤ) ≤ (j : ℤ) := Int.natCast_nonneg j
         omega
@@ -1009,10 +1004,10 @@ private lemma lintegral_sq_archZ_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc 
     simp only [archZ]
     rw [mul_pow, mul_pow, mul_assoc]
   erw [funext hexp, lintegral_const_mul _ ((((hξ.measurable t).ennreal_ofReal).pow_const 2).mul
-      ((Measurable.ennreal_tsum fun k =>
+      ((ENNReal.measurable_tsum fun k =>
         measurable_archLayer_path hξ.measurable bc k t).pow_const 2)),
     lintegral_sq_xi_mul hξ.measurable hξ.iIndep t
-      ((Measurable.ennreal_tsum fun k => measurable_archLayer_sigmaLT bc k t).pow_const 2),
+      ((ENNReal.measurable_tsum fun k => measurable_archLayer_sigmaLT bc k t).pow_const 2),
     lintegral_sq_ofReal_xi hξ.identDistrib, hν]
   exact ENNReal.mul_lt_top (ENNReal.pow_lt_top ENNReal.ofReal_lt_top)
     (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hWtop.lt_top)
@@ -1158,7 +1153,7 @@ theorem archInf_acvf_recursion [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ →
         + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (k - 1 - (j : ℕ)) ω))
           * ENNReal.ofReal (Y 0 ω) :=
       (measurable_const.add
-        (Measurable.ennreal_tsum fun j => measurable_const.mul (hmeasLag j))).mul hmeasY0
+        (ENNReal.measurable_tsum fun j => measurable_const.mul (hmeasLag j))).mul hmeasY0
     have hcong : (∫⁻ ω, ENNReal.ofReal (Y k ω) * ENNReal.ofReal (Y 0 ω) ∂μ)
         = ∫⁻ ω, ENNReal.ofReal (ξ k ω) * ((ENNReal.ofReal a
             + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (k - 1 - (j : ℕ)) ω))
@@ -1256,7 +1251,7 @@ omit [MeasurableSpace Ω] in
 /-- `archInfDrift` is measurable for the **strict past** of the solution. -/
 theorem measurable_archInfDrift_sigmaLT {a : ℝ} {bc : ℕ → ℝ} {Y : ℤ → Ω → ℝ} (t : ℤ) :
     Measurable[sigmaLT Y t] (archInfDrift a bc Y t) := by
-  refine (measurable_const.add (Measurable.ennreal_tsum fun j =>
+  refine (measurable_const.add (ENNReal.measurable_tsum fun j =>
     measurable_const.mul ?_)).ennreal_toReal
   have hlt : t - 1 - (j : ℕ) < t := by
     have : (0 : ℤ) ≤ (j : ℤ) := Int.natCast_nonneg j
@@ -1328,8 +1323,7 @@ theorem archInf_condexp_strict_past [IsProbabilityMeasure μ] {a : ℝ} {bc : �
 
 /-- **The ARCH(∞) martingale-difference sequence**: `d_t = Y_t − ρ_t` has zero conditional
 mean given the strict past. This is the exact decomposition that replaces the
-`m`-dependent approximation of the Volterra series in the CLT (the FY Thm 2.6 statement
-that consumed it has since been removed; see **Removed** in the module docstring). -/
+`m`-dependent approximation of the Volterra series in the CLT route to FY Theorem 2.6. -/
 theorem archInf_mds [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
     {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
@@ -1353,13 +1347,13 @@ theorem archInf_mds [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
   rw [e1, e2, e3, e4]
   simp
 
-/-! ### The noise family is α-mixing (residue item 1 of the removed FY Thm 2.6 debt)
+/-! ### The noise family is α-mixing
 
 An i.i.d. family is α-mixing in the strongest possible way: `α(n) = 0` outright for every
 `n ≥ 1`, because `σ{ξ_s : s ≤ 0}` and `σ{ξ_s : s ≥ n}` are *independent*, so every element
 of the α description set is `0` and its supremum is `sup {0}`. No rate, no moment and no
-property of `Y` itself enters — this is the only mixing input the ergodicity route behind
-the removed FY Thm 2.6 debt's `hvar` needed. -/
+property of `Y` itself enters — this is the only mixing input the ergodicity route to
+FY Theorem 2.6 needs. -/
 
 /-- Disjoint index blocks of an independent family generate independent σ-algebras. -/
 private lemma indep_sigmaLE_sigmaGE_of_iIndep {ξ : ℤ → Ω → ℝ}
@@ -1399,19 +1393,11 @@ theorem IsARCHNoise.isAlphaMixing [IsProbabilityMeasure μ] {ξ : ℤ → Ω →
   filter_upwards [eventually_ge_atTop 1] with n hn
   exact (alphaCoeff_eq_zero_of_iIndep hξ.measurable hξ.iIndep hn).symm
 
-/-- **Strict stationarity of the i.i.d. noise itself** — residue item 4 of the ledger of
-the removed FY Thm 2.6 debt.
+/-- **Strict stationarity of the i.i.d. noise itself.**
 
-It is *free* from `isStrictlyStationary_of_shift_comp` at the coordinate functional
-`F p = p 0`: `ξ_t = F(ξ_{·+t})`, so `map_path_shift` does all the work. In particular the
-route recorded in `(B″)` — "prove it for injective `t` from `iIndepFun` + `identDistrib`,
-then obtain the general tuple by pushing the injective-tuple law forward along the fixed
-coordinate-selection map … that is a self-contained lemma … and belongs next to
-`isStrictlyStationary_iff_window` in `Process/Stationary.lean`, outside this lane's touch
-set" — is **overturned**: no tuple analysis and no injectivity split is needed, because
-`map_path_shift` compares the *whole* path laws (two infinite product measures) rather than
-finite-dimensional marginals, and repeats in the index tuple are then irrelevant. The brick
-was already in this file. -/
+Apply `isStrictlyStationary_of_shift_comp` to the coordinate functional `F p = p 0`:
+`ξ_t = F(ξ_{·+t})`. The underlying `map_path_shift` compares whole path laws, so repeated
+indices in a finite-dimensional marginal require no separate argument. -/
 theorem IsARCHNoise.isStrictlyStationary [IsProbabilityMeasure μ] {ξ : ℤ → Ω → ℝ}
     (hξ : IsARCHNoise ξ μ) : IsStrictlyStationary ξ μ := by
   have h := isStrictlyStationary_of_shift_comp hξ.measurable hξ.iIndep hξ.identDistrib

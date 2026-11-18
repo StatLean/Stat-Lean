@@ -33,9 +33,7 @@ candidate), the range lies in $[0,1]$ by clamping (`gridValue`) plus the outer
 injectivity argument. Edge behavior: garbage paths (leaving $\{0,\dots,m\}$)
 are clamped by `gridValue`, so *every* parameter is a class member and the
 count `(m+1)·3^m` is an upper bound only. `coneMap`'s continuity field cites
-`lipschitzWith_coneFun`, which is therefore **mandatory-close** for the
-work item `hdp-emp-net`; the named-sorry fallback of this file is
-`coneFun_mem_Icc`. `zero_mem_lipschitzNet` (the zero function is the
+`lipschitzWith_coneFun`. `zero_mem_lipschitzNet` (the zero function is the
 all-clamped-to-zero net member) provides the base point $0 \in T$ for the
 Dudley plug in `LipschitzLLN.lean` (Eq. (8.25)).
 
@@ -175,7 +173,7 @@ theorem lipschitzWith_coneFun (m : ℕ) [NeZero m] (k₀ : Fin (m + 1))
   exact this
 
 /-- Net members take values in `[0,1]` (HDP Exercise 8.9): clamping of knot
-values plus the outer `max 0`. Named-sorry fallback of `hdp-emp-net`. -/
+values plus the outer `max 0`. -/
 theorem coneFun_mem_Icc (m : ℕ) [NeZero m] (k₀ : Fin (m + 1))
     (step : Fin m → Fin 3) (x : unitInterval) :
     coneFun m k₀ step x ∈ Set.Icc (0 : ℝ) 1 := by

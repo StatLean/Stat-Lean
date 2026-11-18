@@ -244,7 +244,7 @@ theorem IsARMA.spectralDensityOf_eq [IsProbabilityMeasure μ] {p q : ℕ}
     -- USER-INPUT: the ARMA process is stationary; FY Prop 2.4
     (hstat : IsStationary X μ)
     -- USER-INPUT: causal MA(∞) representation with the ARMA ψ-weights; FY §2.1.3
-    -- standing causality convention (the iff with `NoRootClosedDisc` is the named debt
+    -- standing causality convention (for the iff with `NoRootClosedDisc` see
     -- `arma_causal_of_stationary_debt`)
     (hcausal : IsLinearProcessOf (armaPsi b a) X ε μ)
     -- USER-INPUT: b(z) ≠ 0 for |z| ≤ 1; FY Prop 2.4

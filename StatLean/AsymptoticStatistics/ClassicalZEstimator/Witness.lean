@@ -32,7 +32,6 @@ The example simultaneously satisfies the smoothness, second-order domination,
 The bookkeeping then reads `V = Pψ̇_{θ₀} = (−1)`, `det V = −1` (a unit), `Pψ_{θ₀} = 0`,
 `P‖ψ_{θ₀}‖² = 1 < ∞`, and `θ ↦ P(m_θ − m_{θ₀}) = −(θ 0)²/2` has a (global, hence local)
 maximum at `θ₀ = 0`. All of this is machine-checked below.
-
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory

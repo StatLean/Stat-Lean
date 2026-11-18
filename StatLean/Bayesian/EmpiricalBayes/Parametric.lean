@@ -17,10 +17,10 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 case), p. 485.
 
 **Proof formalization notes.** `normalRandomEffects_marginal` is `comp_gaussKernel_gaussianReal`
-(the Batch-2 Gaussian convolution). Consistency is cut to the method-of-moments estimator (per the
-plan): `normalParamEB_shrinkageWeight_tendsto_oracle` is a continuous-mapping limit of the plug-in
+(the Gaussian convolution). Consistency is cut to the method-of-moments estimator:
+`normalParamEB_shrinkageWeight_tendsto_oracle` is a continuous-mapping limit of the plug-in
 weight given a consistent sample variance (which `strong_law_ae_real` supplies); the general-family
-consistency is deferred to Batch 4. `fisherIdentity_normalMarginal` is the concrete score identity
+consistency is not formalized here. `fisherIdentity_normalMarginal` is the concrete score identity
 `(y−μ)/(σ²+τ²) = (1−B)(y−μ)/τ²` (marginal score = shrinkage × complete-data score);
 `EM_monotonicity_marginalLikelihood` is the abstract `ℓ = Q − R` decomposition with the M-step
 ascent and Gibbs' inequality (`linarith`).
@@ -109,7 +109,7 @@ theorem fisherIdentity_normalMarginal (μ τ2 σ2 : ℝ)
   field_simp
   ring
 
-/-- **EM monotonicity** (3E.9, stretch): with the decomposition `ℓ = Q − R`, an M-step that
+/-- **EM monotonicity** (3E.9): with the decomposition `ℓ = Q − R`, an M-step that
 increases `Q` together with Gibbs' inequality on `R` does not decrease the marginal log-likelihood
 (Dempster–Laird–Rubin 1977). -/
 theorem EM_monotonicity_marginalLikelihood (marginalLogLik : ℝ → ℝ) (Q R : ℝ → ℝ → ℝ) (θ₀ θ₁ : ℝ)

@@ -29,10 +29,12 @@
     {"id":"LinearMap.addCommMonoid","label":"addCommMonoid","full":"LinearMap.addCommMonoid","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Module.LinearMap.Defs"},
     {"id":"Matrix.module","label":"module","full":"Matrix.module","kind":"mathlib","decl":"def","module":"Mathlib.LinearAlgebra.Matrix.Defs"},
     {"id":"LinearMap.module","label":"module","full":"LinearMap.module","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Module.LinearMap.Defs"},
-    {"id":"EquivLike.toFunLike","label":"toFunLike","full":"EquivLike.toFunLike","kind":"mathlib","decl":"def","module":"Mathlib.Data.FunLike.Equiv"},
+    {"id":"EquivLike.toFunLike","label":"toFunLike","full":"EquivLike.toFunLike","kind":"mathlib","decl":"def","module":"Mathlib.Basic.FunLike.Equiv"},
     {"id":"Matrix.toEuclideanLin","label":"toEuclideanLin","full":"Matrix.toEuclideanLin","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
     {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"},
-    {"id":"MeasureTheory.Measure.prod","label":"prod","full":"MeasureTheory.Measure.prod","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Prod"}
+    {"id":"MeasureTheory.Measure.bindProd","label":"bindProd","full":"MeasureTheory.Measure.bindProd","kind":"repo","decl":"def","module":"StatLean.ForMathlib.BindProd"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure.bind","label":"bind","full":"MeasureTheory.Measure.bind","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.GiryMonad"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign"},
@@ -65,6 +67,10 @@
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"EquivLike.toFunLike"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"Matrix.toEuclideanLin"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"Fin.fintype"},
-    {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"MeasureTheory.Measure.prod"}
+    {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"MeasureTheory.Measure.bindProd"},
+    {"source":"MeasureTheory.Measure.bindProd","target":"MeasurableSpace"},
+    {"source":"MeasureTheory.Measure.bindProd","target":"MeasureTheory.Measure"},
+    {"source":"MeasureTheory.Measure.bindProd","target":"MeasureTheory.Measure.bind"},
+    {"source":"MeasureTheory.Measure.bindProd","target":"MeasureTheory.Measure.map"}
   ]
 }

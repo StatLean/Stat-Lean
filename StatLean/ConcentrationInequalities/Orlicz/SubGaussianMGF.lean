@@ -26,9 +26,7 @@ and bounds the remainder by the ψ₂ condition. No hypothesis laundering:
 `HasSubgaussianMGF` integrability field are *derived* from the ψ₂ condition
 (`|x|/K ≤ e^{(x/K)²}` resp. `e^{lx} ≤ e^{l²K²/2}·e^{(x/K)²}` pointwise) in the
 two named integrability lemmas. Book Remark 2.6.2 / Exercise 2.23 ("(iv)
-forces mean zero") is not formalized — scope note. Named-sorry fallback of
-this work item: `integrable_exp_mul_of_lintegral_exp_sq_le_two` (domination
-bookkeeping), with the MGF bound closed modulo it.
+forces mean zero") is not formalized — scope note.
 
 **Bibliographic comments.** The MGF characterization of sub-Gaussian
 variables is due to J.-P. Kahane (1960) and Buldygin–Kozachenko (1980).

@@ -20,7 +20,10 @@
     {"id":"add_comm","label":"add_comm","full":"add_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
     {"id":"StatLean.Minimaxity.mixture","label":"mixture","full":"StatLean.Minimaxity.mixture","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
     {"id":"StatLean.Minimaxity.zeroOneLoss","label":"zeroOneLoss","full":"StatLean.Minimaxity.zeroOneLoss","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
-    {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"}
+    {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"PMF.uniform","label":"uniform","full":"PMF.uniform","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
+    {"id":"PMF.uniformOn","label":"uniformOn","full":"PMF.uniformOn","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
+    {"id":"Finset.univ_nonempty","label":"univ_nonempty","full":"Finset.univ_nonempty","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.BooleanAlgebra"}
   ],
   "edges": [
     {"source":"StatLean.Minimaxity.fano_inequality","target":"StatLean.Minimaxity.mutualInformation"},
@@ -42,6 +45,9 @@
     {"source":"StatLean.Minimaxity.mutualInformation","target":"StatLean.Minimaxity.mixture"},
     {"source":"StatLean.Minimaxity.multiwayTestingError","target":"StatLean.Minimaxity.zeroOneLoss"},
     {"source":"StatLean.Minimaxity.multiwayTestingError","target":"StatLean.Minimaxity.uniformPrior"},
-    {"source":"StatLean.Minimaxity.mixture","target":"StatLean.Minimaxity.uniformPrior"}
+    {"source":"StatLean.Minimaxity.mixture","target":"StatLean.Minimaxity.uniformPrior"},
+    {"source":"StatLean.Minimaxity.uniformPrior","target":"PMF.uniform"},
+    {"source":"PMF.uniform","target":"PMF.uniformOn"},
+    {"source":"PMF.uniform","target":"Finset.univ_nonempty"}
   ]
 }

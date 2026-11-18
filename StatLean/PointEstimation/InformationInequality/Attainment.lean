@@ -20,16 +20,15 @@ Contents:
   affine function of `δ` almost surely.
 
 **Not present: the converse.** The source's converse — attainment at every parameter value
-forces the exponential form — was formalized, found to be **false as written**, and has been
-removed rather than carried as a debt. The attainment identity `var_θ(δ) = g'(θ)²/I(θ)` is
-vacuous wherever `g'(θ) = 0` and `var_θ(δ) = 0`: Cauchy–Schwarz equality then holds trivially
-with `δ` a.e. constant and constrains the score not at all. The Gaussian location family
+forces the exponential form — is **false as written** and is not formalized. The attainment
+identity `var_θ(δ) = g'(θ)²/I(θ)` is vacuous wherever `g'(θ) = 0` and `var_θ(δ) = 0`:
+Cauchy–Schwarz equality then holds trivially with `δ` a.e. constant and constrains the score
+not at all. The Gaussian location family
 `p_θ(x) = φ(x − θ)` with `δ ≡ 0` satisfies every hypothesis, yet is not exponential in `δ`
 (comparing `θ = 1` with `θ = 0` would force `φ(x−1)/φ(x) = e^{x−1/2}` to be a.e. constant).
 The source carries `g'(θ) ≠ 0` implicitly, through the companion identity `I(θ) = η'(θ)g'(θ)`.
 Restoring the converse is a **signature change** — add `∀ θ, g' θ ≠ 0` — and a decision for
-the library, not a proof obligation; the full analysis, with the counterexample and the
-repair, is in `notes/point_estimation/defective-statements.tex`. Note that
+the library, not a proof obligation. Note that
 `score_ae_eq_of_cramer_rao_attained` above already supplies the Cauchy–Schwarz equality step
 that a repaired converse would consume.
 

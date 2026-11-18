@@ -25,8 +25,7 @@ engine first (`measure_sum_ge_le_of_subExponentialNorm_le`), two-sided by the
 `X ↦ −X` symmetry of the ψ₁ norm and a union bound. `hK : ∀ i, 0 < K i` is a
 mild strengthening over the book (a zero bound forces the degenerate
 `X_i = 0` a.e., removable by reindexing); documented, not laundered. The
-work item's single named-sorry fallback is the **bonus** weighted Corollary
-2.9.2 (`bernstein_subexponential_weighted`); Theorem 2.9.1 itself must close.
+weighted Corollary 2.9.2 is `bernstein_subexponential_weighted`.
 
 **Bibliographic comments.** Bernstein-type inequalities for unbounded
 variables under exponential-moment conditions go back to S. N. Bernstein
@@ -237,9 +236,8 @@ theorem bernstein_subexponential
           (t / (4 * ((Finset.univ.sup K : ℝ≥0) : ℝ)))))) := by
         rw [← ENNReal.ofReal_add (Real.exp_nonneg _) (Real.exp_nonneg _)]; congr 1; ring
 
-/-- **Weighted Bernstein** (HDP Corollary 2.9.2; BONUS — this file's allowed
-named-sorry debt): tail for `∑ aᵢ Xᵢ` with uniform ψ₁ bound `K`, exponent
-`min (t²/(16 K² ‖a‖₂²)) (t/(4 K ‖a‖_∞))`. -/
+/-- **Weighted Bernstein** (HDP Corollary 2.9.2): tail for `∑ aᵢ Xᵢ` with uniform ψ₁ bound `K`,
+exponent `min (t²/(16 K² ‖a‖₂²)) (t/(4 K ‖a‖_∞))`. -/
 theorem bernstein_subexponential_weighted
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ] {n : ℕ} {X : Fin n → Ω → ℝ} {K : ℝ≥0}

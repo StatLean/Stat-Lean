@@ -44,7 +44,7 @@ template for Theorem 6.3 (local-polynomial fitting) and the ch. 10 results.
 conditions (C1)–(C5) and Theorem 2.22 (pp. 76–77); proof §2.7.7 (pp. 85–87).
 (`FY §2.6.4 Thm 2.22`.)
 
-**Proof route (§2.7.7, for the closure session).** (a) variance asymptotics
+**Proof route (§2.7.7).** (a) variance asymptotics
 (2.73)–(2.76): main diagonal term by continuity of `σ²·p` + substitution; small lags
 `j ≤ m_n = [1/(h|log h|)]` by (C2'); large lags by Davydov (`abs_covariance_le_davydov`
 with `p = q = δ`) + (C3). (b) Bernstein blocks `l_n = [√(nh)/log n]`,
@@ -54,22 +54,21 @@ part. (c) truncation of `e` at level `L`; variance split (2.82)–(2.83).
 (`norm_integral_prod_sub_prod_integral_le`; `16(k_n − 1)α(s_n) → 0` by (2.78)) +
 degenerate Lindeberg (`tendsto_charFun_rowSum_gaussian_of_uniformly_small`; the
 truncated block summands have envelope `l_n L sup|W| / √(nh) → 0`) + `ν_L → ν`.
-Sub-steps may be left as **named ledger-(a) debts** if the wave budget is hit.
-[Print slips (recorded in the inventory): Term-1 of the telescope is missing a `½`
-exponent; the final "(2.83)" should read "(2.84)".]
+[Print slips: Term-1 of the telescope is missing a `½` exponent; the final "(2.83)"
+should read "(2.84)".]
 
-**Status of the ledger.** `kernel_localized_clt` is assembled (no `sorry` of its own)
-from the two step-(d) inputs through the proved `tendsto_of_uniform_approx`. Proved in
+**The ledger.** `kernel_localized_clt` is assembled from the two step-(d) inputs through
+the proved `tendsto_of_uniform_approx`. Proved in
 full: the four analytic bricks (`integral_dilate_translate`,
 `integral_comp_eq_integral_density`, `integral_bdd_comp_mul_eq_of_condExp`,
 `tendsto_integral_dilate_of_bounded`), the repaired diagonal
 `tendsto_localized_second_moment_of_bounded`, the small-lag bound (2.76)
 `small_lag_covariance_bound`, the large-lag Davydov bound (2.75)
 `large_lag_covariance_bound`, the pair-σ-algebra transport, and the `pairAlphaCoeff`
-basics; and, under the authorized (C1) repair, the diagonal (2.73) itself
+basics; and, under the (C1) repair, the diagonal (2.73) itself
 (`tendsto_localized_second_moment_debt`, with `nonneg_of_continuousAt_of_ae_nonneg`);
 and the Volkonskii–Rozanov rate (2.78) `tendsto_blockCount_mul_pairAlpha`, with its
-(C3) input `tendsto_weighted_antitone_of_summable`; and, under the authorized (2.74)
+(C3) input `tendsto_weighted_antitone_of_summable`; and, under the (2.74)
 repair, **the whole of ledger (a)**: `var_localized_sum`, together with its apparatus
 — the fdd-stationarity law transport (`map_pair_eq_of_stat`, `integral_comp_pair_eq`,
 `map_pair2_eq_of_stat`, `integral_comp_pair2_eq`, `eLpNorm_comp_pair_eq`,
@@ -79,8 +78,7 @@ repair, **the whole of ledger (a)**: `var_localized_sum`, together with its appa
 `localized_trunc_residual_moment_le`, and the bandwidth limits
 `tendsto_smallLagCut_mul_bandwidth`, `tendsto_rpow_mul_abs_log_rpow`.
 
-**New this wave** — the *time-transport* apparatus that steps (b)–(c) need and ledger (a)
-did not, all proved and axiom-clean:
+**The time-transport apparatus** that steps (b)–(c) need and ledger (a) does not:
 * `map_fst_eq_of_stat`, `ae_comp_X_of_stat` — the `X`-marginal and a.e. statements about it
   move across time;
 * `exists_condExp_repr_of_stat` — under fdd stationarity `E(φ(e_t) | X_t)` is the **same**
@@ -95,16 +93,15 @@ did not, all proved and axiom-clean:
   density change of variables (at `G = |W|^δ` it is the truncated summand's δ-th moment: no
   conditional moment is needed there, the error factor being bounded by `2L`).
 
-The three former debts, each with its verified falsity witness and its
+**The three step statements**, each with its verified falsity witness and its
 **Statement strengthening (documented)** paragraph in its own docstring. All three were
 **false as frozen**; all three statements were **repaired**, and the repairs are exactly the
-ones the witnesses prescribe. **All three are now PROVED, and the file is `sorry`-free**:
+ones the witnesses prescribe. All three are proved in the repaired form:
 * `tendsto_smallBlock_variance` (2.79)–(2.81) — was hypothesis-free; now carries the full
   (C1)–(C5) package plus `0 < L`, and (C2) in its printed form (the second obstruction: the
   conditional recentring inside `truncErr` strips both error factors out of the small-lag
-  covariance, so the *unweighted* instance `f ≡ 1` is what closes it). **PROVED (this wave),
-  in the repaired form.** The route recorded here was run as written: (i) the covariance
-  assembly for the truncated array — diagonal `|G_ζ(0)| ≤ 4L² C_p (∫W²) h` from
+  covariance, so the *unweighted* instance `f ≡ 1` is what closes it). The route: (i) the
+  covariance assembly for the truncated array — diagonal `|G_ζ(0)| ≤ 4L² C_p (∫W²) h` from
   `localized_weight_integral_le`, small lags from (C2) at `f ≡ 1`, large lags from Davydov
   (`large_lag_covariance_bound'`) as in ledger (a) — is `tendsto_truncIndex_variance`, stated
   for an *arbitrary* index family `I n ⊆ range n` with `|I n| / n → 0`; and (ii) the numerology
@@ -113,8 +110,7 @@ ones the witnesses prescribe. **All three are now PROVED, and the file is `sorry
   is `(n h³)^{(1+θ)/3} · n^{(2−4θ)/3} / (log n)^{2+2θ} → ∞`, i.e. exactly (C5) with room to
   spare.
 * `charFun_locSum_sub_locTruncSum_le` (2.82)–(2.83) — was missing stationarity and every
-  moment condition beyond time `0`; now carries the same package. **PROVED (this wave), in
-  the repaired form**, by the route recorded below, run as written.
+  moment condition beyond time `0`; now carries the same package.
   Route: `‖e^{iuS} − e^{iuT}‖ ≤ |u| E|S − T|` and `|z| ≤ z²/(2c) + c/2` (no square root
   needed), then the residual array `ρ_t = (r_t − E(r_t|X_t)) W_t`, `r_t = e_t − clamp_L e_t`,
   with `E(e_t|X_t) = 0` supplied at every `t` by `condExp_eq_zero_of_stat`. Diagonal:
@@ -129,26 +125,17 @@ ones the witnesses prescribe. **All three are now PROVED, and the file is `sorry
 * `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`, and (2.84)) — was refutable already
   for an iid series: at a fixed truncation level the limit needs continuity at `x` of the
   *truncated* conditional second moment `σ_L²·p`, which (C1) does not supply. Repaired by the
-  `mL`/`sL` family with `hσLc`, `hσLb`, `hσL84`. **PROVED (this wave), in the repaired
-  form.** The Bernstein-block core was run in full; see its docstring for the route and the
-  private apparatus it required.
+  `mL`/`sL` family with `hσLc`, `hσLb`, `hσL84`. The Bernstein-block core is run in full;
+  see its docstring for the route and the private apparatus it requires.
 
 With that, the **headline** `kernel_localized_clt` — FY Theorem 2.22 — is proved outright.
 What the three verdicts say is that FY §2.7.7's *route* to it needs four silent readings of
-(C1) and (C2) as printed, not two.
-
-**Note on `Mixing/Inequalities.lean`.** The sibling repair — making the frozen
-`norm_integral_prod_sub_prod_integral_le` the `0 < k` statement (its `k = 0` corner is
-false: `‖1 − 1‖ = 0 ≤ 16·(0−1)·a` fails for `a > 0`) — was attempted this wave and
-**reverted**: `StatLean/TimeSeries/Mixing/LimitTheorems.lean:998`
-(`norm_integral_prod_blocks_sub_prod_le`, private, and itself false at `k = 0` for the same
-reason) consumes the frozen name at unconstrained `k`, and that file is outside this wave's
-touch-set. The repair is one line in each of the two files; the content is already available
-as `norm_integral_prod_sub_prod_integral_le_of_pos`.
+(C1) and (C2) as printed, not two. The positive-block version of the Volkonskii–Rozanov
+estimate used in step (d) is `norm_integral_prod_sub_prod_integral_le_of_pos`.
 
 **FALSE AS FROZEN (verified) — REPAIRS APPLIED.** FY (2.73)–(2.76) — hence Theorem 2.22
 itself — does not follow from (C1)–(C5) *as formalized here*. Two independent gaps were
-found and both counterexamples/obstructions stand; the authorized amendments of (C1) have
+found and both counterexamples/obstructions stand; the amendments of (C1) have
 been applied to `kernel_localized_clt`, `tendsto_localized_second_moment_debt`,
 `var_localized_sum` and `tendsto_charFun_locTruncSum`:
 
@@ -382,7 +369,7 @@ FY's `l_n`, `s_n`, `k_n`, `m_n`.
 **What is proved here**: the small-lag covariance bound (2.76) — the one ledger-(a)
 item that the formalized (C2) delivers outright — and the abstract diagonal-limit
 device that the four-term telescope of step (d) is squeezed through. The remaining
-items are named debts, one per FY display. -/
+items are stated separately, one per FY display. -/
 
 section Ledger
 
@@ -528,10 +515,9 @@ theorem nonneg_of_continuousAt_of_ae_nonneg {g : ℝ → ℝ} {x : ℝ}
 inside `tendsto_localized_second_moment_of_bounded`), and FY asserts the limit
 `σ²(x) p(x) ∫ W²`.
 
-**Status: PROVED, under the authorized repair** — the two hypotheses `hσm`/`hσpb` below
-are the laptop-authorized amendment of (C1) (the textbook's silent reading; see the
-module docstring's FALSE-AS-FROZEN section). The record of *why* the amendment is
-necessary is kept verbatim below.
+**Proved under a repair**: the two hypotheses `hσm`/`hσpb` below amend (C1) (the
+textbook's silent reading; see the module docstring's FALSE-AS-FROZEN section). The record
+of *why* the amendment is necessary is kept verbatim below.
 
 Note that `hσpb` is only a **one-sided** (upper) bound: the matching lower bound is not
 assumed but *derived*, since `σ²` is a conditional second moment, hence `≥ 0` a.e. for
@@ -542,9 +528,8 @@ the law of `X_0`, hence `σ²·p ≥ 0` Lebesgue-a.e. (this is where `hσm` is s
 `σ²` a.e.-`μ` under the conditional expectation, and agrees with it *at the point* `x` by
 `nonneg_of_continuousAt_of_ae_nonneg`.
 
-**Why the repair is needed.** The limit needs more than the formalized (C1)–(C5) supply
-(this was verified in the previous wave). Continuity of
-`σ²·p` at `x` controls the window `|u| ≤ M` (there `|h u| ≤ M h → 0`), but the tail
+**Why the repair is needed.** The limit needs more than the formalized (C1)–(C5) supply.
+Continuity of `σ²·p` at `x` controls the window `|u| ≤ M` (there `|h u| ≤ M h → 0`), but the tail
 `|u| > M` is left uncontrolled: `(C2)` forces only `σ·p` to be bounded (take
 `g = g₁ ⊗ g₂` in (C2) and let `g` concentrate), **not** `σ²·p`, and `σ²·p ∈ L¹` alone
 (`= E e_0² < ∞`) is not enough against a merely-`L¹` weight `W²`. Concretely: with
@@ -1626,11 +1611,11 @@ theorem tendsto_rpow_mul_abs_log_rpow {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
   rw [Real.mul_rpow (Real.rpow_nonneg hhn.le _) (abs_nonneg _), ← Real.rpow_mul hhn.le,
     div_mul_cancel₀ _ hlam.ne']
 
-/-- **FY (2.73)–(2.76), the ledger-(a) headline — PROVED under the authorized (2.74)
+/-- **FY (2.73)–(2.76), the ledger-(a) headline — PROVED under the stated (2.74)
 repair.** `(n h_n)⁻¹ Var(S_n(x)) → σ²(x) p(x) ∫ W²`.
 
 Assembled from three inputs: the diagonal (`tendsto_localized_second_moment_debt`, now
-**proved** under the authorized (C1) repair), the small lags `1 ≤ j ≤ smallLagCut h n`
+**proved** under the stated (C1) repair), the small lags `1 ≤ j ≤ smallLagCut h n`
 via `small_lag_covariance_bound` (total `m_n · h² / h = h/|log h| → 0`), and the large
 lags `j > smallLagCut h n` via `large_lag_covariance_bound` + (C3)'s weighted summability
 (`Σ_{j>m} α^{1−2/δ}(j) ≤ m^{−λ} Σ j^λ α^{1−2/δ}(j)`). Stationarity (`hstat`) turns the
@@ -1651,7 +1636,7 @@ supplies only the *unconditional* `MemLp (e 0) δ` (`heLδ`), which gives merely
 
 The gap is not repairable by interpolating the inputs that *are* available. Writing
 `β = 1 − 2/δ`, what the file has is `‖ξ_0‖_2 = O(√h)` (this **is** new, and comes from the
-authorized repair: `E ξ_0² = ∫ (σ²p)(x+hu)W(u)²du ≤ C h ∫W²`), `‖ξ_0‖_δ = O(1)`, and the
+stated repair: `E ξ_0² = ∫ (σ²p)(x+hu)W(u)²du ≤ C h ∫W²`), `‖ξ_0‖_δ = O(1)`, and the
 `(C2)` bound `|E[ξ_0 ξ_j]| = O(h²)` valid at *every* lag. Hölder interpolation at
 `2 < q ≤ δ` gives `‖ξ_0‖_q = O(h^{θ/2})` with `1/q = θ/2 + (1−θ)/δ`, and the Davydov
 exponent is then `1 − 2/q = β(1−θ)`, so the large-lag total is
@@ -1663,7 +1648,7 @@ every combination of the frozen inputs diverges.
 
 **Missing input, precisely.** FY's implicit (2.74): `E|ξ_0|^δ ≤ K h` (equivalently:
 `E(|e_0|^δ | X_0) ≤ M` a.e. together with `p` bounded). This is a *third* silent reading
-of (C1), independent of the two already authorized (`hσm`, `hσpb` bound `σ²·p`, i.e. the
+of (C1), independent of the two already stated (`hσm`, `hσpb` bound `σ²·p`, i.e. the
 **second** conditional moment; they do not bound the δ-th).
 
 **Statement strengthening (documented).** FY's (C1) as printed asserts only the
@@ -3055,7 +3040,7 @@ range: the crude `|E[ζ_0 ζ_j]| ≤ 4 L² C_W · E|W((X_0−x)/h)| = O(h)` (bou
 `h⁻¹ · m_n · O(h) = O(m_n) → ∞`, and Davydov gives `h^{2/δ−1} Σ_j α(j)^{1−2/δ} → ∞`
 since `2/δ < 1`.
 
-**Statement strengthening (documented).** Two repairs, both authorized:
+**Statement strengthening (documented).** Two repairs:
 (i) the whole (C1)–(C5) package is threaded, exactly as `var_localized_sum` carries it
 (`hstat`, `hce`, `hcv`, `hδ`/`heLδ`, the (2.73)/(2.74) readings `hσm`/`hσpb`/`heδc`/`hpb`,
 `hC2`, `hlam`/`hα`, `hWm`/`hWb`/`hW1`/`hW2`, `hh0`/`hh`/`hnh`), plus `0 < L`; the witness
@@ -3067,7 +3052,7 @@ with `f = ` the two singly-weighted ones produced by expanding the recentring.
 As in `var_localized_sum`, `hpx`, `hσc`, `hσpb` and `hσm` are carried for uniformity with
 the rest of the ledger and are not consumed by this estimate.
 
-**Status: PROVED**, over `tendsto_truncIndex_variance` (the covariance assembly, at an
+The proof uses `tendsto_truncIndex_variance` (the covariance assembly, at an
 arbitrary index family) and `tendsto_blockCount_mul_smallBlockLen_div` (the numerology),
 applied to the small-block index set `smallBlockIdx`. -/
 theorem tendsto_smallBlock_variance [IsProbabilityMeasure μ]
@@ -4431,7 +4416,7 @@ small-`n` ranges have to be separated: for `n ≥ N` the large-lag factor is its
 and for the finitely many `n < N` the crude `L¹` bound
 `E|S_n − S^L_n| ≤ √(n/h_n) C_W · 2 L^{1−δ} M` closes at fixed `n`.
 
-**PROVED (this wave)**, exactly along that route. The apparatus is the private block above:
+**PROVED**, exactly along that route. The apparatus is the private block above:
 `abs_sub_clamp_le` (`|z − clamp_L z| ≤ L^{1−δ}|z|^δ`) feeds `exists_truncErr_repr_decay`,
 which upgrades `exists_truncErr_repr` to a recentring constant `c = M L^{1−δ}` that *decays*
 in `L`; `residual_basic` collects, at **every** `n` and `L > 0`, the `L²` membership of
@@ -5625,7 +5610,6 @@ private theorem pairAlphaCoeff_shift [IsProbabilityMeasure μ]
   rfl
 
 
-
 /-- `l_n / n → 0`. -/
 private theorem tendsto_bigBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     (hh : Tendsto h atTop (𝓝 0)) :
@@ -6070,8 +6054,6 @@ private theorem tendsto_blockVar_sum [IsProbabilityMeasure μ]
   exact hsum.congr fun n => by ring
 
 
-
-
 /-- **The row-CLT in product-of-charFuns form.** A uniformly negligible bounded array of
 zero-mean rows with converging row variances has `∏ᵢ φ_{Y_{n,i}}(u) → φ_{N(0,σ²)}(u)`, with
 **no independence assumed**: the product is transported to an independent surrogate on the
@@ -6170,7 +6152,6 @@ private theorem tendsto_prod_charFun_of_uniformly_small [IsProbabilityMeasure μ
   rw [iIndepFun.charFun_map_fun_sum_eq_prod (fun i => (hZm n i).aemeasurable) (hindep n),
     Finset.prod_apply]
   exact Finset.prod_congr rfl fun i _ => by rw [hlaw n i]
-
 
 
 /-- **FY's Volkonskii–Rozanov step (2.77).** The charFun of the sum of the big blocks is
@@ -6312,7 +6293,6 @@ private theorem norm_charFun_blockSum_sub_prod_le [IsProbabilityMeasure μ]
   exact hVR
 
 
-
 /-- `n h_n → ∞` under (C5). -/
 private theorem tendsto_mul_bandwidth_atTop {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     (hh : Tendsto h atTop (𝓝 0))
@@ -6352,7 +6332,6 @@ private theorem tendsto_bigBlockLen_div_sqrt {h : ℕ → ℝ} (hh0 : ∀ n, 0 <
     mul_le_mul_of_nonneg_left hle (by positivity)
   refine hstep.trans (le_of_eq ?_)
   field_simp
-
 
 
 /-- `truncErr` is measurable (the conditional expectation is `σ(X_t)`-measurable). -/
@@ -6400,7 +6379,6 @@ private theorem tendsto_integral_abs_of_tendsto_sq [IsProbabilityMeasure μ] {D 
   have hnn : (0 : ℝ) ≤ ∫ ω, |D n ω| ∂μ := integral_nonneg fun ω => abs_nonneg _
   rw [Real.dist_eq, sub_zero, abs_of_nonneg hnn]
   linarith
-
 
 
 /-- Eventually there is at least one block. -/
@@ -6675,7 +6653,7 @@ private theorem tendsto_charFun_locTruncSum_pos [IsProbabilityMeasure μ]
   refine hcomb.congr fun n => ?_
   ring
 
-/-- **FY (2.77)–(2.81) + (2.84), the fixed-level limit — DEBT.** For each truncation
+/-- **FY (2.77)–(2.81) + (2.84), the fixed-level limit.** For each truncation
 level `L` the truncated statistic is asymptotically `N(0, ν_L)`, and `ν_L → σ²(x) p(x) ∫W²`.
 
 This is the Bernstein-block core of §2.7.7: split `locTruncSum` into `k_n` big blocks
@@ -6688,7 +6666,7 @@ corollary `tendsto_charFun_rowSum_gaussian_of_uniformly_small` — applicable be
 truncated block summands carry the envelope `l_n L CW / √(n h_n) → 0`, which is exactly
 why `l_n = [√(n h_n)/log n]` is chosen. The block-variance input is ledger (a).
 
-**Status.** All three blocking inputs are cleared: (i) ledger (a) (`var_localized_sum`, and
+The proof combines three inputs: (i) ledger (a) (`var_localized_sum`, and
 its truncated analogue `tendsto_truncArray_variance` built here), (ii)
 `tendsto_smallBlock_variance`, (iii) the Volkonskii–Rozanov factorization
 (`norm_integral_prod_sub_prod_integral_le_of_pos` in `Mixing/Inequalities.lean`; the frozen
@@ -6753,7 +6731,7 @@ Doob–Dynkin (`StronglyMeasurable.exists_eq_measurable_comp`), not an assumptio
 with the three genuine hypotheses on `σ_L² := sL L − (mL L)²`:
 `hσLc` (continuity at `x` of `σ_L²·p`, which is the (2.73)-for-truncated-errors that the
 witness above refutes as underivable), `hσLb` (`σ_L²·p` bounded, the level-`L` form of the
-already-authorized `hσpb`), and `hσL84` (FY's (2.84) `σ_L²(x) → σ²(x)`, which is the second
+already-stated `hσpb`), and `hσL84` (FY's (2.84) `σ_L²(x) → σ²(x)`, which is the second
 conclusion; it is *not* implied by `hσLc` — a.e.-in-`v` convergence `σ_L² → σ²` plus
 continuity of each factor at `x` says nothing about the value at the single point `x`).
 All three are consequences of the one conceptual repair the witness identifies, namely that
@@ -6763,7 +6741,7 @@ formulation is heavier and buys nothing else. The two (2.74) hypotheses `heδc`/
 carried here solely because this statement consumes ledger (a); see `var_localized_sum`'s
 docstring for the proof that they are not derivable from (C1)–(C5) as formalized.
 
-**PROVED (this wave), in the repaired form.** The Bernstein-block core was run in full. The
+**PROVED, in the repaired form.** The Bernstein-block core was run in full. The
 private apparatus, in the order it is built above, is:
 * `condExp_truncErr_sq` — `E((e^L_0)² | X_0) = sL L(X_0) − mL L(X_0)²`, i.e. the truncated
   array's conditional variance really is the `σ_L²` of the repair; with `truncErr_zero_repr`

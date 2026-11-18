@@ -18,14 +18,11 @@ Cambridge University Press, §3.4, Definition 3.4.1 and Lemma 3.4.2.
 
 **Proof formalization notes.** Carrier `EuclideanSpace ℝ (Fin n)`; the norm
 is a `⨆` of `ℝ≥0∞`-numbers over the unit sphere — a supremum of *numbers*,
-so the batch's E-sup measurability policy is not triggered. Constants:
+so no uncountable supremum of functions is needed. Constants:
 Lemma 3.4.2's lower bound holds with constant `1` (coordinate directions
 `EuclideanSpace.single i 1`); the upper bound is frozen at `C = √18 = 3√2`
 (formula: B3 ∘ B2 through `subGaussianNorm_weighted_sum_le` at
-`∑ vᵢ² = ‖v‖² = 1`; book's absolute `C`). Work-item single named-sorry
-fallback: `subGaussianVecNorm_le_of_indep` (Lemma 3.4.2 upper — the
-inner-product/sphere plumbing); the definitions, the lower bound, and the
-marginal predicate lemmas must close.
+`∑ vᵢ² = ‖v‖² = 1`; book's absolute `C`).
 
 **Bibliographic comments.** The definition of sub-Gaussian random vectors
 via one-dimensional marginals and the control of a vector norm by coordinate
@@ -85,7 +82,7 @@ theorem subGaussianNorm_coord_le_vecNorm {n : ℕ}
     funext ω
     rw [PiLp.inner_apply, Finset.sum_eq_single i]
     · change (EuclideanSpace.single i (1 : ℝ)) i * (starRingEnd ℝ) (X ω i) = X ω i
-      simp
+      simp [PiLp.single_apply]
     · intro j _ hj
       change (EuclideanSpace.single i (1 : ℝ)) j * (starRingEnd ℝ) (X ω j) = 0
       simp [PiLp.single_apply, ite_eq_right hj]
@@ -131,7 +128,7 @@ theorem isSubGaussianVec_of_coords {n : ℕ}
 /-- **Lemma 3.4.2, upper bound** (HDP §3.4; frozen constant `√18 = 3√2`,
 formula B3∘B2 via `subGaussianNorm_weighted_sum_le` at `‖v‖ = 1`): for
 independent mean-zero coordinates with uniform ψ₂ bound `K`,
-`‖X‖_{ψ₂} ≤ √18 · K`. This work item's single named-sorry fallback. -/
+`‖X‖_{ψ₂} ≤ √18 · K`. -/
 theorem subGaussianVecNorm_le_of_indep
     {μ : Measure Ω}
     -- LEAN-ONLY: probability measure (bridge B2/B3 requirement)

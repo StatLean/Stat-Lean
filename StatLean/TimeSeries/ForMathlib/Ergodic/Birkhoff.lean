@@ -12,8 +12,7 @@ probability space: the maximal ergodic theorem (Garsia's proof), a.e. convergenc
 Birkhoff averages to the conditional expectation on the invariant σ-algebra, and the
 ergodic corollary (limit = the space mean).
 
-Consumed by `Mixing/LimitTheorems.slln_of_alphaMixing_debt` (FY Prop 2.8), whose closing
-wave recorded the four-item build list this file is item (iii) of.
+Used by `Mixing/LimitTheorems.slln_of_alphaMixing_debt` (FY Prop 2.8).
 
 **Reference.** Birkhoff (1931); the maximal-inequality proof is Garsia (1965). FY cite
 Doob 1953 / Ibragimov–Linnik 1971 for the mixing SLLN.
@@ -482,7 +481,7 @@ theorem birkhoffAverage_ae_tendsto_integral [IsProbabilityMeasure μ]
       (fun s _ _ => (integrable_const _).integrableOn) (fun s hs _ => ?_)
       aestronglyMeasurable_const
     have hs' : MeasurableSet s ∧ f ⁻¹' s = s := hs
-    rcases hf.ae_empty_or_univ hs'.1 hs'.2 with h | h
+    rcases hf.ae_empty_or_univ hs'.1.nullMeasurableSet (hs'.2.eventuallyEq) with h | h
     · rw [setIntegral_congr_set h, setIntegral_congr_set h]
       simp
     · rw [setIntegral_congr_set h, setIntegral_congr_set h]

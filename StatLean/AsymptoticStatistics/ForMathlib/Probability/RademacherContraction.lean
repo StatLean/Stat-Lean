@@ -1,6 +1,7 @@
 import StatLean.AsymptoticStatistics.ForMathlib.Probability.Rademacher
 import Mathlib.MeasureTheory.Integral.Pi
 import Mathlib.Order.ConditionallyCompleteLattice.Finset
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Rademacher contractions
@@ -36,7 +37,7 @@ theorem measurePreserving_bool_not_rademacher :
   apply PMF.ext
   intro b
   cases b <;>
-    simp [rademacherPMF, PMF.map_apply, PMF.uniformOfFintype_apply]
+    simp [rademacherPMF, PMF.map_apply, PMF.uniform_apply]
 
 theorem measurePreserving_rademacherCoordinateFlip
     {n : ℕ} (k : Fin n) :

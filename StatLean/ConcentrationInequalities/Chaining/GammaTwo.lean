@@ -31,9 +31,7 @@ the exhausting sequence `seq k = T` once `2^{2^k} ≥ |T|`. The book's "there
 must be some `K` with `T_K = T`" step becomes the pseudometric-safe
 `AdmissibleSequence.exists_eventually_dist_zero`: finite `T` + finite
 functional ⇒ series terms → 0 ⇒ eventually a net point at distance `0`
-(X-values are then a.e.-identified downstream). Named-sorry fallback of this
-work item: `AdmissibleSequence.exists_eventually_dist_zero` (definitions,
-finiteness, and the diameter lemmas proved).
+(X-values are then a.e.-identified downstream).
 
 **Bibliographic comments.** The γ₂ functional and generic chaining are due to
 M. Talagrand, "Regularity of Gaussian processes," *Acta Math.* 159 (1987),

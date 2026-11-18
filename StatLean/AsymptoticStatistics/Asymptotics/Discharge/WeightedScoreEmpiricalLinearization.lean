@@ -1272,7 +1272,7 @@ private theorem scaled_setIntegral_tendsto_zero_of_scaled_mass_and_l2_bounded
     (Eventually.of_forall fun _ => abs_nonneg _) ?_
   filter_upwards [hbound] with n hn
   let oneS : Omega → ℝ := (S n).indicator (fun _ => 1)
-  have hone : MemLp oneS 2 (P n) := (memLp_const 1).indicator (hS n)
+  have hone : MemLp oneS 2 (P n) := (memLp_const 1).indicator (hS n).nullMeasurableSet
   have hone2 : MemLp oneS (ENNReal.ofReal (2 : ℝ)) (P n) := by
     norm_num
     exact hone

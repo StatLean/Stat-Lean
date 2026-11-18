@@ -17,11 +17,13 @@
     {"id":"min_eq_left","label":"min_eq_left","full":"min_eq_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"MeasureTheory.Measure.map_apply","label":"map_apply","full":"MeasureTheory.Measure.map_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Map"},
     {"id":"MeasureTheory.Measure.restrict_apply","label":"restrict_apply","full":"MeasureTheory.Measure.restrict_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Restrict"},
+    {"id":"MeasureTheory.Measure.bindProd","label":"bindProd","full":"MeasureTheory.Measure.bindProd","kind":"repo","decl":"def","module":"StatLean.ForMathlib.BindProd"},
     {"id":"StatLean.StatisticalModels.Survival.measurable_censorObserve","label":"measurable_censorObserve","full":"StatLean.StatisticalModels.Survival.measurable_censorObserve","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Survival.Censoring"},
-    {"id":"MeasureTheory.Measure.prod_apply","label":"prod_apply","full":"MeasureTheory.Measure.prod_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prod"},
+    {"id":"MeasureTheory.Measure.bindProd_eq_prod","label":"bindProd_eq_prod","full":"MeasureTheory.Measure.bindProd_eq_prod","kind":"repo","decl":"thm","module":"StatLean.ForMathlib.BindProd"},
     {"id":"MeasureTheory.sigmaFinite_of_locallyFinite","label":"sigmaFinite_of_locallyFinite","full":"MeasureTheory.sigmaFinite_of_locallyFinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.SFinite"},
     {"id":"MeasureTheory.IsFiniteMeasure.toIsLocallyFiniteMeasure","label":"toIsLocallyFiniteMeasure","full":"MeasureTheory.IsFiniteMeasure.toIsLocallyFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"MeasureTheory.Measure.prod_apply","label":"prod_apply","full":"MeasureTheory.Measure.prod_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prod"},
     {"id":"MeasureTheory.withDensity_apply","label":"withDensity_apply","full":"MeasureTheory.withDensity_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
     {"id":"Set.indicator_of_mem","label":"indicator_of_mem","full":"Set.indicator_of_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Notation.Indicator"},
     {"id":"Set.indicator_of_notMem","label":"indicator_of_notMem","full":"Set.indicator_of_notMem","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Notation.Indicator"},
@@ -29,7 +31,8 @@
     {"id":"MeasureTheory.lintegral_indicator","label":"lintegral_indicator","full":"MeasureTheory.lintegral_indicator","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
     {"id":"Measurable.prodMk","label":"prodMk","full":"Measurable.prodMk","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"Measurable.min","label":"min","full":"Measurable.min","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Order"},
-    {"id":"measurable_to_bool","label":"measurable_to_bool","full":"measurable_to_bool","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"}
+    {"id":"measurable_to_bool","label":"measurable_to_bool","full":"measurable_to_bool","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"MeasureTheory.Measure.prod_eq_of_sfinite","label":"prod_eq_of_sfinite","full":"MeasureTheory.Measure.prod_eq_of_sfinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prod"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"StatLean.StatisticalModels.Survival.uncensoredSubLaw"},
@@ -47,17 +50,20 @@
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"min_eq_left"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.Measure.map_apply"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.Measure.restrict_apply"},
+    {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.Measure.bindProd"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"StatLean.StatisticalModels.Survival.measurable_censorObserve"},
-    {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.Measure.prod_apply"},
+    {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.Measure.bindProd_eq_prod"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.sigmaFinite_of_locallyFinite"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.IsFiniteMeasure.toIsLocallyFiniteMeasure"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.Measure.prod_apply"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.withDensity_apply"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"Set.indicator_of_mem"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"Set.indicator_of_notMem"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.measure_empty"},
     {"source":"StatLean.StatisticalModels.Survival.uncensoredSubLaw_censoredLaw","target":"MeasureTheory.lintegral_indicator"},
     {"source":"StatLean.StatisticalModels.Survival.censoredLaw","target":"StatLean.StatisticalModels.Survival.censorObserve"},
+    {"source":"StatLean.StatisticalModels.Survival.censoredLaw","target":"MeasureTheory.Measure.bindProd"},
     {"source":"StatLean.StatisticalModels.Survival.measurable_censorObserve","target":"StatLean.StatisticalModels.Survival.censorObserve"},
     {"source":"StatLean.StatisticalModels.Survival.measurable_censorObserve","target":"Measurable.prodMk"},
     {"source":"StatLean.StatisticalModels.Survival.measurable_censorObserve","target":"Measurable.min"},
@@ -68,6 +74,8 @@
     {"source":"StatLean.StatisticalModels.Survival.measurable_censorObserve","target":"measurable_snd"},
     {"source":"StatLean.StatisticalModels.Survival.measurable_censorObserve","target":"measurable_to_bool"},
     {"source":"StatLean.StatisticalModels.Survival.measurable_censorObserve","target":"Set.ext"},
-    {"source":"StatLean.StatisticalModels.Survival.measurable_censorObserve","target":"measurableSet_le"}
+    {"source":"StatLean.StatisticalModels.Survival.measurable_censorObserve","target":"measurableSet_le"},
+    {"source":"MeasureTheory.Measure.bindProd_eq_prod","target":"MeasureTheory.Measure.bindProd"},
+    {"source":"MeasureTheory.Measure.bindProd_eq_prod","target":"MeasureTheory.Measure.prod_eq_of_sfinite"}
   ]
 }

@@ -1,6 +1,7 @@
 import StatLean.StatisticalModels.MixedEffects.Defs
 import StatLean.StatisticalModels.ForMathlib.CovarianceMatrix
 import StatLean.StatisticalModels.Gaussian.Affine
+import StatLean.ForMathlib.BindProd
 
 /-!
 # Marginal moments and the Gaussian marginal of the linear mixed model
@@ -90,7 +91,7 @@ private theorem measurable_innerMap :
 /-- LEAN-ONLY: the law of `Z b + ε` — `lmmLaw` without the fixed-effects offset. -/
 private noncomputable def lmmInner (G : Measure (EuclideanSpace ℝ (Fin q)))
     (R : Measure (EuclideanSpace ℝ (Fin n))) : Measure (EuclideanSpace ℝ (Fin n)) :=
-  (G.prod R).map fun be => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2
+  (G.bindProd R).map fun be => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2
 
 /-- LEAN-ONLY: `lmmLaw` is the translation of `lmmInner` by `Xβ`. -/
 private theorem lmmLaw_eq_map_lmmInner (G : Measure (EuclideanSpace ℝ (Fin q)))
@@ -144,7 +145,8 @@ private theorem lmmInner_eq_conv (G : Measure (EuclideanSpace ℝ (Fin q)))
       z.1 + z.2 := measurable_add
   calc lmmInner D G R
       = (G.prod R).map ((fun z : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
-            z.1 + z.2) ∘ Prod.map (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z x) id) := rfl
+            z.1 + z.2) ∘ Prod.map (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z x) id) := by
+          rw [lmmInner, Measure.bindProd_eq_prod]; rfl
     _ = ((G.prod R).map (Prod.map (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z x) id)).map
           (fun z => z.1 + z.2) :=
         (Measure.map_map hadd ((measurable_matAct D.Z).prodMap measurable_id)).symm
@@ -189,7 +191,7 @@ theorem meanVec_lmmLaw (G : Measure (EuclideanSpace ℝ (Fin q)))
       = ∫ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n),
           (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β
             + Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2) ∂(G.prod R) := by
-    rw [lmmLaw]
+    rw [lmmLaw, Measure.bindProd_eq_prod]
     exact integral_map (measurable_lmmMap D β).aemeasurable aesm_self
   -- `Pi.add` reshapes the integrand, so the two splits go through explicit `have`s
   have hsplit1 : ∫ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n),
@@ -237,7 +239,8 @@ theorem covMatrix_lmmLaw (G : Measure (EuclideanSpace ℝ (Fin q)))
   -- the fixed-effects offset is a constant and drops out of every covariance entry
   have hdrop : covMatrix (lmmLaw D β G R) = covMatrix (lmmInner D G R) := by
     ext i j
-    rw [lmmLaw, lmmInner, covMatrix_apply, covMatrix_apply,
+    rw [lmmLaw, lmmInner, Measure.bindProd_eq_prod,
+      covMatrix_apply, covMatrix_apply,
       covariance_map_fun (aesm_proj i) (aesm_proj j) (measurable_lmmMap D β).aemeasurable,
       covariance_map_fun (aesm_proj i) (aesm_proj j) (measurable_innerMap D).aemeasurable]
     simp only [PiLp.add_apply, add_assoc]
@@ -249,7 +252,7 @@ theorem covMatrix_lmmLaw (G : Measure (EuclideanSpace ℝ (Fin q)))
             + Matrix.toEuclideanLin (𝕜 := ℝ) (1 : Matrix (Fin n) (Fin n) ℝ) be.2 := by
     funext be
     rw [toEuclideanLin_one_apply]
-  rw [hdrop, lmmInner, hone,
+  rw [hdrop, lmmInner, Measure.bindProd_eq_prod, hone,
     covMatrix_map_add_prod G R D.Z (1 : Matrix (Fin n) (Fin n) ℝ) hG2 hR2]
   simp
 

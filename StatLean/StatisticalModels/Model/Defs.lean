@@ -23,7 +23,7 @@ This file supplies the **bridge to Mathlib's measurable carrier** `Kernel Θ �
 Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.1 (the model
 as a family of distributions) and §1.4 (dominated families). (`TPE2 §1.1`, `TPE2 §1.4`.)
 
-**Proof formalization notes.** Laptop-only data model — definitions and `rfl`-level lemmas only.
+**Proof formalization notes.** Data model — definitions and `rfl`-level lemmas only.
 We deliberately introduce **no new structure**: the bare-family convention is already canonized
 by `PointEstimation.Model.Defs`, and `ProbabilityTheory.Kernel` together with `[IsMarkovKernel]`
 already *is* the bundled measurable model, so a wrapper structure would only orphan the existing

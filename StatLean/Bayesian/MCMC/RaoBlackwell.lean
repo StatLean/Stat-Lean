@@ -16,12 +16,10 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 unnumbered; cites Gelfand and Smith 1990); the classical Rao–Blackwell theorem is the §2 exercise
 tradition.
 
-**Proof formalization notes.** Stretch item (2F.8). The route is L² contractivity of conditional
+**Proof formalization notes.** The route is L² contractivity of conditional
 expectation: `eLpNorm_condExp_le : eLpNorm (μ[f|m]) 2 μ ≤ eLpNorm f 2 μ` applied to `f := T − c`
 (`condExp_sub` and `condExp_const` move the constant through), then the `eLpNorm`-squared ↔
-`∫⁻ sqLoss` bridge (`sqLoss c t = ‖t − c‖ₑ^2` up to symmetry of the square). If the exponent
-bridging resists, this file's results are droppable without downstream impact (nothing consumes
-them; recorded in the roadmap).
+`∫⁻ sqLoss` bridge (`sqLoss c t = ‖t − c‖ₑ^2` up to symmetry of the square).
 
 **Bibliographic comments.** The Rao–Blackwell theorem is C. R. Rao ("Information and the accuracy
 attainable in the estimation of statistical parameters," *Bull. Calcutta Math. Soc.* 37 (1945),
@@ -38,7 +36,7 @@ namespace StatLean.Bayesian
 
 variable {𝓧 : Type*} {m𝓧 : MeasurableSpace 𝓧}
 
-/-- **Rao–Blackwell for quadratic loss** (Robert §6.3.4, stretch): conditioning an integrable
+/-- **Rao–Blackwell for quadratic loss** (Robert §6.3.4): conditioning an integrable
 real statistic on a sub-σ-algebra does not increase its quadratic risk about any center `c`. -/
 theorem raoBlackwell_sqLoss {μ : Measure 𝓧} [IsFiniteMeasure μ] {m : MeasurableSpace 𝓧}
     -- LEAN-ONLY: `m` is a sub-σ-algebra of the ambient space (regularity)

@@ -12,42 +12,39 @@ The bridge between the Markov layer (`ForMathlib/Markov/*`) and the mixing coeff
 * **eq. (2.58) (Davydov 1973)** — for a strictly stationary Markov process with kernel
   `κ` and marginal `F`, the β-coefficient is the mean total-variation distance of the
   `n`-step transition law from the marginal: `β(n) = ∫ ‖κⁿ(x, ·) − F‖_TV dF(x)`.
-  **PROVED (2026-08-09, wave 7)**, at any **countably generated** state space — a
-  hypothesis that is not removable (formalized witness
-  `betaMixCoeff_eq_integral_tvDist_of_markov_false`) and that `ℝ` satisfies, so the scalar
-  form `betaCoeff_eq_integral_tvDist_debt` is closed as frozen.
+  **Proved** at any **countably generated** state space — a hypothesis that is not
+  removable (formalized witness `betaMixCoeff_eq_integral_tvDist_of_markov_false`) and that
+  `ℝ` satisfies, so the scalar form `betaCoeff_eq_integral_tvDist_debt` holds as frozen.
 * **eq. (2.59)** — a geometric-ergodicity envelope `‖κⁿ(x,·) − F‖_TV ≤ A(x) ρⁿ` with
   `∫ A dF < ∞` gives exponential β-mixing: `β(n) ≤ ρⁿ ∫ A dF`. **Derived here** from
-  the (2.58) debt by monotone integration.
+  (2.58) by monotone integration.
 * **Bradley reduction (FY §2.6.1(vi), cited Bradley Thms 4.1–4.2)** — for stationary
   Markov chains the process coefficients collapse to the two-marginal coefficients of
-  `(X_0, X_n)`. **Both the α- and the β-case are proved here** (2026-08-09; the β-case
-  2026-08-09, wave 4).
+  `(X_0, X_n)`. **Both the α- and the β-case are proved here.**
 
-**Status (2026-08-09, wave 5): the whole bridge is now stated over an arbitrary measurable
-state space `E`** (`IsMarkovOf : (ℤ → Ω → E) → Kernel E E → Measure Ω → Prop`, with
+**The whole bridge is stated over an arbitrary measurable state space `E`**
+(`IsMarkovOf : (ℤ → Ω → E) → Kernel E E → Measure Ω → Prop`, with
 `sigmaLE'`/`sigmaGE'` the state-space-free forms of `Process/Defs.lean`'s
-`sigmaLE`/`sigmaGE`, definitionally equal to them at `E = ℝ`). Nothing in the proofs used
-any property of `ℝ` beyond measurability, so the generalisation is a change of statements
-only; the frozen real-valued theorems (`alphaCoeff_eq_two_marginal_debt`,
-`betaCoeff_eq_integral_tvDist_debt`, `isBetaMixing_of_geometric_envelope`) are kept as
-`E = ℝ` corollaries. Two by-products of the generalisation:
+`sigmaLE`/`sigmaGE`, definitionally equal to them at `E = ℝ`). Nothing in the proofs uses
+any property of `ℝ` beyond measurability; the frozen real-valued theorems
+(`alphaCoeff_eq_two_marginal_debt`, `betaCoeff_eq_integral_tvDist_debt`,
+`isBetaMixing_of_geometric_envelope`) are `E = ℝ` corollaries. Two by-products of the
+generalisation:
 
-* strict stationarity turned out to be **unused** by the Bradley reduction (α and β), and
+* strict stationarity is **unused** by the Bradley reduction (α and β), and
   Davydov's identity only needs *equality of the one-dimensional marginals*, so both are
-  now stated with `hmarg : ∀ s t, μ.map (X s) = μ.map (X t)`, which
+  stated with `hmarg : ∀ s t, μ.map (X s) = μ.map (X t)`, which
   `map_eq_map_of_isStrictlyStationary` supplies in the scalar case;
-* new, **`sorry`-free α- and β-routes** to the model statements —
+* α- and β-routes to the model statements —
   `alphaMixCoeff_two_marginal_le_of_envelope` (the inequality half of (2.58) at the α
   level), `alphaMixCoeff_le_of_measurable_state` (process σ-algebras sit inside state
   σ-algebras) and their composite `alphaCoeff_le_of_state_envelope`, which turns a
   geometric TV envelope for the state kernel into `α_Y(n) ≤ C ρ^{n−1}` for the observed
   series, plus the β-analogues `betaMixCoeff_two_marginal_le_of_envelope` (the `≤` half of
   (2.58), which needs no Hahn selection) and `betaCoeff_le_of_state_envelope`. **Neither
-  route passes through the open Davydov brick.**
+  route passes through Davydov's identity.**
 
-**Status (2026-08-09, wave 4).** Two of the three bricks are now **PROVED** and
-`alphaCoeff_eq_two_marginal_debt` is axiom-clean:
+**The two Bradley bricks.**
 
 * `condExp_sigmaGE_indicator_brick` — the Markov property for the whole future σ-algebra
   (`IsMarkovOf` only supplies it one coordinate at a time). Proved in three layers inside
@@ -71,31 +68,20 @@ only; the frozen real-valued theorems (`alphaCoeff_eq_two_marginal_debt`,
   at time `n`, sums to `1`, and is nonnegative), so **no reverse Markov property is
   needed**. Both steps only *increase* the partition sum, so the sup collapses.
 
-**Status (2026-08-09, wave 6): the one open brick is FALSE AS FROZEN.**
+**Davydov's identity needs countable generation.** At a general state space
 `betaMixCoeff_two_marginal_eq_integral_tvDist_brick`, and with it the public
-`betaMixCoeff_eq_integral_tvDist_of_markov`, are refuted at a general state space by the
-countable–cocountable witness of `section DavydovWitness`
-(`betaMixCoeff_two_marginal_eq_integral_tvDist_false`,
-`betaMixCoeff_eq_integral_tvDist_of_markov_false`, both axiom-clean): the two sides come
-out `0` and `1`. The repair is to add `[MeasurableSpace.CountablyGenerated E]` — the
-hypothesis under which the `≥` half's jointly measurable Hahn selection exists. Since the
-statements are frozen the `sorry` stays; it is a statement debt, not a proof debt. Nothing
+`betaMixCoeff_eq_integral_tvDist_of_markov`, are refuted by the countable–cocountable
+witness of `section DavydovWitness` (`betaMixCoeff_two_marginal_eq_integral_tvDist_false`,
+`betaMixCoeff_eq_integral_tvDist_of_markov_false`): the two sides come out `0` and `1`.
+Both statements therefore carry `[MeasurableSpace.CountablyGenerated E]`. Nothing
 downstream uses the identity (the model routes use the *inequality*
 `betaMixCoeff_two_marginal_le_of_envelope`, which is correct at a general `E`).
 
-**The one open brick** is `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's
-identity proper — note that wave 5's `betaMixCoeff_two_marginal_le_of_envelope` proves its
-`≤` half in envelope form, so nothing downstream depends on it any more; its docstring records the
-*verified* calibration demanded below and the proof of each direction — the `≥` half, which needs a
-measurable Hahn decomposition for `κⁿ(x,·) − F`
-approximated by rectangles, is the genuinely hard one).
-
-**Normalization warning (for the closure session).** `tvDist` is the sup-over-events
-distance `sup_B |P(B) − Q(B)|`; the book's `‖·‖_TV` is twice that. FY's (2.58) is
+**Normalization warning.** `tvDist` is the sup-over-events distance
+`sup_B |P(B) − Q(B)|`; the book's `‖·‖_TV` is twice that. FY's (2.58) is
 stated for the conditional form of β, which in the sup-over-events normalization reads
-`β(n) = ∫ tvDist (κⁿ x) F dF(x)` with **no factor 2** — verify this calibration against
-the finite-partition definition of `betaMixCoeff` before proving anything downstream
-of the debt.
+`β(n) = ∫ tvDist (κⁿ x) F dF(x)` with **no factor 2**; the calibration against the
+finite-partition definition of `betaMixCoeff` is checked in the brick's docstring.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.1,
 eqs. (2.58)–(2.59) (p. 70). (`FY §2.6.1 (2.58)–(2.59)`.)
@@ -863,9 +849,9 @@ lemma sigmaGE'_shift (V : ℤ → Ω → E) (k n : ℤ) :
 space `E` to a kernel on `E`: the conditional law of `X_{t+n}` given the past through time
 `t` is `κⁿ(X_t, ·)`, expressed through conditional expectations of indicators.
 
-**Generalized (2026-08-09, wave 5)** from `Kernel ℝ ℝ` to `Kernel E E`. The scalar case
-`E = ℝ` is unchanged (`sigmaLE'` is definitionally `sigmaLE`); the vector case is what the
-model debts of `Mixing/Relations.lean` consume, since the Markov object of an ARMA or a
+Stated for `Kernel E E`. The scalar case
+`E = ℝ` is the original form (`sigmaLE'` is definitionally `sigmaLE`); the vector case is what
+the model statements of `Mixing/Relations.lean` consume, since the Markov object of an ARMA or a
 GARCH is its *state* vector, not the observed scalar series. -/
 def IsMarkovOf (X : ℤ → Ω → E) (κ : ProbabilityTheory.Kernel E E) (μ : Measure Ω) :
     Prop :=
@@ -1312,7 +1298,7 @@ end MarkovFuture
 /-- **BRICK — the two-marginal reduction for `β`** (Bradley Thms 4.1–4.2, the β-analogue of
 `alphaCoeff_eq_two_marginal_debt`).
 
-**Status (2026-08-09, wave 4): PROVED.** `≥` is `betaMixCoeff_mono'`. For `≤`, a partition
+`≥` is `betaMixCoeff_mono'`. For `≤`, a partition
 pair `({A_i} ⊆ 𝓕_{≤0}, {B_j} ⊆ 𝓕_{≥n})` is pushed onto `(σ(X_0), σ(X_n))` in two steps that
 only increase the partition sum:
 
@@ -1387,7 +1373,7 @@ theorem betaMixCoeff_two_marginal_of_markov [IsProbabilityMeasure μ]
     hstepA.trans hstepB
   linarith
 
-/-! ### REFUTATION of Davydov's identity at a general state space (2026-08-09, wave 6)
+/-! ### REFUTATION of Davydov's identity at a general state space
 
 Davydov's identity is **false** as frozen: at an arbitrary measurable state space `E` the
 `≥` half fails, and it fails by the maximal amount (`0 = β` against `1 = ∫ tvDist dF`).
@@ -1702,21 +1688,19 @@ private lemma abs_toReal_sub_le_tvDist {P Q : Measure E} [IsProbabilityMeasure P
     exact h2
 
 /-! ### Countable generation: the total-variation distance as a partition limit
-(wave 7, 2026-08-09)
 
-The repair prescribed by wave 6 for Davydov's identity. On a **countably generated** state
+On a **countably generated** state
 space the sup-over-events distance of two probability measures is already determined by the
 canonical increasing sequence of finite partitions `MeasurableSpace.countablePartition E n`:
 
 `‖P − Q‖_TV = ⨆ n, ½ Σ_{V ∈ 𝒫ₙ} |P V − Q V|`   (`tvDist_eq_iSup_pdist`).
 
-This is exactly the ingredient the `≥` half of Davydov's identity needs, and it replaces
-wave 4's costing of that half (a *jointly measurable Hahn selection* plus *rectangle
-approximation of a product-measurable set*) by something strictly smaller: the `β`-side
-partition pair is built from a **fixed** partition of the state space on the future side and
-from the **sign cells** of the finitely many kernel discrepancies on the past side, so no
-`x`-dependent Hahn set ever has to be selected measurably. The only genuinely
-measure-theoretic input is the density of the generated algebra, which Mathlib supplies as
+This is exactly the ingredient the `≥` half of Davydov's identity needs, and it avoids both
+a jointly measurable Hahn selection and the rectangle approximation of a product-measurable
+set: the `β`-side partition pair is built from a **fixed** partition of the state space on
+the future side and from the **sign cells** of the finitely many kernel discrepancies on the
+past side, so no `x`-dependent Hahn set ever has to be selected measurably. The only
+genuinely measure-theoretic input is the density of the generated algebra, which Mathlib supplies as
 `MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing`.
 
 The countable-generation hypothesis is not removable: `betaMixCoeff_cocnt_eq_zero` above is
@@ -2285,8 +2269,8 @@ partition pair is: on the future side, `𝒫ₘ` pulled back along `X_n`; on the
 back along `X_0`. On a sign cell every covariance integral has a constant sign, so the
 absolute values come out of the integrals and the double sum collapses to `∫ pdist dF`.
 
-This is where wave 4's "jointly measurable Hahn selection" is avoided: the future-side sets
-are a *fixed* partition of `E`, so no `x`-dependent Hahn set is ever selected. -/
+The future-side sets are a *fixed* partition of `E`, so no `x`-dependent Hahn set is ever
+selected. -/
 private lemma integral_pdist_le_betaMixCoeff [IsProbabilityMeasure μ]
     [MeasurableSpace.CountablyGenerated E]
     {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
@@ -2492,7 +2476,6 @@ private lemma integral_pdist_le_betaMixCoeff [IsProbabilityMeasure μ]
     (hmeas ((n : ℤ))).comap_le hAm hBm hAd hAc hBd hBc
 
 
-
 /-- **BRICK — Davydov's identity at the two-marginal level** (FY eq. (2.58) proper).
 
 `β(σ(X_0), σ(X_n)) = ∫ tvDist (κⁿ x) F dF(x)`.
@@ -2520,11 +2503,9 @@ statement carries **no factor 2**, confirming the module docstring's warning.
   induced two-cell partitions realise the supremum in the limit. This half is the genuinely
   hard one (it is where the finite-partition formula meets the disintegration).
 
-**Status (2026-08-09, wave 7): PROVED, with the wave-6 repair applied.** The hypothesis
-`[MeasurableSpace.CountablyGenerated E]` is now on the statement (and on the public
-`betaMixCoeff_eq_integral_tvDist_of_markov`); the two refutation witnesses stay, and are
-exactly the record that the hypothesis is not removable. The proof runs the two halves as
-follows.
+**Proof.** The hypothesis `[MeasurableSpace.CountablyGenerated E]` is on the statement (and
+on the public `betaMixCoeff_eq_integral_tvDist_of_markov`); the two refutation witnesses are
+the record that it is not removable. The proof runs the two halves as follows.
 
 * `≤` — `betaMixCoeff_two_marginal_le_of_envelope_at` applied with the envelope
   `A x = ‖κⁿ(x, ·) − F‖_TV` itself. (This is why that lemma had to be split off from the
@@ -2536,35 +2517,30 @@ follows.
 * `≥` — `integral_pdist_le_betaMixCoeff` at every partition level `m`, then
   `lintegral_iSup` along `tvDist_eq_iSup_pdist` (whose `pdist` is monotone in `m`).
 
-**Wave 4's costing of the `≥` half is superseded and was too pessimistic.** Neither of the
-two ingredients it named is used: no *jointly measurable Hahn selection* (the future-side
-sets of the `β`-partition pair are a **fixed** partition of `E`, so nothing `x`-dependent is
-ever selected) and no *rectangle approximation of a product-measurable set* (the past-side
-sets are the **sign cells** of the finitely many discrepancies, which are honest measurable
-subsets of `E`). What is really needed is one classical fact — the density of the algebra
-generated by a countable generating family — which Mathlib already has as
+Neither ingredient of the intended `≥` proof above is used: no *jointly measurable Hahn
+selection* (the future-side sets of the `β`-partition pair are a **fixed** partition of `E`,
+so nothing `x`-dependent is ever selected) and no *rectangle approximation of a
+product-measurable set* (the past-side sets are the **sign cells** of the finitely many
+discrepancies, which are honest measurable subsets of `E`). What is really needed is one
+classical fact — the density of the algebra generated by a countable generating family —
+which Mathlib already has as
 `MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing`.
 
-**Status (2026-08-09, wave 6): FALSE AS FROZEN — see the section
-`REFUTATION of Davydov's identity at a general state space` immediately above, and the
-formalized witness `betaMixCoeff_two_marginal_eq_integral_tvDist_false` (axiom-clean).**
-At `E = Set ℕ` with the countable–cocountable σ-algebra, `μ = F` the `0`–`1` measure,
-`X_t = id` and `κ = Kernel.id`, every hypothesis holds, the left-hand side is `0` and the
-right-hand side is `1`. The `≤` half (the display below) is *not* what fails; the `≥` half
-does, and it fails maximally. The repair is `[MeasurableSpace.CountablyGenerated E]` on
-this brick and on `betaMixCoeff_eq_integral_tvDist_of_markov` — the hypothesis under which
-Mathlib supplies the jointly measurable Hahn selection (`Kernel.rnDerivAux`) that the `≥`
-half needs. Nothing downstream is affected: the model routes of `Mixing/Relations.lean`
+**Without countable generation the statement is false**: see the section
+`REFUTATION of Davydov's identity at a general state space` above, and the formalized
+witness `betaMixCoeff_two_marginal_eq_integral_tvDist_false`. At `E = Set ℕ` with the
+countable–cocountable σ-algebra, `μ = F` the `0`–`1` measure, `X_t = id` and
+`κ = Kernel.id`, every other hypothesis holds, the left-hand side is `0` and the
+right-hand side is `1`. The `≤` half (the display above) is *not* what fails; the `≥` half
+does, and it fails maximally. Under `[MeasurableSpace.CountablyGenerated E]` Mathlib
+supplies the jointly measurable Hahn selection (`Kernel.rnDerivAux`) that the `≥` half
+needs. Nothing downstream is affected: the model routes of `Mixing/Relations.lean`
 go through the *inequality* `betaMixCoeff_two_marginal_le_of_envelope`, which is correct
-at a general `E`. The `sorry` therefore stays, and it is not a debt of *proof* but of
-*statement*. The wave-4/5 analysis is kept below as the record of the two halves.
-(Wave 7: the repair has now been applied and the `sorry` is gone.)
+at a general `E`.
 
-**Status (2026-08-09, wave 4): the sole remaining `sorry` of this file.** The other two
-bricks are now proved, so this is exactly what stands between the file and a `sorry`-free
-`betaCoeff_eq_integral_tvDist_debt`. Sharpened assessment of the two halves:
+Notes on the intended route for the two halves:
 
-* `≤` is now *within reach* with the machinery added in this wave. Its three inputs all
+* `≤` is within reach with the machinery of this file. Its three inputs all
   exist: the one-event Markov identity `μ(X_0⁻¹U ∩ X_n⁻¹V) = ∫⁻_U (κⁿ x)(V) dF(x)` is the
   `hone` step inside `markov_setIntegral_eq`; `Σ_i |∫_{U_i} φ| ≤ ∫ |φ|` for an `F`-a.e.
   partition `{U_i}` is `sum_abs_setIntegral_le` (the `U_i` are `F`-a.e. disjoint because the
@@ -2579,14 +2555,13 @@ bricks are now proved, so this is exactly what stands between the file and a `so
   product-measurable `H ⊆ ℝ × ℝ` with `tvDist (κⁿ x) F = (κⁿ x)(H_x) − F(H_x)` for
   `F`-a.e. `x`; and (ii) **approximation of a product-measurable set by finite unions of
   rectangles** in `F ⊗ F`-measure, together with the conversion of such a union into a
-  *partition pair* (the finite algebra generated by the `U`'s and the `V`'s). Neither is
-  a `sorry`-filling task; both are new `ForMathlib` bricks. -/
+  *partition pair* (the finite algebra generated by the `U`'s and the `V`'s). -/
 private lemma betaMixCoeff_two_marginal_eq_integral_tvDist_brick [IsProbabilityMeasure μ]
-    -- REPAIR (wave 7, 2026-08-09): the hypothesis wave 6 prescribed. Without it the
+    -- Without this hypothesis the
     -- statement is FALSE — see `betaMixCoeff_two_marginal_eq_integral_tvDist_false` above.
     [MeasurableSpace.CountablyGenerated E]
     {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
-    -- only the equality of the one-dimensional marginals is used (wave 5: this replaces
+    -- only the equality of the one-dimensional marginals is used (this replaces
     -- the frozen `IsStrictlyStationary`, which is unavailable for a vector state)
     (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
     {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
@@ -2677,34 +2652,23 @@ private lemma betaMixCoeff_two_marginal_eq_integral_tvDist_brick [IsProbabilityM
           ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
       _ = _ := ENNReal.toReal_ofReal hβ0
 
-/-- **DEBT (Davydov 1973; FY eq. (2.58))**: for a strictly stationary Markov process
+/-- **Davydov's identity (Davydov 1973; FY eq. (2.58))**: for a strictly stationary Markov process
 with kernel `κ` and time-`0` marginal `F = μ ∘ X_0⁻¹`,
 `β(n) = ∫ tvDist (κⁿ x) F dF(x)` (sup-over-events normalization — see the module
 docstring's calibration warning).
 
-**Status (2026-08-09, wave 5).** Split into its two independent halves, of which the
-first is now **PROVED**: `betaMixCoeff_two_marginal_of_markov` (Bradley's collapse to the
-two marginals) and `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's identity
-proper — the only remaining `sorry` of this file; its docstring records the verified
-calibration and the proof of each direction).
-
-**Status (2026-08-09, wave 7): PROVED**, with the wave-6 repair
-`[MeasurableSpace.CountablyGenerated E]` applied — see the brick's docstring. The witness
-`betaMixCoeff_eq_integral_tvDist_of_markov_false` above stays as the record that the
-hypothesis is not removable. `ℝ` has the instance, so the scalar corollary
-`betaCoeff_eq_integral_tvDist_debt` is closed with no hypothesis change at all.
-
-**Status (2026-08-09, wave 6): FALSE AS FROZEN at a general `E`** — formalized witness
-`betaMixCoeff_eq_integral_tvDist_of_markov_false` above. It is proved *over* the open
-brick, so nothing is unsound; the statement needs
-`[MeasurableSpace.CountablyGenerated E]`, which `ℝ` has, so the scalar corollary
-`betaCoeff_eq_integral_tvDist_debt` is true in substance and only inherits the defect
-through this general form.
+The proof splits into two independent halves: `betaMixCoeff_two_marginal_of_markov`
+(Bradley's collapse to the two marginals) and
+`betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's identity proper; its
+docstring records the calibration and the proof of each direction). The hypothesis
+`[MeasurableSpace.CountablyGenerated E]` is not removable: see the witness
+`betaMixCoeff_eq_integral_tvDist_of_markov_false` above. `ℝ` has the instance, so the
+scalar corollary `betaCoeff_eq_integral_tvDist_debt` needs no hypothesis change at all.
 
 Stated for a general state space `E`; the scalar form is
 `betaCoeff_eq_integral_tvDist_debt` below. -/
 theorem betaMixCoeff_eq_integral_tvDist_of_markov [IsProbabilityMeasure μ]
-    -- REPAIR (wave 7, 2026-08-09): the hypothesis wave 6 prescribed. Without it the
+    -- Without this hypothesis the
     -- statement is FALSE — see `betaMixCoeff_eq_integral_tvDist_of_markov_false` above.
     -- `ℝ` has it, so the scalar corollary `betaCoeff_eq_integral_tvDist_debt` is unaffected.
     [MeasurableSpace.CountablyGenerated E]
@@ -2719,7 +2683,7 @@ theorem betaMixCoeff_eq_integral_tvDist_of_markov [IsProbabilityMeasure μ]
   rw [betaMixCoeff_two_marginal_of_markov hmeas hmarkov n,
     betaMixCoeff_two_marginal_eq_integral_tvDist_brick hmeas hmarg hmarkov n]
 
-/-- **FY eq. (2.59), derived from the (2.58) debt**, general state space: a pointwise
+/-- **FY eq. (2.59), derived from (2.58)**, general state space: a pointwise
 geometric envelope `tvDist (κⁿ x) F ≤ A(x) ρⁿ` with `A` integrable gives
 `β(n) ≤ ρⁿ ∫ A dF`. -/
 theorem betaMixCoeff_le_of_geometric_envelope [IsProbabilityMeasure μ]
@@ -2737,8 +2701,7 @@ theorem betaMixCoeff_le_of_geometric_envelope [IsProbabilityMeasure μ]
     ∀ n : ℕ, betaMixCoeff μ (sigmaLE' X 0) (sigmaGE' X (n : ℤ))
       ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n := by
   -- (2.59) needs only the *inequality* half of (2.58), which is available at a general `E`
-  -- (wave 7: this route replaces the old one through the identity, which since the wave-6
-  -- refutation carries a `CountablyGenerated` hypothesis this statement does not need).
+  -- (the identity carries a `CountablyGenerated` hypothesis this statement does not need).
   intro n
   rw [betaMixCoeff_two_marginal_of_markov hmeas hmarkov n]
   have h := betaMixCoeff_two_marginal_le_of_envelope_at hmeas hmarg hmarkov
@@ -2771,7 +2734,8 @@ lemma map_eq_map_of_isStrictlyStationary [IsProbabilityMeasure μ]
       = μ.map (X t) := by rw [Measure.map_map hev hm2]; rfl
   rw [← e1, ← e2, h]
 
-/-- **DEBT (Davydov 1973; FY eq. (2.58))**, scalar form: for a strictly stationary Markov
+/-- **Davydov's identity (Davydov 1973; FY eq. (2.58))**, scalar form: for a strictly
+stationary Markov
 process with kernel `κ` and time-`0` marginal `F = μ ∘ X_0⁻¹`,
 `β(n) = ∫ tvDist (κⁿ x) F dF(x)`. Specialisation of
 `betaMixCoeff_eq_integral_tvDist_of_markov`. -/
@@ -2787,7 +2751,7 @@ theorem betaCoeff_eq_integral_tvDist_debt [IsProbabilityMeasure μ]
   betaMixCoeff_eq_integral_tvDist_of_markov hmeas
     (map_eq_map_of_isStrictlyStationary hmeas hstat) hmarkov n
 
-/-- **FY eq. (2.59), derived from the (2.58) debt**: a pointwise geometric envelope
+/-- **FY eq. (2.59), derived from (2.58)**: a pointwise geometric envelope
 `tvDist (κⁿ x) F ≤ A(x) ρⁿ` with `A` integrable gives `β(n) ≤ ρⁿ ∫ A dF`; in
 particular the process is (exponentially) β-mixing. -/
 theorem isBetaMixing_of_geometric_envelope [IsProbabilityMeasure μ]
@@ -2842,7 +2806,7 @@ extension of that to the σ-algebra they generate.
 This is the classical statement that the past and the future of a Markov chain are
 conditionally independent given the present (Bradley, *Introduction to Strong Mixing
 Conditions*, ch. 7); it is genuinely the analytic content of the two-marginal reduction and
-is left as a single named debt. Everything else in
+is isolated as a single lemma. Everything else in
 `alphaCoeff_eq_two_marginal_debt` is proved from it. -/
 private lemma condExp_sigmaGE_indicator_brick [IsProbabilityMeasure μ]
     {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
@@ -2857,8 +2821,7 @@ process the α-coefficient collapses to the two-marginal coefficient of `(X_0, X
 `α(σ{X_s : s ≤ 0}, σ{X_s : s ≥ n}) = α(σ(X_0), σ(X_n))`. (Same statement holds for
 β, ρ, φ, ψ; α is the consumed one.)
 
-**Status (2026-08-09, wave 5).** PROVED, and axiom-clean; generalized from `Kernel ℝ ℝ`
-to `Kernel E E` (strict stationarity was never used, and is dropped). Its single input
+Stated for `Kernel E E`; strict stationarity is not used. Its single input
 `condExp_sigmaGE_indicator_brick` (the Markov property for the whole future σ-algebra) is
 itself now proved (see the module docstring).
 The reduction is:
@@ -3003,7 +2966,8 @@ theorem alphaMixCoeff_two_marginal_of_markov [IsProbabilityMeasure μ]
   exact this.2
 
 
-/-- **DEBT (Bradley Thms 4.1–4.2; FY §2.6.1(vi))**, scalar form: for a strictly stationary
+/-- **Bradley reduction (Bradley Thms 4.1–4.2; FY §2.6.1(vi))**, scalar form: for a strictly
+stationary
 Markov process the α-coefficient collapses to the two-marginal coefficient of `(X_0, X_n)`.
 Specialisation of `alphaMixCoeff_two_marginal_of_markov` (which needs neither `ℝ` nor
 stationarity); `hstat` is kept because it is part of the frozen FY statement. -/
@@ -3017,10 +2981,10 @@ theorem alphaCoeff_eq_two_marginal_debt [IsProbabilityMeasure μ]
           (MeasurableSpace.comap (X n) inferInstance) :=
   alphaMixCoeff_two_marginal_of_markov hmeas hmarkov n
 
-/-! ### The α-envelope and the process-vs-state comparison (wave 5)
+/-! ### The α-envelope and the process-vs-state comparison
 
-Two additions the model debts of `Mixing/Relations.lean` consume, and which do **not**
-depend on the open Davydov identity:
+Two additions the model statements of `Mixing/Relations.lean` consume, and which do **not**
+depend on Davydov's identity:
 
 * `alphaMixCoeff_two_marginal_le_of_envelope` — the *inequality* half of (2.58) at the α
   level. Only `IsMarkovOf` at one time and a change of variables along `X_k` are used; no
@@ -3035,7 +2999,6 @@ depend on the open Davydov identity:
   `α_Y(n) ≤ (∫ A dF) ρ^{n−1}` — FY §2.6.1(v)/(x)'s conclusion, over the two model-side
   inputs "the state is a Markov chain with kernel `κ`" and "`κ` has a geometric TV
   envelope". -/
-
 
 
 private theorem markovPow {S : Type*} [MeasurableSpace S] (κ : Kernel S S)
@@ -3164,7 +3127,6 @@ theorem alphaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
     _ = (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n := integral_mul_const _ _
 
 
-
 lemma IsMarkovOf.shiftBy {X : ℤ → Ω → E} {κ : Kernel E E} (h : IsMarkovOf X κ μ) (k : ℤ) :
     IsMarkovOf (fun s => X (s + k)) κ μ := by
   intro t n B hB
@@ -3238,13 +3200,11 @@ theorem alphaCoeff_le_of_state_envelope [IsProbabilityMeasure μ]
   exact hstep1.trans (hstep2.le.trans hstep3)
 
 
-
-
 /-! ### The β-envelope: the `≤` half of Davydov's identity
 
-`betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (the *equality*) is still open, because
-its `≥` half needs a jointly measurable Hahn selection. The `≤` half needs none of that,
-and it is what the model statements consume. Two points of the wave-4 proof sketch are
+`betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (the *equality*) needs countable
+generation, because of its `≥` half. The `≤` half needs none of that,
+and it is what the model statements consume. Two points of the proof sketch are
 **simplified** here:
 
 * the past-side sets need **no disjointification**: `sum_abs_setIntegral_le` is applied to
@@ -3263,7 +3223,7 @@ carries **no factor 2**. -/
 total-variation envelope for the kernel bounds the two-marginal β-coefficient by
 `(∫ A dF) ρⁿ` — with no factor 2, see the module docstring's calibration warning.
 
-Statement unchanged; since wave 7 it is the geometric specialisation of the single-lag form
+It is the geometric specialisation of the single-lag form
 `betaMixCoeff_two_marginal_le_of_envelope_at`, which is what the `≤` half of Davydov's
 *identity* also consumes. -/
 theorem betaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
@@ -3283,7 +3243,6 @@ theorem betaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
     (A := fun x => A x * ρ ^ n) (fun x => mul_nonneg (hA0 x) (pow_nonneg hρ0 n))
     (hAint.mul_const _) k n (fun x => henv x n)
   rwa [integral_mul_const] at h
-
 
 
 /-- The two-marginal reduction for β at an arbitrary anchor (the β-analogue of

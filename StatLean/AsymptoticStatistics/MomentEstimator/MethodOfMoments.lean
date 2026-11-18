@@ -36,7 +36,6 @@ whence consistency and `O_P(1)` are derived; `delta_method_remainder` linearises
 The i.i.d. sample is `X : ℕ → Ξ → Ω` on a base `(Ξ, μ)` with `μ.map (X 0) = P`.  The
 `delta_method_remainder` engine is used at the *constant* varying base `Ω k := Ξ`,
 `P k := μ`.
-
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory

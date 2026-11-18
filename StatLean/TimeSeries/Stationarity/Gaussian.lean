@@ -11,10 +11,10 @@ import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Independence
 
 Two threads:
 
-1. **FY Theorem 2.7, sufficiency** (`exists_stationary_of_isPosSemidefSeq`, the batch-A
-   debt): every even positive semidefinite `γ : ℤ → ℝ` is the ACVF of some weakly
-   stationary process. Proof by the **random-phase construction** over the Herglotz
-   spectral measure — no Kolmogorov extension needed: on
+1. **FY Theorem 2.7, sufficiency** (`exists_stationary_of_isPosSemidefSeq`): every even
+   positive semidefinite `γ : ℤ → ℝ` is the ACVF of some weakly stationary process. Proof
+   by the **random-phase construction** over the Herglotz spectral measure — no
+   Kolmogorov extension needed: on
    `Ω' = AddCircle (2π) × ℝ × ℝ` with `P = (γ(0)⁻¹ • F) ⊗ N(0,1) ⊗ N(0,1)` (where `F`
    is the measure from `exists_measure_of_isPosSemidefSeq`), the process
    `X_t(λ, α, β) = √γ(0) · (α · Re(e^{itλ}) + β · Im(e^{itλ}))`
@@ -24,8 +24,8 @@ Two threads:
    stationary (finite-dimensional Gaussian laws are determined by mean vector and
    covariance matrix, both shift-invariant); a causal ARMA process driven by i.i.d.
    Gaussian noise is a Gaussian process (`L²`-limits of Gaussian vectors are Gaussian);
-   the **Wold decomposition** (FY eq. (2.6)) as a named DEBT (batch F, conditional-
-   expectation route) and **Proposition 2.1** standing on it.
+   the **Wold decomposition** (FY eq. (2.6), conditional-expectation route) and
+   **Proposition 2.1(ii)** standing on it.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003: §2.2.1
 Theorem 2.7 (p. 40; sufficiency cited to Brockwell & Davis 1991, p. 27 — our
@@ -35,14 +35,14 @@ random-phase proof is a different, self-contained route, documented deviation);
 
 **Proof formalization notes.**
 * The random-phase process is *not* Gaussian and not strictly stationary — Theorem 2.7
-  only demands weak stationarity, and the construction uses exclusively batch-A bricks
-  (`exists_measure_of_isPosSemidefSeq`, `measureFourierCoeff_im/neg`, `NegInvariant`).
-  The amplitudes only need mean `0`, variance `1`, uncorrelated; we take independent
-  standard Gaussians (`gaussianReal 0 1`) for definiteness.
+  only demands weak stationarity, and the construction uses only the spectral-measure
+  results (`exists_measure_of_isPosSemidefSeq`, `measureFourierCoeff_im/neg`,
+  `NegInvariant`). The amplitudes only need mean `0`, variance `1`, uncorrelated; we take
+  independent standard Gaussians (`gaussianReal 0 1`) for definiteness.
 * `IsGaussianProcess` is Mathlib's (pinned) structure; the weak⇒strict argument pins the
   finite-dimensional laws down through their characteristic functions.
-* Prop 2.1(iii) (conditional-independence ⇒ AR(p)) needs Gaussian conditioning; stated
-  here with proof deferred (DEBT) pending the Gaussian-conditioning bricks.
+* Prop 2.1(iii) (conditional-independence ⇒ AR(p)) needs Gaussian conditioning and is not
+  stated here.
 
 **Bibliographic comments.** The spectral random-phase representation goes back to
 Slutsky and to Cramér's spectral theory (H. Cramér, "On the theory of stationary random
@@ -331,7 +331,7 @@ private lemma mfc_smul (a : ENNReal) (F : Measure (AddCircle (2 * π))) (j : ℤ
   rw [measureFourierCoeff, measureFourierCoeff, integral_smul_measure]
   exact Complex.real_smul
 
-/-- **FY Theorem 2.7, sufficiency** (batch-A debt, relocated here; proof: random-phase
+/-- **FY Theorem 2.7, sufficiency** (proof: random-phase
 construction over the Herglotz measure — see the module docstring). Every even positive
 semidefinite sequence is the autocovariance function of some weakly stationary process. -/
 theorem exists_stationary_of_isPosSemidefSeq (γ : ℤ → ℝ)
@@ -615,7 +615,6 @@ private lemma isGaussian_map_of_tendsto_L2 [IsProbabilityMeasure μ] {Y : ℕ �
   exact (Complex.continuous_exp.tendsto _).comp hA
 
 
-
 section LinearGaussian
 
 variable {ψ : ℕ → ℝ} {X ε : ℤ → Ω → ℝ}
@@ -648,11 +647,6 @@ private lemma isGaussian_noise_comb [IsProbabilityMeasure μ] {σ2 : ℝ}
       = fun ω => G (fun (b : {x // x ∈ Finset.image τ Finset.univ}) => ε (b : ℤ) ω) := rfl
   rw [heq]
   exact (hblock.map_fun G).isGaussian_map
-
-
-
-
-
 
 
 /-- A window of partial sums, linearly combined, is Gaussian. -/
@@ -713,7 +707,6 @@ private lemma tendsto_eLpNorm_comb [IsProbabilityMeasure μ]
   exact eLpNorm_sum_le one_le_two
 
 
-
 private lemma measurable_gpsum (hmε : ∀ t, Measurable (ε t)) (ψ : ℕ → ℝ) (s : ℤ) (N : ℕ) :
     Measurable (gpsum ψ ε s N) :=
   Finset.measurable_sum _ fun _ _ => (hmε _).const_mul _
@@ -754,7 +747,7 @@ theorem isGaussianProcess_of_linearProcess [IsProbabilityMeasure μ]
 
 end LinearGaussian
 
-/-! ### Private machinery for the Wold decomposition (FY eq. (2.6), batch F)
+/-! ### Private machinery for the Wold decomposition (FY eq. (2.6))
 
 The Hilbert-space half runs in an abstract real Hilbert space `H` over a family `x : ℤ → H`
 whose Gram matrix is shift invariant (`⟪x s, x t⟫ = γ (s − t)`): the closed linear spans
@@ -1539,10 +1532,8 @@ private lemma measure_inter_eq_right_of_measure_eq_one [IsProbabilityMeasure μ]
 end WoldProb
 
 
-
-/-- **Wold decomposition, Gaussian form — DEBT** (FY §2.1.3, eq. (2.6); cited to
-Brockwell & Davis 1991, p. 187; closure scheduled for batch F via the conditional-
-expectation route, see `notes/time_series/debt_assessment.md` §5): a zero-mean weakly
+/-- **Wold decomposition, Gaussian form** (FY §2.1.3, eq. (2.6); cited to
+Brockwell & Davis 1991, p. 187; conditional-expectation route): a zero-mean weakly
 stationary Gaussian process splits as an MA(∞) over i.i.d. Gaussian innovations plus an
 independent deterministic (remote-past-measurable) component. -/
 theorem wold_gaussian_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
@@ -1719,8 +1710,8 @@ theorem wold_gaussian_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
 
 /-- **Proposition 2.1(ii)** (FY §2.1.3): a zero-mean weakly stationary Gaussian process
 that is `q`-dependent (`Cov(X_s, X_t) = 0` for `|s − t| > q`) with trivial remote past
-in its Wold decomposition is an MA(q). Statement conditional on `wold_gaussian_debt`;
-DEBT until batch F. -/
+in its Wold decomposition is an MA(q). The proof runs through the Wold decomposition
+machinery above. -/
 theorem gaussian_q_dependent_isMA_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     {q : ℕ}
     (hG : IsGaussianProcess X μ) (hmeas : ∀ t, Measurable (X t))

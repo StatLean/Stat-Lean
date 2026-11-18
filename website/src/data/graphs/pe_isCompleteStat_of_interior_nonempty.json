@@ -46,7 +46,7 @@
     {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
     {"id":"ENNReal.ofReal_max","label":"ofReal_max","full":"ENNReal.ofReal_max","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"ENNReal.ofReal_zero","label":"ofReal_zero","full":"ENNReal.ofReal_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
-    {"id":"sup_of_le_left","label":"sup_of_le_left","full":"sup_of_le_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Lattice"}
+    {"id":"sup_of_le_left","label":"sup_of_le_left","full":"sup_of_le_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.Lattice"}
   ],
   "edges": [
     {"source":"StatLean.PointEstimation.isCompleteStat_of_interior_nonempty","target":"StatLean.PointEstimation.ExpFamily"},

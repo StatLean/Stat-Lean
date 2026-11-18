@@ -22,8 +22,6 @@ convention of `SubGaussian/TailBounds.lean`; strict-< consumers weaken via
 `measure_mono`. The raw core takes the book-literal threshold-2 condition and
 holds for any measure; the norm-facing wrapper (the frozen B1 bridge) derives
 it via the attainment lemma and hence assumes `[IsProbabilityMeasure μ]`.
-Named-sorry fallback of this work item: none here — both B1 declarations must
-close (the fallback lives in `Orlicz/Equivalence.lean`).
 
 **Bibliographic comments.** Gaussian-type tails from square-exponential
 moments are classical (cf. Kahane 1960; Buldygin–Kozachenko 1980); the

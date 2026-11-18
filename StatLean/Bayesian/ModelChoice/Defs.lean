@@ -22,8 +22,8 @@ Bayes rule), p. 225; §5.2.2, Definition 5.2.5 and eq. (5.2.2) (Bayes factor as 
 p. 227; §7.2.1, eq. (7.2.2) (posterior model probabilities), p. 348; §5.5.1, Definition 5.5.2
 (α-credible sets), p. 260.
 
-**Proof formalization notes.** Laptop-only data model — definitions only. `bayesFactorM` is
-distinct from the Batch-1 event-level `Cond.bayesFactor` (that one conditions two events of one
+**Proof formalization notes.** Definitions and basic constructions. `bayesFactorM` is
+distinct from the event-level `Cond.bayesFactor` (that one conditions two events of one
 measure; this one compares two dominated models). `predictiveDensity` serves as Robert's marginal
 `m(x)` for improper priors too, so no separate "marginal likelihood" name is introduced.
 `posteriorModelProb` needs the model index to be standard Borel — automatic for the intended

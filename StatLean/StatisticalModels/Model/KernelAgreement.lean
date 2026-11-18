@@ -64,7 +64,7 @@ theorem pushforward_coe (K : Kernel Θ 𝓧) {T : 𝓧 → 𝓨}
     (Kernel.map_apply K hT θ).symm
 
 /-- The regression joint with a θ-free response kernel is Mathlib's kernel `compProd`
-against the `prodMkLeft` lift. Named Batch-0 spelling-verification item. -/
+against the `prodMkLeft` lift. -/
 theorem condProd_coe_const (K : Kernel Θ 𝓧) (η : Kernel 𝓧 𝓨)
     [IsSFiniteKernel K] [IsSFiniteKernel η] :
     condProd ⇑K (fun _ => η) = ⇑(K ⊗ₖ Kernel.prodMkLeft Θ η) := by

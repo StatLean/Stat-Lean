@@ -24,8 +24,7 @@ This is faster than the $O(1/t)$ rate of the (non-accelerated) proximal gradient
 method.
 
 *Deviation from the book.* The Lean statement is proved for $t \ge 1$; the
-$t = 0$ case is the trivial initial gap and is excluded, per CLAUDE.md §1
-(documented constant/scope deviation).
+$t = 0$ case is the trivial initial gap and is excluded.
 
 **Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
 (ISBN 978-3-032-03160-0), Chapter 14 (Proximal Gradient Descent), §14.2
@@ -108,7 +107,7 @@ private theorem lam_sq_sub (lam : ℕ → ℝ)
 /-- Lu-BDA Theorem 14.2 (Convergence Rate of Accelerated Proximal Gradient Descent). `f` convex
 `L`-smooth (`0 < L`), `h` convex, `F = f + h`, step `1/L`, Nesterov momentum:
 `F(x_t) - F(x*) ≤ 2L‖x_0 - x*‖² / (t+1)²`. Stated for `t ≥ 1` (the `t = 0` case
-is the trivial initial gap), per CLAUDE.md §1 documented deviation. -/
+is the trivial initial gap), a documented deviation. -/
 theorem acceleratedProximalGradient_rate
     {f h : E → ℝ} (hf : ConvexOn ℝ Set.univ f) (hdiff : Differentiable ℝ f)
     {L : ℝ} (hL : 0 < L) (hsmooth : IsLSmooth f L) (hh : ConvexOn ℝ Set.univ h)

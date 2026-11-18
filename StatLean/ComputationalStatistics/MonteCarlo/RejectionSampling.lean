@@ -34,12 +34,10 @@ Then
   is everything and the claim is false); `c ≥ 1` is *derivable* from the
   majorization plus `∫⁻ p dν = 1` and is not assumed.
 * The proposal-normalization hypothesis `∫⁻ q dν = 1` is genuinely needed (the
-  book's `g_Y` *is* a probability density): the first frozen statements omitted
-  it and were **refuted** at the `q ≡ ∞` corner — the machine-checked falsity
-  witnesses for the unrepaired statements are retained below as `private`
-  lemmas documenting why the hypothesis is there.
+  book's `g_Y` *is* a probability density): the `q ≡ ∞` counterexamples below
+  demonstrate why this hypothesis cannot be omitted.
 * The geometric law of the number of trials to first acceptance (ECS §2.1,
-  p. 40) is deferred to a later round: it needs the infinite i.i.d. proposal
+  p. 40) is outside this module's scope: it needs an infinite i.i.d. proposal
   stream and a hitting-time construction, orthogonal to the correctness core.
 
 **Bibliographic comments.** The method is von Neumann's ("Various techniques
@@ -83,16 +81,15 @@ theorem measurableSet_rejectionAccept
 /-!
 ### Falsity witnesses for the `q = ∞` corner
 
-The three correctness identities below were **false as first frozen** (before
-the `∫⁻ q dν = 1` hypothesis was added): nothing in the original hypotheses
-excluded `q y = ∞` on a set of positive `ν`-measure.  At such a `y`
-the acceptance section is `{u | ofReal u · ∞ ≤ p y} = Iic 0`, which is
+The proposal normalization `∫⁻ q dν = 1` is needed for the three correctness
+identities below. Without it, `q y = ∞` may hold on a set of positive
+`ν`-measure. At such a `y` the acceptance section is `{u | ofReal u · ∞ ≤ p y} = Iic 0`, which is
 `uniform01`-null, so the accepted mass contributed by `y` is `q y · 0 = 0`,
 whereas the claimed right-hand side contributes `c⁻¹ · p y > 0`.
 
 The witness is `𝓧 = Unit`, `ν = δ`, `p ≡ 1`, `q ≡ ∞`, `c = 1`: every hypothesis
-of all three theorems holds, but the acceptance region is a null set.  See
-`LANE-REPORT.md`.
+other than proposal normalization holds, but the acceptance region is a null set.
+The following lemmas formalize this example.
 -/
 
 /-- The acceptance region of the `q ≡ ∞` witness is a null set for the joint

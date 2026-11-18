@@ -122,7 +122,7 @@ lemma iid_lln_in_prob_l1
   have h_ae_eq : ∀ᵐ ω ∂μ_inf, ∀ i : ℕ, f (ω i) = f' (ω i) := by
     rw [ae_all_iff]
     intro i
-    have h_qmp : MeasureTheory.Measure.QuasiMeasurePreserving
+    have h_qmp : MeasureTheory.QuasiMeasurePreserving
         (fun ω : ℕ → Ω => ω i) μ_inf P := (hMP i).quasiMeasurePreserving
     -- `f ∘ eval i =ᵐ[μ_inf] f' ∘ eval i` from `f =ᵐ[P] f'`.
     have h_comp_ae : (fun ω : ℕ → Ω => f (ω i)) =ᵐ[μ_inf] fun ω => f' (ω i) :=

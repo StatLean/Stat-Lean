@@ -35,9 +35,7 @@ radius. Class-level exports are in `toNat` shape
 cluster's `sqrtLogCov` integrand carrier; `ne_top` lemmas make `toNat`
 lossless and settle, for our sets, the chaining cluster's
 totally-bounded-⇒-finite side condition. Edge behavior: for $\varepsilon \ge 1$
-the covering number is exactly `1` (diameter cap, nonempty class). Named-sorry
-fallback of the work item `hdp-emp-cover`: `card_lipschitzNet_le_exp` (the
-arithmetic step; the `ℕ∞` covering chain closes modulo it).
+the covering number is exactly `1` (diameter cap, nonempty class).
 
 **Bibliographic comments.** The $e^{\Theta(1/\varepsilon)}$ entropy of
 Lipschitz balls on $[0,1]$ is due to Kolmogorov–Tikhomirov (1959); the
@@ -74,9 +72,8 @@ theorem log_three_le_two : Real.log 3 ≤ 2 := by
 
 /-- Net-cardinality arithmetic (HDP Exercise 8.9): for any mesh `m` with
 `3/ε ≤ m ≤ 4/ε` (in particular `m = ⌈3/ε⌉₊` when `0 < ε < 1`),
-`(m+1)·3^m ≤ e^{12/ε}`. Named-sorry fallback of `hdp-emp-cover`.
-Frozen constant `12 = 3·4`; docstring records the uncommitted `C = 9`
-sharpening via `3^8 ≤ e^9`. -/
+`(m+1)·3^m ≤ e^{12/ε}`. Frozen constant `12 = 3·4`; a sharper `C = 9` is available via
+`3^8 ≤ e^9`. -/
 theorem card_lipschitzNet_le_exp {ε : ℝ}
     -- USER-INPUT: radius window of Exercise 8.9; HDP Exercise 8.9
     (hε₀ : 0 < ε) (hε₁ : ε < 1) {m : ℕ} [NeZero m]

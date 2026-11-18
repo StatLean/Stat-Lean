@@ -1,4 +1,5 @@
 import StatLean.AsymptoticStatistics.LowerBounds.OperationalEfficiencyCharacterizationNondominated
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 
 /-!
 # Raw regularity characterizes operational efficiency

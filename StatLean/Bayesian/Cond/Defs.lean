@@ -22,7 +22,7 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 2007 (ISBN 978-0-387-71598-8). §1.2 (Bayes' theorem, p. 8) for the
 odds form of Bayes' theorem; §5.2.2, Definition 5.2.5 (Bayes factor) and eq. (5.2.2), p. 227.
 
-**Proof formalization notes.** This is a laptop-only shared data model — definitions only.
+**Proof formalization notes.** Definitions and basic constructions.
 Everything is expressed with Mathlib's `ProbabilityTheory.cond`. All three quantities live in
 `ℝ≥0∞`, so division follows the extended-nonnegative conventions (`x / 0 = ∞` for `x ≠ 0`,
 `0 / 0 = 0`, `x / ∞ = 0`): the ratios are total and require no positivity side conditions to

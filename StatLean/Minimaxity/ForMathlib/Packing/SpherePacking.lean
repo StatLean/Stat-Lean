@@ -13,7 +13,7 @@ $$\log M\!\left(\tfrac12;\ \mathbb{S}^{n-1},\ \|\cdot\|_2\right) \ \ge\ n\,\log 
 i.e. there exists a set $T$ of unit vectors, pairwise at Euclidean distance $\ge 1/2$, with
 $\log |T| \ge n\log 2$.
 
-**Constant deviation (documented per CLAUDE.md §1).** This formalization proves the *exponential*
+**Constant deviation.** This formalization proves the *exponential*
 bound $\log |T| \ge n/10$ instead of the book's $n\log 2$ ($\log 2 \approx 0.693$). The looser base
 is harmless: the PCA Fano argument (Example 15.19) only needs a packing of cardinality
 $2^{\Omega(n)}$, and $e^{n/10}$ is exponential in $n$. The slack comes from routing the construction

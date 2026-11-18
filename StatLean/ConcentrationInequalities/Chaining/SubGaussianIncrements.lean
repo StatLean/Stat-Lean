@@ -36,9 +36,6 @@ instantiation of `Orlicz/Attainment.orliczNorm_eq_zero_iff` at `ψ = psiTwo`
 (no independent derivation). The mean-zero hypothesis of
 `hasSubgaussianMGF_sub` is stated **on the increment**
 (`∫ (X t − X s) dμ = 0`), which is junk-proof for non-integrable `X t`.
-Named-sorry fallback of this work item: `ae_eq_zero_of_subGaussianNorm_eq_zero`
-(the `psiTwo` instantiation plumbing), keeping the two bridge repackagings
-proved.
 
 **Bibliographic comments.** Processes with sub-gaussian increments as the
 natural setting for chaining go back to R. M. Dudley, "The sizes of compact

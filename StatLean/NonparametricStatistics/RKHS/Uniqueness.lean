@@ -116,8 +116,8 @@ theorem exists_isometryEquiv_of_scalarKernel_eq
   have hcomm : (fun g : H₁ =>
       ((LinearEquiv.refl 𝕜 (X →₀ 𝕜)).extendOfIsometry _ _ hd₁ hd₂ hnorm g : X → 𝕜) x)
       = fun g : H₁ => (g : X → 𝕜) x := by
-    refine hd₁.equalizer ((RKHS.continuous_eval x).comp
-      (LinearIsometryEquiv.continuous _)) (RKHS.continuous_eval x) ?_
+    refine hd₁.equalizer ((RKHS.continuous_eval_const x).comp
+      (LinearIsometryEquiv.continuous _)) (RKHS.continuous_eval_const x) ?_
     funext c
     change ((LinearEquiv.refl 𝕜 (X →₀ 𝕜)).extendOfIsometry _ _ hd₁ hd₂ hnorm
       (kerComb (X := X) (H := H₁) c) : X → 𝕜) x = (kerComb (X := X) (H := H₁) c : X → 𝕜) x

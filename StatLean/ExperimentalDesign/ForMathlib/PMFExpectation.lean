@@ -1,6 +1,7 @@
 import Mathlib.Probability.Distributions.Uniform
 import Mathlib.Data.Fintype.Powerset
 import Mathlib.Data.Fintype.BigOperators
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Expectation, variance and covariance of a real statistic under a finite PMF
@@ -143,16 +144,16 @@ theorem pmfExpect_map {Ω' : Type*} [Fintype Ω'] (D : PMF Ω) (g : Ω → Ω') 
 /-- Counting formula for the expectation under the uniform law on a finite set of
 outcomes: the average of `f` over the set. -/
 theorem pmfExpect_uniformOfFinset (s : Finset Ω) (hs : s.Nonempty) (f : Ω → ℝ) :
-    pmfExpect (PMF.uniformOfFinset s hs) f = (s.card : ℝ)⁻¹ * ∑ ω ∈ s, f ω := by
+    pmfExpect (PMF.uniformOn s hs) f = (s.card : ℝ)⁻¹ * ∑ ω ∈ s, f ω := by
   classical
-  simp only [pmfExpect, PMF.uniformOfFinset_apply, apply_ite ENNReal.toReal,
+  simp only [pmfExpect, PMF.uniformOn_apply, apply_ite ENNReal.toReal,
     ENNReal.toReal_inv, ENNReal.toReal_natCast, ENNReal.toReal_zero, ite_mul, zero_mul,
     Finset.sum_ite_mem, Finset.univ_inter, Finset.mul_sum]
 
 /-- Counting formula for the expectation under the uniform law on a finite type. -/
 theorem pmfExpect_uniformOfFintype [Nonempty Ω] (f : Ω → ℝ) :
-    pmfExpect (PMF.uniformOfFintype Ω) f = (Fintype.card Ω : ℝ)⁻¹ * ∑ ω, f ω := by
-  simp only [pmfExpect, PMF.uniformOfFintype_apply, ENNReal.toReal_inv,
+    pmfExpect (PMF.uniform Ω) f = (Fintype.card Ω : ℝ)⁻¹ * ∑ ω, f ω := by
+  simp only [pmfExpect, PMF.uniform_apply, ENNReal.toReal_inv,
     ENNReal.toReal_natCast, Finset.mul_sum]
 
 /-- Expansion of the expectation of a doubly centered product at *arbitrary* centering

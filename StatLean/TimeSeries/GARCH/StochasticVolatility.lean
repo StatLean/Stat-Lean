@@ -31,10 +31,9 @@ FY §4.2.9 and is not formalized.
   Mathlib pin and is built here (`integral_pow_even_gaussianReal`) out of the m.g.f.
   `e^{t²/2}` via the Leibniz recursion `f^{(n+1)} = y f^{(n)} + n f^{(n−1)}`
   (`iteratedDeriv_id_mul`), which gives `f^{(n+1)}(0) = n f^{(n−1)}(0)`.
-* Four hypotheses that FY's §4.2.9 has but the frozen Lean statements did not carry were
-  once recorded here as *named debts*; all four are now **supplied explicitly** and the
-  file is `sorry`-free. Each carries a `Statement strengthening (documented)` paragraph
-  in the style of `ForMathlib/Markov/GeometricErgodicity.lean`'s
+* Four hypotheses implicit in FY's §4.2.9 are **supplied explicitly** in the Lean statements.
+  Each carries a `Statement strengthening (documented)` paragraph in the style of
+  `ForMathlib/Markov/GeometricErgodicity.lean`'s
   `nlARKernel_geometricallyErgodic`, together with the witness showing the statement is
   false or unprovable without it. They are: the **causal representation** `hcausal` of
   the latent AR(1) chain (`IsSV` alone does not force `σ{ε} ⟂ σ{h}` — the recursion
@@ -918,7 +917,7 @@ private lemma acf_sq_lognormal_corrected [IsProbabilityMeasure μ] {a0 a1 σe2 �
 denominator **corrected**:
 `Corr(X_t², X_{t−k}²) = (exp(σ_h² a₁^{|k|}) − 1)/(3 exp(σ_h²) − 1)`.
 
-**Book error, verified 2026-08-09.** FY prints `exp(σ_h²) − 1` in the denominator; that
+**Book error.** FY prints `exp(σ_h²) − 1` in the denominator; that
 is the ACF of the *volatility* `e^{h_t}`, where the multiplier `ε_t²` is absent. For
 `X_t²` the variance carries `E ε⁴ = 3`:
 `Var(X_0²) = E ε⁴ · E e^{2h} − (E ε² · E e^{h})² = e^{2μ_h+σ_h²}(3e^{σ_h²} − 1)`,
@@ -958,7 +957,7 @@ theorem IsSV.acf_sq_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : �
     -- USER-INPUT: the stationary latent autocovariance structure; FY eq. (4.60)
     (hacvf : ∀ k : ℤ, acvf h μ k = σh2 * a1 ^ k.natAbs)
     (hstat : IsStrictlyStationary X μ) (hL4 : ∀ t, MemLp (X t) 4 μ)
-    -- USER-INPUT: nonzero lag. Added 2026-08-09 with the denominator correction: at
+    -- USER-INPUT: nonzero lag, needed with the denominator correction: at
     -- lag `0` the autocorrelation is `1` by definition, which the corrected right-hand
     -- side does not give (FY's printed version does, and that is the only lag at which
     -- it is right).

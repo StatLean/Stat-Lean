@@ -19,12 +19,12 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 2007 (ISBN 978-0-387-71598-8). §1.3.1, Definition 1.3.1 (sufficient statistic) and the
 factorization theorem (stated inline, p. 14).
 
-**Proof formalization notes.** Laptop-only data model — definitions only. `statKernel` is
+**Proof formalization notes.** Definitions and basic constructions. `statKernel` is
 `Kernel.deterministic T hT ∘ₖ K`, so `statKernel K T hT θ = (K θ).map T` (proved in
 `Sufficiency.Factorization`). `IsSufficient` is the existence of a Markov reconstruction kernel
 factorizing `K` through `K_T`; the fiber-support refinement (`Q(s, {x | T x = s}) = 1`) and the
 equivalence with the factorization criterion (Halmos–Savage) are deliberately out of scope for
-this batch (recorded in `notes/bayesian/roadmap.md`). `IsFactorizedLikelihood` is a plain
+this module. `IsFactorizedLikelihood` is a plain
 pointwise equation in `ℝ≥0∞`.
 
 **Bibliographic comments.** Sufficiency is due to R. A. Fisher ("On the mathematical foundations
@@ -51,8 +51,8 @@ noncomputable def statKernel (K : Kernel Θ 𝓧) {T : 𝓧 → S} (hT : Measura
 
 /-- **Sufficiency as kernel factorization** (prior-free form): there is a Markov reconstruction
 kernel `Q : S ⇝ 𝓧` with `K = Q ∘ₖ K_T` (Robert §1.3.1, Definition 1.3.1; Halmos–Savage 1949).
-Recorded for the library; the Batch-2 theorems use the dominated Fisher–Neyman form
-`IsFactorizedLikelihood`. -/
+Recorded for the library; the theorems in `Sufficiency.Factorization` use the dominated
+Fisher–Neyman form `IsFactorizedLikelihood`. -/
 def IsSufficient (K : Kernel Θ 𝓧) {T : 𝓧 → S} (hT : Measurable T) : Prop :=
   ∃ Q : Kernel S 𝓧, IsMarkovKernel Q ∧ K = Q ∘ₖ statKernel K hT
 

@@ -17,6 +17,7 @@
     {"id":"StatLean.ExperimentalDesign.pmfExpect_const","label":"pmfExpect_const","full":"StatLean.ExperimentalDesign.pmfExpect_const","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.ForMathlib.PMFExpectation"},
     {"id":"sub_self","label":"sub_self","full":"sub_self","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
     {"id":"StatLean.ExperimentalDesign.RandomizationDesign","label":"RandomizationDesign","full":"StatLean.ExperimentalDesign.RandomizationDesign","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Design"},
+    {"id":"PMF.uniformOn","label":"uniformOn","full":"PMF.uniformOn","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
     {"id":"StatLean.ExperimentalDesign.validAllocations","label":"validAllocations","full":"StatLean.ExperimentalDesign.validAllocations","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Randomization.CompleteRandomization"},
     {"id":"StatLean.ExperimentalDesign.validAllocations_nonempty","label":"validAllocations_nonempty","full":"StatLean.ExperimentalDesign.validAllocations_nonempty","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Randomization.CompleteRandomization"},
     {"id":"StatLean.ExperimentalDesign.sum_prod_pmf","label":"sum_prod_pmf","full":"StatLean.ExperimentalDesign.sum_prod_pmf","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Stratified.ProductDesign"},
@@ -72,6 +73,7 @@
     {"source":"StatLean.ExperimentalDesign.pmfCov_productDesign_of_ne","target":"StatLean.ExperimentalDesign.pmfExpect_const"},
     {"source":"StatLean.ExperimentalDesign.pmfCov_productDesign_of_ne","target":"sub_self"},
     {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"StatLean.ExperimentalDesign.RandomizationDesign"},
+    {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"PMF.uniformOn"},
     {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"StatLean.ExperimentalDesign.Allocation"},
     {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"StatLean.ExperimentalDesign.validAllocations"},
     {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"StatLean.ExperimentalDesign.validAllocations_nonempty"},
@@ -117,10 +119,6 @@
     {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"PMF.apply_ne_top"},
     {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"tsum_fintype"},
     {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"PMF.tsum_coe"},
-    {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"ENNReal.toReal_one"},
-    {"source":"StatLean.ExperimentalDesign.arm","target":"StatLean.ExperimentalDesign.Allocation"},
-    {"source":"StatLean.ExperimentalDesign.mem_validAllocations","target":"StatLean.ExperimentalDesign.Allocation"},
-    {"source":"StatLean.ExperimentalDesign.mem_validAllocations","target":"StatLean.ExperimentalDesign.validAllocations"},
-    {"source":"StatLean.ExperimentalDesign.mem_validAllocations","target":"StatLean.ExperimentalDesign.arm"}
+    {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"ENNReal.toReal_one"}
   ]
 }

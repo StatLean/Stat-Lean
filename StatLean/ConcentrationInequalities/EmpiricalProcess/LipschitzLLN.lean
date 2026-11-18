@@ -47,9 +47,7 @@ laundering; the headline hypotheses are exactly the book's: independence,
 common law on `[0,1]` (codomain type), `n ≥ 1` (`[NeZero n]`), plus
 LEAN-ONLY per-index measurability. Edge behavior: `L = 0` holds via the
 degenerate lemma `iSup_abs_empiricalProcess_lipZero_eq` (both sides `0` and
-`0 ≤ 0`). Named-sorry fallback of the work item `hdp-emp-lln`:
-`expectation_sup'_netUnion_le` (the single point of contact with the
-chaining Dudley interface).
+`0 ≤ 0`).
 
 **Bibliographic comments.** Theorem 8.2.3 is a quantitative mean
 Glivenko–Cantelli / Wasserstein-1 law of large numbers; the $n^{-1/2}$ rate
@@ -125,8 +123,7 @@ noncomputable def lipschitzLLNConst : ℝ := 960
 maximum of `|X_g|` over the exhaustion stage `lipschitzNetUnion m` is at most
 `960/√n`, uniformly in `m` — the chaining plug `dudley_abs_of_cov_le_exp_div`
 at base point `0 ∈ T`, entropy majorant `24/ε`, diameter cap `1`, increment
-constant `√6/√n`. Single point of contact with the chaining Dudley interface;
-named-sorry fallback of `hdp-emp-lln`. -/
+constant `√6/√n`. Single point of contact with the chaining Dudley interface. -/
 theorem expectation_sup'_netUnion_le [IsProbabilityMeasure μ]
     [IsProbabilityMeasure P] [NeZero n]
     -- LEAN-ONLY: measurability of the data; regularity, no book content

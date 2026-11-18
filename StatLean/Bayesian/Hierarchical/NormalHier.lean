@@ -15,7 +15,7 @@ hyperparameter `μ` itself has a Normal–Normal posterior with `J` observations
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §5.4 (normal
 one-way hierarchy), p. 113; §5.5 (eight schools), p. 119.
 
-**Proof formalization notes.** Every coupling reuses the Batch-2 `Conjugacy.NormalNormal` API: the
+**Proof formalization notes.** Every coupling reuses the `Conjugacy.NormalNormal` API: the
 per-group posterior (`normal_normal_posterior_ae` at `n = 1`), the μ-posterior (the same at
 `n = J`, noise variance `σ²+τ²`), and the marginal (`comp_gaussKernel_gaussianReal` per coordinate,
 assembled with the diagonal product kernel `diagKernel`). The convex-combination mean and

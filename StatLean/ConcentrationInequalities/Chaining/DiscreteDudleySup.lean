@@ -24,8 +24,7 @@ uncountable forms per the p. 227 footnote through separable versions
 and `dudleyLSum T` as the `ℝ≥0∞` carrier (divergent series = honest `⊤`).
 The anchored family contains `0` (anchor in the subset / `t₀ ∈ T`), so the
 `ENNReal.ofReal` carrier is junk-free; a bare mean-zero `⨆ t ∈ T, X t ω`
-statement would be FALSE at `|T| = 1`. Named-sorry fallback of this work
-item: `discrete_dudley_anchored` (the sup'-shift algebra).
+statement would be FALSE at `|T| = 1`.
 
 **Bibliographic comments.** R. M. Dudley, *J. Funct. Anal.* 1 (1967),
 290–330; the dyadic-series form is HDP's Theorem 8.1.4 route to the
@@ -110,9 +109,9 @@ theorem discrete_dudley_abs_countable_subset {X : E → Ω → ℝ} {K : ℝ≥0
     -- USER-INPUT: the anchor point; HDP §8.1, Remark 8.1.5
     {t₀ : E} (ht₀ : t₀ ∈ T)
     {C : Set E}
-    -- LEAN-ONLY: the countable approximating subfamily (sup policy)
+    -- LEAN-ONLY: the countable approximating subfamily
     (hC : C ⊆ T)
-    -- LEAN-ONLY: countability of the subfamily (sup policy)
+    -- LEAN-ONLY: countability of the subfamily
     (hCcnt : C.Countable) :
     ∫⁻ ω, ⨆ t ∈ C, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
       ≤ ENNReal.ofReal 20 * K * dudleyLSum T := by
@@ -178,9 +177,9 @@ theorem discrete_dudley_anchored_countable_subset {X : E → Ω → ℝ} {K : �
     -- USER-INPUT: the anchor point; HDP §8.1
     {t₀ : E} (ht₀ : t₀ ∈ T)
     {C : Set E}
-    -- LEAN-ONLY: the countable approximating subfamily (sup policy)
+    -- LEAN-ONLY: the countable approximating subfamily
     (hC : C ⊆ T)
-    -- LEAN-ONLY: countability of the subfamily (sup policy)
+    -- LEAN-ONLY: countability of the subfamily
     (hCcnt : C.Countable) :
     ∫⁻ ω, ⨆ t ∈ C, ENNReal.ofReal (X t ω - X t₀ ω) ∂μ
       ≤ ENNReal.ofReal (6 * Real.sqrt 3) * K * dudleyLSum T := by
@@ -317,7 +316,7 @@ countable-subset core. -/
 theorem discrete_dudley_abs_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
@@ -340,7 +339,7 @@ theorem discrete_dudley_anchored_countable {X : E → Ω → ℝ} {K : ℝ≥0}
     {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)

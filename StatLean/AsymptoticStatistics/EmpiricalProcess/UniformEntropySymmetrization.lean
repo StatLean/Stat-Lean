@@ -8,6 +8,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.OuterPeeling
 import Mathlib.Probability.Distributions.Uniform
 import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.ProbabilityMassFunction.Integrals
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Uniform-entropy symmetrization for Glivenko--Cantelli classes
@@ -125,7 +126,7 @@ The sign law is the uniform law on the finite Boolean cube, hence exactly a
 product of fair signs.  Edge behavior: `n = 0` uses the singleton empty cube. -/
 noncomputable def conditionalRademacherTail (F : Set (Ω → ℝ)) (n : ℕ)
     (z z' : Fin n → Ω) (ε : ℝ) : ℝ≥0∞ :=
-  (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+  (PMF.uniform (Fin n → Bool)).toMeasure
     {σ | ENNReal.ofReal ε < signedGhostDeviation F n z z' σ}
 
 /-- Conditional fair-sign tail of the maximum over the dyadic block
@@ -139,7 +140,7 @@ if the endpoint interval or class is empty, the event is empty. -/
 noncomputable def conditionalRademacherBlockMaxTail (E : Set (Ω → ℝ))
     (T : Finset (Ω → ℝ)) (m : ℕ) (z z' : Fin (2 * m) → Ω)
     (ε : ℝ) : ℝ≥0∞ :=
-  (PMF.uniformOfFintype (Fin (2 * m) → Bool)).toMeasure {σ |
+  (PMF.uniform (Fin (2 * m) → Bool)).toMeasure {σ |
     ∃ j ∈ Finset.Icc m (2 * m),
       ENNReal.ofReal ε < supNormOver (E ∪ (↑T : Set (Ω → ℝ))) (fun f =>
         (m : ℝ)⁻¹ * ∑ i ∈ Finset.univ.filter (fun i : Fin (2 * m) => i.val < j),
@@ -182,7 +183,7 @@ private theorem outerLpNorm_localized_le_conditionOn
       (hf.indicator hA).aemeasurable,
     outerLpNorm_eq_eLpNorm_of_aemeasurable R f r hr hf.aemeasurable]
   change eLpNorm (A.indicator f) p Q ≤ eLpNorm f p R
-  rw [eLpNorm_indicator_eq_eLpNorm_restrict hA, hQR,
+  rw [eLpNorm_indicator_eq_eLpNorm_restrict hA.nullMeasurableSet, hQR,
     eLpNorm_smul_measure_of_ne_top hp_top f (Q A) hf.aestronglyMeasurable]
   have hQAone : Q A ≤ 1 := by
     simpa only [measure_univ] using
@@ -348,7 +349,7 @@ theorem exists_localizedPooledClassNet
             ((hFmeas f hf).sub (hFmeas f₀ hf₀))).aemeasurable
         rw [hsub, outerLpNorm_eq_eLpNorm_of_aemeasurable Q _ r hrpos hsubmeas]
         change eLpNorm (A.indicator (f - f₀)) (ENNReal.ofReal r) Q < _
-        rw [eLpNorm_indicator_eq_eLpNorm_restrict hA,
+        rw [eLpNorm_indicator_eq_eLpNorm_restrict hA.nullMeasurableSet,
           Measure.restrict_eq_zero.mpr hzero]
         rw [eLpNorm_eq_lintegral_rpow_enorm_toReal
           (ENNReal.ofReal_pos.mpr hrpos).ne' ENNReal.ofReal_ne_top
@@ -1132,8 +1133,8 @@ private theorem map_uniformOfFintype_involutive
     {α : Type*} [Fintype α] [Nonempty α]
     [MeasurableSpace α] [MeasurableSingletonClass α]
     (f : α → α) (hf : Function.Involutive f) :
-    Measure.map f (PMF.uniformOfFintype α).toMeasure =
-      (PMF.uniformOfFintype α).toMeasure := by
+    Measure.map f (PMF.uniform α).toMeasure =
+      (PMF.uniform α).toMeasure := by
   rw [PMF.toMeasure_map f _ (measurable_of_finite f)]
   congr 1
   ext y
@@ -1245,11 +1246,11 @@ private theorem firstRademacherCrossing_spec
 
 private theorem uniform_max_partial_le_two_terminal
     {N : ℕ} (a : Fin N → ℝ) (t : ℝ) :
-    let ν := (PMF.uniformOfFintype (Fin N → Bool)).toMeasure
+    let ν := (PMF.uniform (Fin N → Bool)).toMeasure
     ν {σ | HasRademacherCrossing a t σ} ≤
       2 * ν {σ | t ≤ rademacherPartialSum a σ N} := by
   classical
-  let ν := (PMF.uniformOfFintype (Fin N → Bool)).toMeasure
+  let ν := (PMF.uniform (Fin N → Bool)).toMeasure
   let B : Set (Fin N → Bool) := {σ | HasRademacherCrossing a t σ}
   let C : Set (Fin N → Bool) := {σ | t ≤ rademacherPartialSum a σ N}
   let R := reflectAfterFirstCrossing a t
@@ -1273,7 +1274,7 @@ private theorem uniform_max_partial_le_two_terminal
     _ = 2 * ν C := by rw [hpre, two_mul]
 
 private noncomputable def fairBoolMeasure : Measure Bool :=
-  (PMF.uniformOfFintype Bool).toMeasure
+  (PMF.uniform Bool).toMeasure
 
 private instance : IsProbabilityMeasure fairBoolMeasure := by
   unfold fairBoolMeasure
@@ -1304,17 +1305,17 @@ private instance (N : ℕ) : IsProbabilityMeasure (fairBoolCube N) := by
   infer_instance
 
 private theorem fairBoolCube_eq_uniform (N : ℕ) :
-    fairBoolCube N = (PMF.uniformOfFintype (Fin N → Bool)).toMeasure := by
+    fairBoolCube N = (PMF.uniform (Fin N → Bool)).toMeasure := by
   apply Measure.ext_of_singleton
   intro σ
   have hpoint (b : Bool) : fairBoolMeasure {b} = (2 : ℝ≥0∞)⁻¹ := by
     rw [fairBoolMeasure, PMF.toMeasure_apply_singleton,
-      PMF.uniformOfFintype_apply, Fintype.card_bool]
+      PMF.uniform_apply, Fintype.card_bool]
     · norm_num
     · exact MeasurableSet.singleton b
   rw [fairBoolCube, Measure.pi_singleton, PMF.toMeasure_apply_fintype]
   simp_rw [hpoint]
-  simp only [Set.indicator_singleton, PMF.uniformOfFintype_apply, Fintype.card_pi,
+  simp only [Set.indicator_singleton, PMF.uniform_apply, Fintype.card_pi,
     Fintype.card_bool, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
     Nat.cast_pow, Nat.cast_ofNat, Finset.sum_pi_single', Finset.mem_univ, ite_true]
   exact ENNReal.inv_pow.symm
@@ -1325,7 +1326,7 @@ private theorem rademacherPartialSum_hasSubgaussianMGF
     ProbabilityTheory.HasSubgaussianMGF
       (fun σ : Fin N → Bool => rademacherPartialSum a σ N)
       (∑ i, (NNReal.mk ((a i) ^ 2) (sq_nonneg (a i))))
-      (PMF.uniformOfFintype (Fin N → Bool)).toMeasure := by
+      (PMF.uniform (Fin N → Bool)).toMeasure := by
   have hindep : ProbabilityTheory.iIndepFun
       (fun i (σ : Fin N → Bool) => a i * fairBoolSign (σ i))
       (fairBoolCube N) := by
@@ -1375,11 +1376,11 @@ private theorem uniform_abs_max_partial_tail
     {N : ℕ} (a : Fin N → ℝ) (t : ℝ) (v : ℝ≥0)
     (ht : 0 ≤ t)
     (hv : (∑ i, ((NNReal.mk ((a i) ^ 2) (sq_nonneg (a i))) : ℝ≥0)) ≤ v) :
-    let ν := (PMF.uniformOfFintype (Fin N → Bool)).toMeasure
+    let ν := (PMF.uniform (Fin N → Bool)).toMeasure
     ν {σ | ∃ j, j ≤ N ∧ t ≤ |rademacherPartialSum a σ j|} ≤
       4 * ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (v : ℝ)))) := by
   classical
-  let ν := (PMF.uniformOfFintype (Fin N → Bool)).toMeasure
+  let ν := (PMF.uniform (Fin N → Bool)).toMeasure
   let B : Set (Fin N → Bool) :=
     {σ | ∃ j, j ≤ N ∧ t ≤ |rademacherPartialSum a σ j|}
   let Bpos : Set (Fin N → Bool) := {σ | HasRademacherCrossing a t σ}
@@ -1525,7 +1526,7 @@ theorem conditionalRademacher_finitePooledNet_blockMaxTail
         (Real.exp (-((m : ℝ) * ε ^ 2) / (128 * M ^ 2))) := by
   classical
   rcases hT with ⟨hTsub, hTlp, hnet⟩
-  let ν := (PMF.uniformOfFintype (Fin (2 * m) → Bool)).toMeasure
+  let ν := (PMF.uniform (Fin (2 * m) → Bool)).toMeasure
   let B : Set (Fin (2 * m) → Bool) := {σ |
     ∃ j ∈ Finset.Icc m (2 * m),
       ENNReal.ofReal ε < supNormOver (E ∪ (↑T : Set (Ω → ℝ))) (fun f =>
@@ -1746,7 +1747,7 @@ private theorem paired_swap_outer_le_uniform_average
     (hXiindep : ProbabilityTheory.iIndepFun X μ) :
     (μ.prod μ).outerMeasureStar (pairedFiniteSample X n ⁻¹' D) ≤
       outerExpectation (μ.prod μ) (fun ξ =>
-        (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+        (PMF.uniform (Fin n → Bool)).toMeasure
           {σ | swapFinitePairs σ (pairedFiniteSample X n ξ) ∈ D}) := by
   classical
   let q : Fin n → Measure Ω := fun i => μ.map (X i.val)
@@ -1782,7 +1783,7 @@ private theorem paired_swap_outer_le_uniform_average
           hpairedMeas) hDmeas
   let c : ℝ≥0∞ := (Fintype.card (Fin n → Bool) : ℝ≥0∞)⁻¹
   have htail (ξ : Ξ × Ξ) :
-      (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+      (PMF.uniform (Fin n → Bool)).toMeasure
           {σ | swapFinitePairs σ (pairedFiniteSample X n ξ) ∈ D} =
         ∑ σ : Fin n → Bool, (A σ).indicator (fun _ => c) ξ := by
     rw [PMF.toMeasure_apply_fintype]
@@ -1792,16 +1793,16 @@ private theorem paired_swap_outer_le_uniform_average
     · simp [hσ, A, c]
     · simp [hσ, A, c]
   have htailMeas : Measurable (fun ξ : Ξ × Ξ =>
-      (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+      (PMF.uniform (Fin n → Bool)).toMeasure
         {σ | swapFinitePairs σ (pairedFiniteSample X n ξ) ∈ D}) := by
     simp_rw [htail]
     exact Finset.measurable_sum _ fun σ _ => measurable_const.indicator (hAmeas σ)
   have htailIntegral :
-      ∫⁻ ξ, (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+      ∫⁻ ξ, (PMF.uniform (Fin n → Bool)).toMeasure
           {σ | swapFinitePairs σ (pairedFiniteSample X n ξ) ∈ D} ∂(μ.prod μ) =
         (μ.prod μ) (pairedFiniteSample X n ⁻¹' D) := by
     calc
-      ∫⁻ ξ, (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+      ∫⁻ ξ, (PMF.uniform (Fin n → Bool)).toMeasure
           {σ | swapFinitePairs σ (pairedFiniteSample X n ξ) ∈ D} ∂(μ.prod μ) =
           ∫⁻ ξ, ∑ σ : Fin n → Bool,
             (A σ).indicator (fun _ => c) ξ ∂(μ.prod μ) := lintegral_congr htail
@@ -1831,7 +1832,7 @@ private theorem paired_swap_outer_le_uniform_average
         (μ.prod μ) (pairedFiniteSample X n ⁻¹' D) :=
       outerMeasureStar_le_measure_symm _ _
     _ = outerExpectation (μ.prod μ) (fun ξ =>
-        (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+        (PMF.uniform (Fin n → Bool)).toMeasure
           {σ | swapFinitePairs σ (pairedFiniteSample X n ξ) ∈ D}) := by
       rw [outerExpectation_eq_lintegral htailMeas, htailIntegral]
 
@@ -2152,7 +2153,7 @@ private theorem localizedUniformCover_block_tsum_lt_top
             (μ.prod μ).outerMeasureStar (pairedFiniteSample X (2 * m) ⁻¹' D) := by
           rw [pairedGhostBlockBad_pairedFiniteSample E X m (ε / 2)]
         _ ≤ outerExpectation (μ.prod μ) (fun ξ =>
-            (PMF.uniformOfFintype (Fin (2 * m) → Bool)).toMeasure
+            (PMF.uniform (Fin (2 * m) → Bool)).toMeasure
               {σ | swapFinitePairs σ (pairedFiniteSample X (2 * m) ξ) ∈ D}) :=
           paired_swap_outer_le_uniform_average μ X (2 * m) D hDmeas hXmeas hXiindep
         _ ≤ outerExpectation (μ.prod μ) (fun _ =>
@@ -2171,7 +2172,7 @@ private theorem localizedUniformCover_block_tsum_lt_top
             convert! hT using 1
             ring
           calc
-            (PMF.uniformOfFintype (Fin (2 * m) → Bool)).toMeasure
+            (PMF.uniform (Fin (2 * m) → Bool)).toMeasure
                 {σ | swapFinitePairs σ (pairedFiniteSample X (2 * m) ξ) ∈ D} ≤
                 conditionalRademacherBlockMaxTail E T m
                   (fun i => (pairedFiniteSample X (2 * m) ξ i).1)

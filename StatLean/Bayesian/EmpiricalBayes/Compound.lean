@@ -15,7 +15,7 @@ solutions of compound statistical decision problems," *Proc. Second Berkeley Sym
 B. Efron, *Large-Scale Inference*, Cambridge University Press, 2010, §1.
 
 **Proof formalization notes.** `mixtureDensity_eq_predictiveDensity` and
-`npEB_oraclePosterior_eq_withDensity` are the definitional bridges to the Batch-1/2 dominated-Bayes
+`npEB_oraclePosterior_eq_withDensity` are the definitional bridges to the dominated-Bayes
 machinery (`predictiveDensity`, `generalizedPosterior_def`, `bayesDensity`);
 `oracleBayesRule_minimizes_compoundRisk` is `lintegral_mono` applied to a pointwise
 posterior-risk domination — the pointwise Bayes optimality of the oracle rule integrates to

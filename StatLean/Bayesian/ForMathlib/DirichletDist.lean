@@ -15,7 +15,8 @@ $$w_\alpha(\theta) = \mathbf{1}_{\mathrm{corner}}(\theta)\,
   \prod_{i=0}^{k} (\mathrm{simplexExtend}\,\theta)_i^{\alpha_i - 1},$$
 and `dirichletMeasure α = Z(α)⁻¹ • volume.withDensity w_α` with the **abstract normalization**
 `Z(α) = ∫⁻ w_α`. Conjugacy (`StatLean.Bayesian.Conjugacy.DirichletMultinomial`) needs only
-`0 < Z(α) < ∞`, never the closed form `Z(α) = ∏Γ(αᵢ)/Γ(∑αᵢ)` (a stretch goal).
+`0 < Z(α) < ∞`, never the closed form `Z(α) = ∏Γ(αᵢ)/Γ(∑αᵢ)` (proved separately as
+`dirichletZ_eq_prod_Gamma_div`).
 
 **Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §3.4
@@ -25,7 +26,7 @@ and `dirichletMeasure α = Z(α)⁻¹ • volume.withDensity w_α` with the **ab
 the null set `{∑ xᵢ = 1}`; the corner parametrization used here is the standard
 Lebesgue-absolutely-continuous realization (drop the last coordinate), which keeps all measure
 theory on `Fin k → ℝ` where `volume` is the pi measure and `StandardBorelSpace` is automatic.
-Positivity of `Z` is a sub-box lower bound. Finiteness is the batch's hardest analysis: peel one
+Positivity of `Z` is a sub-box lower bound. Finiteness is the hardest analysis: peel one
 coordinate with `MeasureTheory.measurePreserving_piFinSuccAbove`, rescale the remaining corner by
 `(1 − t)`, and reduce to the one-dimensional Beta integral `lintegral_Ioo_rpow_mul_rpow`, itself
 derived from the pinned `lintegral_betaPDF_eq_one`. Exponents use `Real.rpow`; mind
@@ -93,7 +94,7 @@ theorem measurable_dirichletWeight {k : ℕ} (α : Fin (k + 1) → ℝ) :
   exact ((measurable_pi_apply i).comp measurable_simplexExtend).pow measurable_const
 
 /-- The **Dirichlet normalization** `Z(α) = ∫⁻ w_α dLeb`. Conjugacy needs only `0 < Z < ∞`;
-the closed form `∏Γ(αᵢ)/Γ(∑αᵢ)` is a stretch goal. -/
+the closed form `∏Γ(αᵢ)/Γ(∑αᵢ)` is proved separately (`dirichletZ_eq_prod_Gamma_div`). -/
 noncomputable def dirichletZ {k : ℕ} (α : Fin (k + 1) → ℝ) : ℝ≥0∞ :=
   ∫⁻ θ, dirichletWeight α θ
 
@@ -320,8 +321,8 @@ private theorem dirichletZ_inner {k : ℕ} (α : Fin (k + 2) → ℝ)
     show (k : ℝ) + ((∑ i : Fin (k + 1), α i.succ) - ((k : ℝ) + 1))
       = (∑ i : Fin (k + 1), α i.succ) - 1 by ring]
 
-/-- **Exact Dirichlet normalization** `Z(α) = ∏ᵢ Γ(αᵢ) / Γ(∑ᵢ αᵢ)` (Gelman §3.4). Batch-3
-target closing the carried debt: the coordinate-peel recursion `Z(α) = B(α₀, ∑_{i≥1} αᵢ)·Z(tail α)`
+/-- **Exact Dirichlet normalization** `Z(α) = ∏ᵢ Γ(αᵢ) / Γ(∑ᵢ αᵢ)` (Gelman §3.4). The
+coordinate-peel recursion `Z(α) = B(α₀, ∑_{i≥1} αᵢ)·Z(tail α)`
 with the pinned real Beta–Gamma identity `ProbabilityTheory.beta a b = Γ(a)Γ(b)/Γ(a+b)`
 (`beta_eq_betaIntegralReal`) telescopes to `∏Γ/Γ(∑)`; `dirichletZ_lt_top` is then an immediate
 corollary. -/

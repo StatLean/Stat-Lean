@@ -25,8 +25,7 @@ construction.
 **Reference.** Natural extension: Rokhlin (1961); the reverse-kernel construction of a
 stationary two-sided Markov chain is classical (e.g. Meyn & Tweedie, *Markov Chains and
 Stochastic Stability*, ch. 3 notes). Consumed by `Threshold/TAR.lean`
-(`exists_stationary_nlAR_of_invariant`, FY §4.1.1) — the last structurally-blocked debt
-of the TimeSeries area.
+(`exists_stationary_nlAR_of_invariant`, FY §4.1.1).
 
 **Bibliographic comments.** The disintegration input is Mathlib's
 `Measure.condKernel` (standard Borel); the one-sided trajectory input is
@@ -169,7 +168,6 @@ private instance instMarkovChainWindowKernel (κ : Kernel S S) [IsMarkovKernel �
   | succ k ih =>
       rw [chainWindowKernel]
       exact Kernel.IsMarkovKernel.map _ (measurable_finSnoc' k)
-
 
 
 section K1

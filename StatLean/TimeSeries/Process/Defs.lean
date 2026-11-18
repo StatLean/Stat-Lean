@@ -8,7 +8,7 @@ import StatLean.PointEstimation.ForMathlib.MeasureMap
 
 A (real, discrete-time) **time series** is a family `X : ℤ → Ω → ℝ` of random variables on
 a probability space, indexed by two-sided time (FY's backshift operator is defined for
-`k = ±1, ±2, …`, which fixes the ambient index set as `ℤ`). This laptop-only `Defs` file
+`k = ±1, ±2, …`, which fixes the ambient index set as `ℤ`). This `Defs` file
 fixes the shared data model of the `TimeSeries` area:
 
 * `shift`, `fdd` — time shift and finite-dimensional distributions;

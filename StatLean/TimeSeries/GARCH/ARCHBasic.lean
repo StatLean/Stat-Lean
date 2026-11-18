@@ -16,7 +16,7 @@ in §4.2:
   ARCH(p) solution with `E X_t² < ∞`, and then `E X_t = 0`,
   `E X_t² = c₀/(1 − Σ b_j)`; `c₀ = 0` forces `X ≡ 0`. Proof: apply Theorem 2.5 with
   `Y_t = X_t²`, `ξ_t = ε_t²`, then read off the moments by stationarity. The
-  **necessity** half is Bollerslev (1986) Thm 1 — a literature DEBT.
+  **necessity** half is Bollerslev (1986) Thm 1 and is not formalized.
 * **Theorem 4.3(ii)**: `E ε⁴ < ∞` and eq. (4.16) `max{1, (Eε⁴)^{1/2}} Σ b_j < 1`
   ⇒ `E X_t⁴ < ∞`.
 * **eqs. (4.17)–(4.20)**: `X_t²` satisfies an AR(p) recursion whose noise

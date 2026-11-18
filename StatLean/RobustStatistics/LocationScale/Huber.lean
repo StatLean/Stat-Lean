@@ -118,7 +118,7 @@ theorem huberPsi_tendsto_atBot (c : ℝ) : Tendsto (huberPsi c) atBot (𝓝 (-c)
 
 /-- The Huber score tends to `c` at `+∞` (the upper clamp; `MMY §3.2.1`, `k₂ = ψ(∞)`).
 
-**Statement repair (2026-08-15).** The hypothesis `0 ≤ c` is *not* optional: the original
+**Statement repair.** The hypothesis `0 ≤ c` is *not* optional: the original
 stub asserted the limit for every real `c`, which is false for `c < 0`. There
 `min c u ≤ c < 0 < -c`, so `huberPsi c` is the *constant* `-c` and tends to `-c ≠ c`; the
 refutation at `c = -1` is machine-checked immediately below. Since `MMY §2.2` only ever

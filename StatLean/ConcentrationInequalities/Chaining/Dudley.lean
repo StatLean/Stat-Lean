@@ -15,7 +15,7 @@ $$ \mathbb{E}\Bigl[\sup_{t \in T} |X_t - X_{t_0}|\Bigr]
    \mathbb{E}\Bigl[\sup_{s,t \in T} |X_t - X_s|\Bigr]
      \le 80\, K \int_0^{D}\!\sqrt{\log \mathcal{N}}, $$
 plus the $\int_0^\infty$ display of Theorem 8.1.3 and the ONE countable lift
-mandated by the sup policy. Assembly file.
+used for countable index sets. Assembly file.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, §8.1, Theorem 8.1.3, Eqs. (8.13), (8.14), and
@@ -36,11 +36,9 @@ countable lift is stated wholly in `ℝ≥0∞` (`∫⁻` of
 `⨆ ENNReal.ofReal |X_t − X_{t₀}|` against `dudleyLIntegral`) so neither side
 can be junk; it goes by monotone convergence (`lintegral_iSup`) over a finite
 exhaustion `S_n ↑ T`, with the subset step costing exactly the factor `2`
-above. Uncountable-sup statements are left to consumers per the sup policy
+above. Uncountable-sup statements are left to consumers
 (ℚ-grid + right-continuity for Glivenko–Cantelli; `L^∞`-dense subfamilies for
-Lipschitz classes). Named-sorry fallback of this work item:
-`dudley_inequality_countable` (all finite-`T` integral forms proved; the
-MCT/change-of-variables lift is the isolated hard part).
+Lipschitz classes).
 
 **Bibliographic comments.** R. M. Dudley, "The sizes of compact subsets of
 Hilbert space and continuity of Gaussian processes," *J. Funct. Anal.* 1
@@ -62,7 +60,7 @@ variable {E : Type*} [PseudoMetricSpace E]
 + Eq. (8.16)): `E max_{t ∈ T} X_t ≤ 12√3 · K · ∫_0^D √(log 𝒩)`. Book constant
 frozen to `12√3 = 2 × 6√3`.
 
-Carrier note (statement fix at the debt gate): the finite maximum is stated
+Carrier note: the finite maximum is stated
 with the junk-free `Finset.sup'` carrier, inherited verbatim from
 `discrete_dudley_of_finite` (see its docstring for the `|T| = 1` counterexample to the
 old set-bounded `⨆ t ∈ T` form). -/
@@ -237,8 +235,7 @@ theorem dudley_inequality_abs_pair_of_finite {X : E → Ω → ℝ} {K : ℝ≥0
 /-- **Dudley's inequality, `∫_0^∞` display** (HDP §8.1, Theorem 8.1.3
 verbatim shape): via `dudleyIntegral_Ioi_eq`; the `diam = 0` corner is
 handled separately in the proof. `Finset.sup'` carrier as in
-`dudley_inequality_of_finite` (junk-free honest maximum; statement fix at the debt
-gate). -/
+`dudley_inequality_of_finite` (junk-free honest maximum). -/
 theorem dudley_inequality_Ioi_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
@@ -584,7 +581,7 @@ below, which measures the entropy of `T` directly — so the former
 theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy (uncountable sups are left
+    -- LEAN-ONLY: countable T (uncountable sups are left
     -- to consumers)
     (hcnt : T.Countable)
     -- LEAN-ONLY: nonemptiness

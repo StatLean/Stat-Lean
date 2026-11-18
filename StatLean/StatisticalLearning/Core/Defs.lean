@@ -15,8 +15,7 @@ Definition 4.3), agnostic PAC (SSBD Definition 3.4), and realizable PAC for
 binary classification (SSBD Definitions 2.1 and 3.1).
 
 **Reference.** Shalev-Shwartz & Ben-David, *Understanding Machine Learning*
-(Cambridge, 2014), Ch. 2–4. Exact transcriptions:
-`notes/statistical_learning/book_statements/ch2-5.md`.
+(Cambridge, 2014), Ch. 2–4.
 
 **Formalization notes.**
 * A sample is a *sequence* `Fin n → Z` (SSBD footnote 1, p. 14: order and
@@ -28,8 +27,8 @@ binary classification (SSBD Definitions 2.1 and 3.1).
 * Best-in-class risk is `sInf (risk D ℓ '' 𝓗)` (image form — avoids the
   real-`⨅` junk floor at `0`); junk value `0` when `𝓗 = ∅` or the image is
   unbounded below. Theorems carry nonemptiness/nonnegativity hypotheses.
-* This file is a laptop-only Defs surface: definitions and instances only,
-  0-sorry; all lemma content lives in the sibling files.
+* This file is a Defs surface: definitions and instances only; all lemma
+  content lives in the sibling files.
 
 **Bibliographic comments.** The PAC model is due to L. G. Valiant, "A theory
 of the learnable," *Comm. ACM* 27 (1984), 1134–1142; the agnostic extension to

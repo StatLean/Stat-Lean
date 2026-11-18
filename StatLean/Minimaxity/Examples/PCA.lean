@@ -469,7 +469,7 @@ theorem pca_minimax_rate {n d : ℕ} (hn : 1 ≤ n)
     (hP : ∀ θ, P θ = Measure.pi fun _ : Fin n =>
       multivariateGaussian 0 (1 + ν • vecMulVec (θ : Fin d → ℝ) (θ : Fin d → ℝ))) :
     -- USER-INPUT: constant loosened from book 128⁻¹ to the value provable from the n/10
-    -- sphere-packing brick (Wainwright Ex 15.19; CLAUDE.md §1).
+    -- sphere-packing brick (Wainwright Ex 15.19).
     ENNReal.ofReal (2048⁻¹ * min ((1 + ν) / ν ^ 2 * (d / n)) 1)
       ≤ minimaxRiskDist (· ^ 2) (Subtype.val) P := by
   obtain ⟨M, hMne, θfam, hθ, δ, hM, hsep, hbound⟩ := pca_fano_config hn hd0 ν hν P hP

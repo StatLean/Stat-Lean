@@ -14,7 +14,7 @@
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum","label":"scoreSum","full":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"StatLean.HypothesisTesting.localAlt","label":"localAlt","full":"StatLean.HypothesisTesting.localAlt","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.LikelihoodMethods.EstimatorUnderAlternatives"},
     {"id":"StatLean.HypothesisTesting.posSemidef_of_fisherInformation","label":"posSemidef_of_fisherInformation","full":"StatLean.HypothesisTesting.posSemidef_of_fisherInformation","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.LikelihoodMethods.EstimatorUnderAlternatives"},
-    {"id":"Matrix.PosSemidef.posDef_iff_isUnit","label":"posDef_iff_isUnit","full":"Matrix.PosSemidef.posDef_iff_isUnit","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Matrix.Order"},
+    {"id":"Matrix.PosSemidef.posDef_iff_isUnit","label":"posDef_iff_isUnit","full":"Matrix.PosSemidef.posDef_iff_isUnit","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
     {"id":"Matrix.isUnit_iff_isUnit_det","label":"isUnit_iff_isUnit_det","full":"Matrix.isUnit_iff_isUnit_det","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.NonsingularInverse"},
     {"id":"Matrix.PosDef.posSemidef","label":"posSemidef","full":"Matrix.PosDef.posSemidef","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
     {"id":"Matrix.PosDef.inv","label":"inv","full":"Matrix.PosDef.inv","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},

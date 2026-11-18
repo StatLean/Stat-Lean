@@ -21,7 +21,7 @@ its values, so bundling it would violate the area's hypothesis discipline.
 E. L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed., Springer, 1998, §1.5,
 Definition 5.2 and the surrounding discussion (`TPE2 §1.5`).
 
-**Proof formalization notes.** Laptop-only — definitions only; the characterizations and the
+**Proof formalization notes.** Definitions only; the characterizations and the
 transfer theorems under the model calculus live in `Identifiability.Transfer`. `lawFunctional`
 junk-values to `Classical.arbitrary Γ` off the model range (`Function.extend`'s fallback);
 statements about it therefore always carry the `IdentifiesTarget` hypothesis. The import of

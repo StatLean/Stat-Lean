@@ -1,6 +1,7 @@
 import StatLean.TimeSeries.GARCH.ARCHBasic
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.ConditionalExpectation
+import StatLean.ForMathlib.ENNRealTsum
 
 /-!
 # Basic properties of GARCH(p, q) (FY §4.2.2, Theorem 4.4, Proposition 4.2)
@@ -11,7 +12,7 @@ import Mathlib.Probability.ConditionalExpectation
 * **Theorem 4.4** (sufficiency half): `Σ b_i + Σ a_j < 1` ⇒ a unique strictly
   stationary solution with `E X_t² < ∞`; then `E X_t = 0`,
   `Var X_t = c₀/(1 − Σb − Σa)`, and `X` is white noise. Finite fourth moments hold
-  under eq. (4.28). The **necessity** half is Bollerslev (1986) — literature DEBT.
+  under eq. (4.28). The **necessity** half is Bollerslev (1986) and is not formalized.
 * **eqs. (4.25)–(4.26)**: `X_t²` follows an ARMA(p∨q, q) with martingale-difference
   noise `e_t = (ε_t² − 1)σ_t²`.
 * **Proposition 4.2**: stationary GARCH is white noise, `σ_t²` is the conditional
@@ -20,14 +21,14 @@ import Mathlib.Probability.ConditionalExpectation
 * **Example 4.2**, eqs. (4.29)–(4.30): the GARCH(1,1) ARCH(∞) form and the closed-form
   squared-process ACF
   `Corr(X_t², X_{t+k}²) = ((1 − a₁² − a₁b₁)b₁ / (1 − a₁² − 2a₁b₁))·(b₁ + a₁)^{k−1}`.
-* **Nelson (1990) sufficiency — a COMMISSIONED PROOF TARGET** (user, 2026-08-04):
+* **Nelson (1990) sufficiency:**
   `E log(b₁ε² + a₁) < 0` ⇒ GARCH(1,1) has a unique strictly stationary solution, via
   the a.s. convergence of the random-product series `Σ_k ∏_{i<k}(b₁ε²_{t−i} + a₁)`
   (iid SLLN on the logs), *without* any moment condition; and the **IGARCH(1,1)**
   corollary: `b₁ + a₁ = 1` with nondegenerate `ε²` still gives strict stationarity,
   because strict Jensen makes `E log(b₁ε² + a₁) < log E(b₁ε² + a₁) = 0`.
 
-**Scope.** Descoped 2026-08-04 (user), with all consumers: Nelson **necessity**,
+**Scope.** Not formalized, together with their consumers: Nelson **necessity**,
 Bougerol–Picard (1992b) Lyapunov-exponent iff and the general-`(p,q)` IGARCH
 eq. (4.33), Kesten (1973) tail index eqs. (4.31)–(4.32). None is stated here.
 
@@ -599,7 +600,7 @@ theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
           * ENNReal.ofReal (G fun s => r (s - 1 - (j : ℕ)) ^ 2) := ⟨_, rfl⟩
   have hVm : Measurable V := by
     rw [hVdef]
-    refine measurable_const.add (Measurable.ennreal_tsum fun j => measurable_const.mul ?_)
+    refine measurable_const.add (ENNReal.measurable_tsum fun j => measurable_const.mul ?_)
     exact Measurable.ennreal_ofReal (hGm.comp (Measurable.of_eval fun s =>
       (measurable_pi_apply (s - 1 - (j : ℕ))).pow_const 2))
   have hVcaus : ∀ r r' : ℤ → ℝ, (∀ s ≤ (0 : ℤ), r s = r' s) → V r = V r' := by
@@ -662,7 +663,7 @@ theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     intro t
     simp only [hσdef, hUdef]
     refine Measurable.sqrt (Measurable.ennreal_toReal (measurable_const.add
-      (Measurable.ennreal_tsum fun j => measurable_const.mul ?_)))
+      (ENNReal.measurable_tsum fun j => measurable_const.mul ?_)))
     exact Measurable.ennreal_ofReal ((hXm _).pow_const 2)
   have hUV : ∀ t : ℤ, ∀ᵐ ω ∂μ, (U fun s => X (s + t) ω) = V fun s => ε (s + t) ω := by
     intro t
@@ -683,7 +684,7 @@ theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     intro t
     simp only [hσdef, hUdef]
     refine Measurable.sqrt (Measurable.ennreal_toReal (measurable_const.add
-      (Measurable.ennreal_tsum fun j => measurable_const.mul ?_)))
+      (ENNReal.measurable_tsum fun j => measurable_const.mul ?_)))
     refine Measurable.ennreal_ofReal (Measurable.pow_const ?_ 2)
     exact measurable_of_lt_sigmaLT (by omega : (-1 : ℤ) - ((j : ℕ) : ℤ) + t < t)
   have hpast : ∀ t : ℤ, Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT X t) μ := by
@@ -1319,7 +1320,7 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
   rw [acf, hmain n, Nat.add_sub_cancel, mul_div_assoc, hratio]
   ring
 
-/-! ### Nelson's strict-stationarity criterion (commissioned proof target) -/
+/-! ### Nelson's strict-stationarity criterion -/
 
 /-! #### The random-product volatility series
 
@@ -1362,7 +1363,7 @@ private lemma measurable_nelProd (b1 a1 : ℝ) (k : ℕ) : Measurable (nelProd b
   fun_prop
 
 private lemma measurable_nelW (b1 a1 : ℝ) : Measurable (nelW b1 a1) :=
-  Measurable.ennreal_tsum fun k => measurable_nelProd b1 a1 k
+  ENNReal.measurable_tsum fun k => measurable_nelProd b1 a1 k
 
 private lemma measurable_nelV (c0 b1 a1 : ℝ) : Measurable (nelV c0 b1 a1) :=
   (measurable_const.mul (measurable_nelW b1 a1)).ennreal_toReal
@@ -1612,7 +1613,7 @@ private lemma measurable_nelV_sigmaLT {ε : ℤ → Ω → ℝ} (c0 b1 a1 : ℝ)
     Measurable[sigmaLT ε t] fun ω => nelV c0 b1 a1 (nelPath ε s ω) := by
   simp only [nelV, nelW]
   exact Measurable.ennreal_toReal (measurable_const.mul
-    (Measurable.ennreal_tsum fun k => measurable_nelProd_sigmaLT b1 a1 k hst))
+    (ENNReal.measurable_tsum fun k => measurable_nelProd_sigmaLT b1 a1 k hst))
 
 omit [MeasurableSpace Ω] in
 private lemma measurable_nelXf_sigmaLT {ε : ℤ → Ω → ℝ} (c0 b1 a1 : ℝ) {s t : ℤ} (hst : s < t) :
@@ -1697,7 +1698,7 @@ private noncomputable def nelU (c0 b1 a1 : ℝ) (q : ℤ → ℝ) : ℝ :=
   (ENNReal.ofReal (c0 / (1 - a1)) + nelT b1 a1 q).toReal
 
 private lemma measurable_nelT (b1 a1 : ℝ) : Measurable (nelT b1 a1) := by
-  refine Measurable.ennreal_tsum fun k => Measurable.ennreal_ofReal ?_
+  refine ENNReal.measurable_tsum fun k => Measurable.ennreal_ofReal ?_
   fun_prop
 
 private lemma measurable_nelU (c0 b1 a1 : ℝ) : Measurable (nelU c0 b1 a1) :=
@@ -1710,7 +1711,7 @@ omit [MeasurableSpace Ω] in
 private lemma measurable_nelT_sigmaLT {X : ℤ → Ω → ℝ} (b1 a1 : ℝ) (t : ℤ) :
     Measurable[sigmaLT X t] fun ω => nelT b1 a1 (nelPath X t ω) := by
   simp only [nelT]
-  refine Measurable.ennreal_tsum fun k => Measurable.ennreal_ofReal ?_
+  refine ENNReal.measurable_tsum fun k => Measurable.ennreal_ofReal ?_
   have hlt : t - 1 - (k : ℕ) < t := by
     have : (0 : ℤ) ≤ (k : ℤ) := Int.natCast_nonneg k
     omega
@@ -1943,7 +1944,7 @@ private lemma exists_garch_of_nelW_ae [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
   rw [hXfun]
   exact isStrictlyStationary_nelX hε.measurable hε.iIndep hε.identDistrib
 
-/-- **Nelson (1990), sufficiency — COMMISSIONED PROOF TARGET** (user, 2026-08-04):
+/-- **Nelson (1990), sufficiency:**
 if `E log(b₁ ε₀² + a₁) < 0` then the GARCH(1,1) equations admit a strictly stationary
 solution, *with no moment condition on `ε`*. The volatility is the a.s.-convergent
 random-product series `σ_t² = c₀ Σ_{k ≥ 0} ∏_{i < k} (b₁ ε_{t−1−i}² + a₁)`, whose

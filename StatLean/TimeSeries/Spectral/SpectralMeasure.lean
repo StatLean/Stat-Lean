@@ -9,10 +9,10 @@ import StatLean.TimeSeries.Models.WhiteNoise
 has a unique spectral measure — a negation-invariant finite measure `F` on
 `AddCircle (2π)` whose Fourier coefficients are the autocovariances,
 `γ(k) = ∫ e^{ikλ} dF(λ)` (FY eq. (2.35), unnormalized form eq. (2.37)). Existence
-combines the batch-A Herglotz theorem with the ACVF's evenness and positive
+combines the Herglotz theorem with the ACVF's evenness and positive
 semidefiniteness (FY Theorem 2.7, necessity); uniqueness is
 `ext_of_measureFourierCoeff`. The book's `[−π, π]`-with-endpoint conventions are the
-circle picture (batch-A design decision D7); `F(π) = γ(0)` is the mass identity.
+circle picture (a deliberate design choice); `F(π) = γ(0)` is the mass identity.
 
 (FY §2.3.1's periodic-process examples are instances of the correspondence — the
 random-phase process of `Stationarity/Gaussian.lean` realizes an arbitrary spectral

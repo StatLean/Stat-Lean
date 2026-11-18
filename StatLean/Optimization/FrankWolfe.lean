@@ -39,8 +39,7 @@ Architecture: `frankWolfe_step` proves the one-step recursion; `frankWolfe_rate`
 then closes by `Nat.le_induction` for `t ≥ 1`, with base case `t = 1` coming from
 one FW step at `t = 0` (`η_0 = 1 ⇒ Δ_1 ≤ (L/2)D ≤ 2LD/3`). The theorem is stated
 for `t ≥ 1`: the `t = 0` case would assert the trivial initial gap `Δ_0 ≤ L D`,
-not provable from the per-step diameter bound alone for a *constrained* minimizer
-(CLAUDE.md §1 documented deviation).
+not provable from the per-step diameter bound alone for a *constrained* minimizer.
 
 **Bibliographic comments.**
 The Frank–Wolfe (conditional-gradient) method originates with M. Frank and
@@ -135,7 +134,7 @@ Stated for `t ≥ 1`: the `t = 0` case would assert the trivial initial gap
 `Δ_0 ≤ L D`, which is not provable from the per-step diameter bound alone for a
 *constrained* minimizer; the `O(1/t)` rate is the meaningful regime, and its
 base case `t = 1` follows from one FW step at `t = 0` (`η_0 = 1 ⇒ Δ_1 ≤ (L/2)D
-≤ 2LD/3`). Documented deviation per CLAUDE.md §1. -/
+≤ 2LD/3`). Documented deviation. -/
 theorem frankWolfe_rate
     {f : E → ℝ} (hf : ConvexOn ℝ Set.univ f) (hdiff : Differentiable ℝ f)
     {L : ℝ} (hL : 0 < L) (hsmooth : IsLSmooth f L)

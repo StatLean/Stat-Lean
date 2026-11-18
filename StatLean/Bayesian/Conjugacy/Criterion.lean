@@ -11,8 +11,8 @@ finite multiple of a probability measure, the posterior IS that measure.**
   measure, then `generalizedPosterior p π x = ρ` — no measurability, no almost-everywhere.
 * A.e. lift: under a dominated model, if for every `x` the unnormalized posterior is `c(x) • ρ(x)`
   with each `ρ(x)` a probability measure, then `(κ†π) x = ρ x` for predictive-a.e. `x` — with
-  **no side conditions on `c`**: evaluating at the whole space forces `c(x) = m(x)`, and Batch 1
-  proves `0 < m < ∞` predictive-a.e.
+  **no side conditions on `c`**: evaluating at the whole space forces `c(x) = m(x)`, and
+  `0 < m < ∞` holds predictive-a.e.
 
 **Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
 Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
@@ -22,7 +22,7 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 **Proof formalization notes.** Pointwise: apply the hypothesis to `Set.univ` to identify
 `c = predictiveDensity p π x` (`withDensity_apply`, `setLIntegral_univ`, `Measure.smul_apply`,
 `measure_univ`), then divide by `c` via `withDensity_smul'` (needs only `c⁻¹ ≠ ∞`) and cancel with
-`ENNReal.inv_mul_cancel`. A.e. lift: `filter_upwards` with the Batch-1 headline
+`ENNReal.inv_mul_cancel`. A.e. lift: `filter_upwards` with the dominated Bayes formula
 `posterior_eq_withDensity_likelihood_div_predictive` and `predictiveDensity_pos_ae` /
 `predictiveDensity_lt_top_ae_comp`.
 

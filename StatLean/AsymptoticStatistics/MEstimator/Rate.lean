@@ -24,7 +24,6 @@ It localizes to a closed ball and dilates the parameter so the curvature and mod
 share one constant, instantiates `α = 2`, `β = 1`,
 and transfers the resulting outer-probability rate back to the measurable
 Euclidean estimator.
-
 -/
 
 set_option linter.style.longFile 1600

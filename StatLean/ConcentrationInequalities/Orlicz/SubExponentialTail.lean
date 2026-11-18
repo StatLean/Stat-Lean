@@ -18,9 +18,7 @@ route through property (iv), which yields `K₁ = 3K₃`. Raw core for arbitrary
 measures; the norm-facing wrapper derives the threshold-2 condition via the
 attainment lemma and hence assumes `[IsProbabilityMeasure μ]`. Tail events
 use the ≤-form `μ {ω | t ≤ |X ω|}` with `ENNReal.ofReal` right-hand side (the
-`SubGaussian/TailBounds.lean` carrier convention). Named-sorry fallback of
-this work item: `measure_abs_ge_le_of_lintegral_exp_abs_le_two` (only if the
-Markov event-equality resists; expected to close fully).
+`SubGaussian/TailBounds.lean` carrier convention).
 
 **Bibliographic comments.** Exponential tails from exponential moments is
 Markov's inequality in its oldest clothing (Bernstein 1924, Chernoff 1952).

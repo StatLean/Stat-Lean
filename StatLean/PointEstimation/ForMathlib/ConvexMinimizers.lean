@@ -32,7 +32,7 @@ integral criteria on the line. (`TPE2 §3.1 Thm 1.10, Cor 1.11`.)
   of any of the integrals — `ℝ≥0∞` absorbs the `⊤` cases — so no finiteness hypothesis is
   imposed. Only measurability of `ρ` is required, for additivity of `∫⁻`.
 * **Convexity coefficients.** The `∫⁻` statement uses `ConvexOn ℝ≥0`, the only convexity
-  predicate that typechecks for `ℝ≥0∞`-valued functions at this pin (`ℝ≥0∞` is a module over
+  predicate that typechecks for `ℝ≥0∞`-valued functions (`ℝ≥0∞` is a module over
   `ℝ≥0`, not over `ℝ`). The real-valued statements use the ordinary `ConvexOn ℝ`.
 * **No continuity hypothesis on `exists_min_of_convexOn_of_coercive`.** A convex function
   `ℝ → ℝ` defined on all of `ℝ` is automatically continuous, so assuming continuity would be

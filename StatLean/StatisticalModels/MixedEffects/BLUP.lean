@@ -1,5 +1,6 @@
 import StatLean.StatisticalModels.MixedEffects.Marginal
 import StatLean.StatisticalModels.Gaussian.Conditioning
+import StatLean.ForMathlib.BindProd
 
 /-!
 # BLUP — the best linear unbiased predictor of the random effects
@@ -156,7 +157,7 @@ block), latent effects second. -/
 noncomputable def lmmJointLaw (D : LMMDesign n p q) (β : EuclideanSpace ℝ (Fin p))
     (G : Measure (EuclideanSpace ℝ (Fin q))) (R : Measure (EuclideanSpace ℝ (Fin n))) :
     Measure (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin q)) :=
-  (G.prod R).map fun be =>
+  (G.bindProd R).map fun be =>
     (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β + Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1
         + be.2,
       be.1)
@@ -214,7 +215,7 @@ theorem lmmJointLaw_eq_blockGaussian (D : LMMDesign n p q) (β : EuclideanSpace 
       ring
     · ext j
       simp [blockPair]
-  rw [lmmJointLaw, hprod,
+  rw [lmmJointLaw, Measure.bindProd_eq_prod, hprod,
     Measure.map_map (measurable_jointMap D β)
       (sumMeasEquivProd (ι₁ := Fin q) (ι₂ := Fin n)).measurable,
     hcomp, ← Measure.map_map (sumMeasEquivProd (ι₁ := Fin n) (ι₂ := Fin q)).measurable haff,
@@ -258,7 +259,7 @@ noncomputable def blupRisk (D : LMMDesign n p q)
     (G : Measure (EuclideanSpace ℝ (Fin q))) (R : Measure (EuclideanSpace ℝ (Fin n)))
     (A : Matrix (Fin q) (Fin n) ℝ) : ℝ :=
   ∫ be, ‖be.1 - Matrix.toEuclideanLin (𝕜 := ℝ) A
-      (Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2)‖ ^ 2 ∂(G.prod R)
+      (Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2)‖ ^ 2 ∂(G.bindProd R)
 
 /-! ### LEAN-ONLY plumbing for the variational identity (M3c)
 
@@ -478,7 +479,7 @@ private theorem blupRisk_eq_trace (D : LMMDesign n p q)
       Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
         + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2) :=
     (by infer_instance)
-  rw [blupRisk]
+  rw [blupRisk, Measure.bindProd_eq_prod]
   simp_rw [hfun]
   rw [← integral_map hmT.aemeasurable hae, integral_sq_norm_eq_trace _ hL2map hmean,
     covMatrix_map_add_prod G R (1 - A * D.Z) (-A) hG2 hR2, hneg, Matrix.trace_add]

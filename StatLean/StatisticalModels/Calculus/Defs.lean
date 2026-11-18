@@ -32,7 +32,7 @@ Probabilistic Mathematics, Cambridge University Press, 2003 (ISBN 0-521-77339-3)
 D. F. Heitjan and D. B. Rubin, "Ignorability and coarse data," *Ann. Statist.* **19** (1991),
 no. 4, 2244–2253, §2.
 
-**Proof formalization notes.** Laptop-only data model — definitions only; all lemmas (algebra
+**Proof formalization notes.** Data model — definitions only; all lemmas (algebra
 of the operations, probability-preservation instances, marginals) live in `Calculus.Compose`
 and `Calculus.Marginal`. The θ-free `observe` is the primary observation operation (its laws
 are hypothesis-free and it is the case in which identifiability and risk theorems live);

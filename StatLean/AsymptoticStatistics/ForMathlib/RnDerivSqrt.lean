@@ -52,7 +52,6 @@ theorem aestronglyMeasurable_sqrt_rnDeriv_mul_iff {ν ξ : Measure Ω} [SigmaFin
     · rw [hω hd]
 
 
-
 /-- Pointwise identity: `√(x.toReal)² = x.toReal` since `x.toReal ≥ 0`. -/
 private lemma sqrt_rnDeriv_sq_eq (ν μ : Measure Ω) :
     (fun ω => Real.sqrt ((ν.rnDeriv μ ω).toReal) ^ 2)

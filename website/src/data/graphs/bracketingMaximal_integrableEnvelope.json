@@ -12,7 +12,8 @@
     {"id":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","label":"bracketingMaximal_full","full":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.BracketingMaximalGeneral"},
     {"id":"mul_pos","label":"mul_pos","full":"mul_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"iSup_congr_Prop","label":"iSup_congr_Prop","full":"iSup_congr_Prop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
-    {"id":"iSup_neg","label":"iSup_neg","full":"iSup_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
+    {"id":"iSup_of_empty'","label":"iSup_of_empty'","full":"iSup_of_empty'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Bounds.Basic"},
+    {"id":"sSup_empty","label":"sSup_empty","full":"sSup_empty","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Bounds.Basic"},
     {"id":"bot_eq_zero'","label":"bot_eq_zero'","full":"bot_eq_zero'","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Canonical.Defs"},
     {"id":"ciSup_const","label":"ciSup_const","full":"ciSup_const","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompletePartialOrder.Indexed"},
     {"id":"MeasureTheory.outerExpectation_const","label":"outerExpectation_const","full":"MeasureTheory.outerExpectation_const","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectation"},
@@ -45,8 +46,7 @@
     {"id":"AsymptoticStatistics.EmpiricalProcess.outerExpectation_supNorm_le_truncateClass_add_tail","label":"outerExpectation_supNorm_le_truncateClass_add_tail","full":"AsymptoticStatistics.EmpiricalProcess.outerExpectation_supNorm_le_truncateClass_add_tail","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.BracketingMaximalGeneral"},
     {"id":"AsymptoticStatistics.EmpiricalProcess.clampFn","label":"clampFn","full":"AsymptoticStatistics.EmpiricalProcess.clampFn","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.NestedPartition"},
     {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.EmpiricalAverage"},
-    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
-    {"id":"abs_mul","label":"abs_mul","full":"abs_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Abs"}
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope"},
@@ -59,7 +59,8 @@
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"mul_pos"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"iSup_congr_Prop"},
-    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"iSup_neg"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"iSup_of_empty'"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"sSup_empty"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"bot_eq_zero'"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"ciSup_const"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"MeasureTheory.outerExpectation_const"},
@@ -92,7 +93,6 @@
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"AsymptoticStatistics.EmpiricalProcess.outerExpectation_supNorm_le_truncateClass_add_tail"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"AsymptoticStatistics.EmpiricalProcess.clampFn"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg"},
-    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"Finset.sum_congr"},
-    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"abs_mul"}
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope","target":"Finset.sum_congr"}
   ]
 }

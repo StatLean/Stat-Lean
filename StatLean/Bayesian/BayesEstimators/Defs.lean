@@ -23,7 +23,7 @@ and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 10 (Bay
 Procedures), §10.3 (Point Estimators), p. 147 (the loss conditions and the posterior-risk
 minimization problem).
 
-**Proof formalization notes.** Laptop-only data model. Losses are `ℝ≥0∞`-valued (matching
+**Proof formalization notes.** Shared definitions. Losses are `ℝ≥0∞`-valued (matching
 `BowlShaped` and `anderson_lemma_loss`); the risk process is a `lintegral`. The separation
 condition is stated pointwise (`‖x‖ ≤ M → 2M ≤ ‖y‖ → ℓ x ≤ ℓ y`), equivalent to vdV's
 sup–inf form but free of suprema over uncountable sets.

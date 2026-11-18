@@ -661,7 +661,6 @@ private lemma UV_diff {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (ε : 
   exact Finset.sum_congr rfl fun l _ => by ring
 
 
-
 /-- The `L²` norm of a finite scalar combination. -/
 private lemma eLpNorm_const_mul_sum_le {ι : Type*} (s : Finset ι) (c : ι → ℝ) (f : ι → Ω → ℝ)
     (hf : ∀ i ∈ s, AEStronglyMeasurable (f i) μ) :
@@ -1379,9 +1378,8 @@ end CausalityConverse
 ARMA process with a stationary causal solution and **coprime** AR/MA polynomials, `b` has
 no roots in the closed unit disc.  The ⇐ half is `exists_stationary_arma`.
 
-**Statement repair (wave `ts/f1-arma-finale`, 2026-08-09).** The frozen form — without
-`hcop` — is FALSE, as recorded by wave `ts/s7`: take `p = q = 1`, `b = ![1]`, `a = ![-1]`,
-i.e. `b(z) = 1 − z = a(z)`, whose common root is `z = 1`.  The recurrence
+**Statement repair.** The frozen form — without `hcop` — is FALSE: take `p = q = 1`,
+`b = ![1]`, `a = ![-1]`, i.e. `b(z) = 1 − z = a(z)`, whose common root is `z = 1`.  The recurrence
 `X_t = X_{t−1} + ε_t − ε_{t−1}` is solved exactly by `X = ε`, which is stationary and
 causal (`ψ = δ₀`, so `IsCausalFor X ε μ` holds) for *any* white noise, including one with
 `σ² > 0`; yet `aeval 1 (arPoly ![1]) = 0` with `‖(1 : ℂ)‖ ≤ 1`, so `NoRootClosedDisc ![1]`
@@ -1454,7 +1452,7 @@ theorem arma_causal_of_stationary_debt [IsProbabilityMeasure μ] {p q : ℕ}
   rw [hzero, haz, mul_zero, mul_zero, add_zero] at this
   exact zero_ne_one this
 
-/-- **DEBT (Brockwell & Davis 1996, p. 82; FY §2.1.2 cited fact (ii))**: uniqueness of
+/-- **Brockwell & Davis (1996), p. 82; FY §2.1.2 cited fact (ii)**: uniqueness of
 the stationary solution when `b` has no roots on the unit circle: two stationary
 solutions driven by the same noise agree a.e. at every time. -/
 theorem arma_stationary_unique_debt [IsProbabilityMeasure μ] {p q : ℕ}

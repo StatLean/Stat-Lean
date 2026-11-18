@@ -4,6 +4,7 @@ import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import Mathlib.Probability.CDF
 import Mathlib.MeasureTheory.Measure.Portmanteau
+import StatLean.ForMathlib.BindCDF
 
 /-!
 # Asymptotics of the randomization distribution
@@ -118,7 +119,7 @@ end Defs
 /-- The **lower generalized inverse** of a c.d.f., $F^{-1}(p) = \inf\{t : F(t) \ge p\}$.
 The general API lives in the `ForMathlib/QuantileFunction` brick; this is the packaging
 used by the randomization statements. -/
-noncomputable def cdfQuantile (R : Measure ℝ) (p : ℝ) : ℝ := sInf {t : ℝ | p ≤ cdf R t}
+noncomputable def cdfQuantile (R : Measure ℝ) (p : ℝ) : ℝ := sInf {t : ℝ | p ≤ bindCDF R t}
 
 /-- **Convergence in probability along a triangular array.** The measure spaces change
 with `n`, so `TendstoInMeasure` (one fixed space) does not apply; this is the same notion

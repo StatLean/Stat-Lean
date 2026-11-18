@@ -31,9 +31,7 @@ expectation bound `2·L·√(log(2N))` — split the layer cake at
 `a = L√(log(2N))`; the Gaussian-tail remainder is
 `≤ L/(2√log 2) ≤ 0.74·L√(log(2N))`, slack to the frozen numeral `2`. First
 moment: `E|Y| ≤ ∫₀^∞ 2exp(−t²/L²) dt = √π·L`, exact. All tail lemmas carry
-`[IsProbabilityMeasure μ]` (bridge B1 requires it). Named-sorry fallback of
-this work item: `expectation_abs_max_le` (with `tail_abs_max_le` and the
-first moment proved; `DudleyTail` needs only the tail form).
+`[IsProbabilityMeasure μ]` (bridge B1 requires it).
 
 **Bibliographic comments.** Maximal inequalities under ψ₂-norm bounds are
 folklore consequences of the Cramér–Chernoff method and Orlicz-norm calculus;

@@ -86,7 +86,7 @@ form of the regular-estimator limit law, vdV §25.3 + Thm 7.10),
 bound, vdV §25.3 Lemmas 3-4 plus the basis-selection / Riesz-pairing bridge),
 and `_hCovBlockPSD` in `covBlockPSDAll` (the joint-MGF differentiation +
 Anderson PSD-monotone covariance bound). Each is a named, well-defined
-downstream debt rather than an arbitrary assumption.
+explicit hypothesis rather than an arbitrary assumption.
 
 **Bibliographic comments.** The conceptual origin is Lucien Le Cam's theory of
 limits of experiments — L. Le Cam, "Limits of experiments", in *Proceedings of

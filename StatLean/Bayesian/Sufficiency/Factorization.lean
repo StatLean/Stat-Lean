@@ -26,7 +26,7 @@ p. 16 that the posterior (1.2.3) depends on `x` only through the likelihood).
 For the statistic reduction, the key bridge is `map_withDensity_comp` (a density factoring through
 `T` passes through `Measure.map T`), which exhibits the statistic experiment as dominated by
 `(ν.withDensity h).map T` with density `g`; both experiments' posteriors are then identified by the
-Batch-1 dominated Bayes theorem, and the exceptional sets transport because `h ∈ (0, ∞)` holds
+dominated Bayes theorem, and the exceptional sets transport because `h ∈ (0, ∞)` holds
 `(κ ∘ₘ π)`-a.e. (forced by `predictiveDensity_pos_ae`/`_lt_top_ae_comp` — not hypotheses). The
 likelihood principle is the scalar case of the same cancellation.
 
@@ -110,7 +110,7 @@ theorem posterior_ae_eq_posterior_statKernel [StandardBorelSpace Θ] [Nonempty �
       funext x; rw [Pi.mul_apply, hfac θ x, mul_comm]
     rw [hpθ, withDensity_mul _ hh (show Measurable fun x => g θ (T x) from (hgθ θ).comp hT),
       map_withDensity_comp hT (hgθ θ)]
-  -- Batch-1 dominated Bayes for the full and the statistic experiments.
+  -- Dominated Bayes for the full and the statistic experiments.
   have hfull := posterior_eq_withDensity_likelihood_div_predictive (κ := κ) (π := π) (ν := ν) hp hκ
   have hstatpost := posterior_eq_withDensity_likelihood_div_predictive
     (κ := statKernel κ hT) (π := π) (ν := (ν.withDensity h).map T) hg hκ'

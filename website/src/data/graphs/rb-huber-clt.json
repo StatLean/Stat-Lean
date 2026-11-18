@@ -31,7 +31,7 @@
     {"id":"hasDerivAt_iff_isLittleO","label":"hasDerivAt_iff_isLittleO","full":"hasDerivAt_iff_isLittleO","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Basic"},
     {"id":"Metric.eventually_nhds_iff","label":"eventually_nhds_iff","full":"Metric.eventually_nhds_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
     {"id":"Real.dist_eq","label":"dist_eq","full":"Real.dist_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
-    {"id":"iSup_unique","label":"iSup_unique","full":"iSup_unique","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
+    {"id":"iSup_unique","label":"iSup_unique","full":"iSup_unique","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Bounds.Basic"},
     {"id":"ENNReal.ofReal_le_ofReal","label":"ofReal_le_ofReal","full":"ENNReal.ofReal_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"RingHomInvPair.ids","label":"ids","full":"RingHomInvPair.ids","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.CompTypeclasses"},
     {"id":"WithLp.linearEquiv_apply","label":"linearEquiv_apply","full":"WithLp.linearEquiv_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.WithLp"},

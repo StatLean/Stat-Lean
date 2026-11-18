@@ -25,7 +25,7 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 2007 (ISBN 978-0-387-71598-8). §1.2, eq. (1.2.3)
 (posterior density), p. 9; §1.4, marginal `m(x)`, p. 22.
 
-**Proof formalization notes.** Laptop-only data model — definitions only, all in `ℝ≥0∞`. The
+**Proof formalization notes.** Definitions only, all in `ℝ≥0∞`. The
 posterior density uses extended-nonnegative division, so it is total: it takes the junk value `0`
 wherever `m(x) = 0` or `m(x) = ∞` (both of which are `(K ∘ₘ π)`-null under a finite model, proved
 in `Dominated.PredictiveDensity`). `bayesKernel` is built with `Kernel.withDensity` of the

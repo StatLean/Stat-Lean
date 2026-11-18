@@ -13,7 +13,7 @@
     {"id":"FiniteDimensional.RCLike.properSpace_submodule","label":"properSpace_submodule","full":"FiniteDimensional.RCLike.properSpace_submodule","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Lemmas"},
     {"id":"FiniteDimensional.finiteDimensional_submodule","label":"finiteDimensional_submodule","full":"FiniteDimensional.finiteDimensional_submodule","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.FiniteDimensional.Defs"},
     {"id":"StatLean.HighDimensionalStatistics.MEstimator.subspaceLip_nonneg","label":"subspaceLip_nonneg","full":"StatLean.HighDimensionalStatistics.MEstimator.subspaceLip_nonneg","kind":"repo","decl":"thm","module":"StatLean.HighDimensionalStatistics.MEstimator.SubspaceLip"},
-    {"id":"AddGroupSeminormClass.toNonnegHomClass","label":"toNonnegHomClass","full":"AddGroupSeminormClass.toNonnegHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Hom.Basic"},
+    {"id":"AddGroupSeminormClass.toNonnegHomClass","label":"toNonnegHomClass","full":"AddGroupSeminormClass.toNonnegHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Hom.GroupNorm"},
     {"id":"add_nonneg","label":"add_nonneg","full":"add_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Basic"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
     {"id":"mul_nonneg","label":"mul_nonneg","full":"mul_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},

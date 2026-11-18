@@ -49,7 +49,7 @@ variable {Θ : Type*} {𝓧 S : Type*} [MeasurableSpace 𝓧] [MeasurableSpace S
 theorem pushforward_eq_statLaw (P : Θ → Measure 𝓧) (T : 𝓧 → S) :
     pushforward P T = statLaw P T := rfl
 
--- **Batch-0 finding: the two `iff`s below are FALSE as frozen** (no `Measurable T`).
+-- **The two `iff`s below are FALSE as frozen** (no `Measurable T`).
 -- `HasSufficientKernel P T` is *vacuously* satisfiable by a statistic that is nowhere
 -- a.e.-measurable: then `(P θ).map (fun x => (T x, x)) = 0` and `statLaw P T θ = 0`
 -- (`Measure.map_of_not_aemeasurable`), so the graph identity reads `0 = 0 ⊗ₘ Q = 0`

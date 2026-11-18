@@ -1109,8 +1109,8 @@ private lemma tendstoInProbRandomized_twoSampleScale (PY PZ : Measure ℝ)
     TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
       (fun k => twoSampleLaw (m k) (n k) PY PZ)
       (fun k x => twoSampleScale (m k) (n k) x) τ := by
-  -- **The hypergeometric half of Theorem 17.3.3** (wave 8, closed here).
-  -- Route, exactly as the wave-5 note laid it out:
+  -- **The hypergeometric half of Theorem 17.3.3.**
+  -- Route:
   -- (a) the group-average calculus (`tendstoInProbRandomized_add`, `_const_mul`, `_comp`,
   --     `_congr`) reduces the square root, the sum and the factor `m/n` to the two block
   --     variances;
@@ -1818,7 +1818,7 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
     Tendsto (fun k => powerAgainst (twoSampleLaw (m k) (n k) PY PZ)
         (randTest (Equiv.Perm (Fin (m k + n k))) (studentizedTwoSample (m k) (n k)) α))
       atTop (𝓝 α) := by
-  -- Route (re-derived this session, wave 5). The critical value is *not* passed through
+  -- Route. The critical value is *not* passed through
   -- `randQuantile_tendstoInProb`: the test's critical index `k = M − ⌊Mα⌋` gives the
   -- randomization quantile at the *moving* level `k/M`, and `randQuantile_tendstoInProb` is
   -- stated at the fixed level `1 − α`. The finite-sample identity

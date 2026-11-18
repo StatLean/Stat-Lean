@@ -20,12 +20,11 @@ own `log(d/ε)` looseness), by the Massart route of SSBD §28.1:
   `m ≥ (128d/ε²)·log(64d/ε²) + (8/ε²)(8d log(e/d) + 2 log(4/δ))`
   (SSBD p. 341, exact constants frozen).
 
-**Reference.** SSBD §28.1; Lemma A.2. Transcriptions:
-`notes/statistical_learning/book_statements/ch6-28.md`.
+**Reference.** SSBD §28.1; Lemma A.2.
 
-**Formalization notes.** `Countable 𝓗` is LEAN-ONLY per the batch sup policy
-(the book quantifies over arbitrary classes); the `StandardBorelSpace X`
-instance is inherited from the McDiarmid engine behind Theorem 26.5. The VC
+**Formalization notes.** `Countable 𝓗` is LEAN-ONLY (the book quantifies over arbitrary
+classes); the `StandardBorelSpace X` instance is inherited from the McDiarmid engine behind
+Theorem 26.5. The VC
 hypothesis is `vcDim (setClassOf 𝓗) ≤ d` (set-class dictionary). This is the
 `log(d/ε)`-loose form the book actually proves — the tight `d/ε²` of
 Theorem 6.8 requires chaining and is out of scope (SSBD's own remark). -/
@@ -214,7 +213,7 @@ simultaneously for every `h ∈ 𝓗`,
 `|L_D(h) − L_S(h)| ≤ √(8 d log(en/d)/n) + √(2 log(4/δ)/n)`. -/
 theorem vc_uniformDeviation_hp (𝓗 : Set (X → Bool))
     (D : Measure (X × Bool)) [IsProbabilityMeasure D] {δ : ℝ}
-    -- LEAN-ONLY: countable class per the batch sup policy
+    -- LEAN-ONLY: countable class, so the supremum is measurable
     (hc : 𝓗.Countable)
     -- USER-INPUT: nonempty class; SSBD §28.1 (implicit)
     (h𝓗 : 𝓗.Nonempty)
@@ -481,7 +480,7 @@ dimension `≤ d` with sample complexity
 otherwise frozen). -/
 theorem vc_isAgnosticPACLearnerWith (𝓗 : Set (X → Bool))
     {A : ∀ m : ℕ, Sample (X × Bool) m → (X → Bool)}
-    -- LEAN-ONLY: countable class per the batch sup policy
+    -- LEAN-ONLY: countable class, so the supremum is measurable
     (hc : 𝓗.Countable)
     -- USER-INPUT: nonempty class; SSBD §28.1 (implicit)
     (h𝓗 : 𝓗.Nonempty)

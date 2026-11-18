@@ -7,149 +7,24 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.InfinitePi
 
 /-!
-# Hannan's theorem: asymptotic normality of the ARMA Gaussian MLE (FY Theorem 3.2)
+# ARMA variance consistency and sample PACF
 
-The head of the commissioned Hannan program (ledger (a), batches C–D): for a
-stationary causal invertible ARMA(p, q) with **iid** noise and coprime minimal orders,
-any measurable approximate-MLE sequence over a compact identifiable region satisfies
+`hannan_sigma2_consistent` proves consistency of the profiled innovation-variance
+estimate, using the quadratic-form LLN and local stochastic equicontinuity from
+`ARMA/Consistency.lean`. The module also defines the sample partial autocorrelation
+`samplePACF` and proves the measurability facts used by that construction.
 
-`√T (θ̂_T − θ₀) →d N(0, W)`, `W = (hannanVarZBack b₀ a₀)⁻¹` (FY eq. (3.14)),
+The white-noise counterexample `ls_yw_mle_equivalent_debt_false` shows why a
+measurable estimator cannot be substituted for an actual least-squares, Yule–Walker
+or maximum-likelihood estimator when asserting their asymptotic equivalence.
 
-where `hannanVarZBack` is the covariance of the score vector `Z_t = (U_{t−1−i},
-V_{t−1−j})` — see FINDING 26 at `hannanScore_brownInputs` and the orientation repair
-recorded there (wave `ts/f1c-hannan-orientation`): the file used to write the *forward*
-Gram `hannanVarZ` here, which is a different quadratic form as soon as `p, q ≥ 1` and
-`max (p, q) ≥ 2`.
-
-Stated in Cramér–Wold/charFun form, together with `σ̂² →p σ²`. FY's remarks are
-honored: **no fourth moment is required**, and the noise assumption is exactly iid
-(the martingale-difference weakening is future work, not stated).
-
-**The whole of that head has been removed** — see **Removed** immediately below. What
-this module still delivers is `hannan_sigma2_consistent` (`σ̂² →p σ²`), the `samplePACF`
-definition, and the machine-checked falsity witness `ls_yw_mle_equivalent_debt_false`.
-Everything from the *Assembly plan* paragraph onwards is kept verbatim as the historical
-record of the route and its findings; read it as history, not as an inventory of what the
-file contains.
-
-**Removed (2026-08-10, user directive).** The three sorried declarations of this module,
-the two headline theorems proved from them, and — transitively — the 41 `private`
-declarations left with no surviving consumer, were deleted. This is by far the largest
-deletion of the sweep: the entire `ScoreCLT` section (the score martingale, the three
-Brown inputs and the averaged Lindeberg condition) went with it, because every path out of
-it ran through one of the two headlines.
-
-*Sorried (the three listed in the directive):*
-* `armaMLE_linearization` — the Taylor/sandwich linearization of the approximate MLE
-  against the score sum, the analytic core of FY Thm 3.2.
-* `samplePACF_linearization` — the delta-method linearization of the sample PACF, with
-  its variance normalisation `dᵀ W_k d = 1`.
-* `ls_yw_mle_equivalent_debt` — B&D Thm 10.8.2 / FY §3.3.2: LS, Yule–Walker and Gaussian
-  MLE for a causal AR(p) are `√T`-asymptotically equivalent (repaired two-conjunct form).
-
-*Headline consumers:*
-* `hannan_mle_clt` — **FY Theorem 3.2 (Hannan)**, Cramér–Wold/charFun form:
-  `√T (θ̂_T − θ₀) →d N(0, W)` with `W = (hannanVarZBack b₀ a₀)⁻¹`. Proved from
-  `armaMLE_linearization`.
-* `samplePACF_clt` — **FY Proposition 3.1**: `√T π̂(k) →d N(0, 1)` for a causal AR(p) at
-  lag `k > p`. Proved from `samplePACF_linearization`.
-
-*`private`, proved, and left without a consumer* (all grep-verified; a survivor-reference
-audit confirmed the cut is clean): the charFun bricks `charFun_map_eq_integral`,
-`integrable_cexp_mul_I`, `norm_cexp_sub_cexp_le`, `tendsto_charFun_of_tendstoInProb_sub`;
-the filtration/linear-process bricks `comap_le_sigmaLT'`, `sigmaLT_le'`,
-`measurable_sigmaLT'`, `sigmaLT_mono'`, `arPoly_neg'`, `noRootClosedDisc_neg'`,
-`exists_adapted_isLinearProcessOf`, `sum_range_shiftSeq_mul`, `isLinearProcessOf_comb`,
-`isLinearProcessOf_unique`; the score apparatus `scoreSeq`, `scoreVec`,
-`scoreVec_eq_comb`, `measurable_scoreVec`, `isLinearProcessOf_scoreVec`,
-`integral_noise_sq`, `condExp_noise_mul_sq`, `hannanScore_condVar_lln`,
-`memLp_noise_mul_of_adapted`, `memLp_scoreSeqS`; the Lindeberg apparatus `lindTrunc`,
-`lindTrunc_nonneg`, `lindTrunc_le_sq`, `measurable_lindTrunc`, `lindTrunc_mul_le`,
-`setIntegral_sq_eq_integral_lindTrunc`, `tendsto_integral_lindTrunc`,
-`identDistrib_of_isStrictlyStationary`, `lindeberg_noise_mul`, `hannanScore_lindeberg`;
-the Brown inputs and the score CLT `hannanScore_brownInputs_back`,
-`hannanScore_brownInputs`, `hannanScore_clt`; and the PACF helpers `sum_padCoeff`,
-`arPoly_pad`, `measurable_samplePACF`.
-
-*Kept:* `hannan_sigma2_consistent` and its three `private` inputs
-(`armaContrastVar_self`, `armaProfileS_atTruth_tendstoInProb`,
-`armaProfileS_equicontinuous`), the two measure-splitting bricks, the `samplePACF`
-definition, `measurable_inv_mulVec`/`measurable_sampleACVF`, and the whole
-`ls_yw_mle_equivalent_debt_false` witness block with its white-noise instance.
-
-Recover from `bdc8143f`.
-
-The two items that used to be listed here alongside the above — FY Proposition 3.1 and
-the LS = YW = MLE equivalence (B&D Thm 10.8.2), together with the reciprocal-variance
-identity `(Γ_k⁻¹)_{kk} = σ⁻²` for `k > p` — are exactly what went.
-
-**Assembly plan** (lane prompt carries detail): consistency (`mle_consistent`) +
-score MDS (`armaScore_condexp_zero` + Brown `mds_clt_sequence`) + Hessian/information
-LLN + the standard Taylor/sandwich argument on the profiled criterion.
-
-**Status of the assembly** (wave `ts/d-hannan-assembly`). All three headline theorems
-are *assembled*: their proofs run end to end over named `private` debts, which are
-listed here with their exact blockers.
-
-* Proved outright: the charFun bricks (`tendsto_charFun_of_tendstoInProb_sub`, the
-  charFun form of Slutsky), `exists_adapted_isLinearProcessOf` (conditional expectation
-  turns a linear process into an *adapted* one — `exists_isLinearProcessOf` alone does
-  not, and Brown's CLT needs adaptedness), `hannanScore_clt` (the Brown CLT genuinely
-  wired along the noise filtration), the padding lemmas and measurability of
-  `samplePACF`, and the three assemblies.
-* The **variance algebra** of the sandwich is carried out symbolically in the
-  `ScoreCLT` section docstring; it collapses to `W⁻¹ = (hannanVarZBack b₀ a₀)⁻¹`.
-* Debts (after wave `ts/f1c-hannan-orientation`, 2026-08-09): `armaMLE_linearization`,
-  `samplePACF_linearization`. **`hannanScore_brownInputs` is CLOSED** (see below).
-  **FINDING 26 (wave `ts/f1b-arma-deep`, 2026-08-09): `hannanVarZ` is the covariance of
-  the FORWARD auxiliary vector, while the score contracts the BACKWARD one `Z_t =
-  (U_{t−1−i}, V_{t−1−j})`; the two Grams read the AR–MA cross-block at opposite lags and
-  differ whenever `p, q ≥ 1` and `max (p, q) ≥ 2`** (machine witness:
-  `ScoreAnalysis.hannanVarZ_quadForm_ne_back`, at ARMA(2,1)).
-  **ORIENTATION REPAIR APPLIED (wave `ts/f1c-hannan-orientation`, 2026-08-09).** Every
-  statement in the chain that asserted a `hannanVarZ` covariance for the score now
-  asserts the `hannanVarZBack` one: `hannanScore_brownInputs`(2), `hannanScore_clt`,
-  `armaMLE_linearization`, `samplePACF_linearization`, and the headline
-  `hannan_mle_clt`, whose asymptotic covariance is now `(hannanVarZBack b₀ a₀)⁻¹`.
-  `hannanVarZ` itself is untouched (it is a correct object — the forward Gram — and
-  `hannanVarZ_posDef` stands); what the repair supplies is its twin
-  `ScoreAnalysis.hannanVarZBack_posDef`, proved by re-running the Bézout/degree argument
-  at the score's shifts. The pure-AR and pure-MA instantiations are unaffected either way
-  (`hannanVarZ_eq_back_of_pure_ar`, `..._of_pure_ma`).
-  **`hannanScore_brownInputs` is now PROVED**: items (1) and (2) are
-  `hannanScore_brownInputs_back`, item (3) is the new `hannanScore_lindeberg`.
-  **CLOSED**: `armaProfileS_atTruth_tendstoInProb` (a two-line corollary of Consistency's
-  now-public `armaProfileS_tendstoInProb`) and `armaProfileS_equicontinuous` (a one-line
-  corollary of `Consistency.armaProfileS_locallyEquicontinuous`).
-  `ARMA/Consistency.lean` is now `sorry`-free — `mle_consistent` is PROVED — and it
-  exports the generic one-filter LLN `linearProcess_avgSq_tendstoInProb`, which is the
-  analytic brick all three remaining debts were blocked on. Each of them now carries a
-  status note naming exactly what is left; the short version is: an `L²`-limit
-  past-measurability step (score `L²` and the conditional-variance identity), the
-  `private` `hannanVec`/`hannanVarZ_quadForm` chain in `ARMA/ScoreAnalysis.lean` (a new
-  scope blocker), an identical-distribution transfer for the Lindeberg input, and the
-  Taylor/delta-method bookkeeping of the last two debts.
-  The "**pointwise ergodic theorem**" diagnosis is **WITHDRAWN** (2026-08-08/09):
-  `ARMA/Consistency.lean`'s `armaResidualSS_tendstoInProb` proved the pointwise LLN
-  ergodic-theorem-free, and the *uniform* half is a deterministic θ-modulus estimate,
-  not an ergodic statement — see `armaProfileS_equicontinuous` below, where the
-  geometric-bound brick and the `ℓ¹` modulus of `π` are now available as
-  `Consistency.exists_uniform_geometric_bound_arma` and
-  `Consistency.exists_armaPi_l1_modulus`.
-  The scope blocker that used to sit here — `ARMA/ScoreAnalysis.lean`'s
-  `indep_noise_sigmaLT`, `private` and hence not citeable — is **gone**: wave
-  `ts/s1b-arma-finish` made it public. (Its replacement, narrower, is the still-`private`
-  `hannanVarZ_quadForm` chain; see `hannanScore_brownInputs`.)
-
-**Two findings reported by this wave.**
-1. `criterion_tendsto_contrast` is *strictly weaker* than the `S_T/T`-level LLN the
-   variance part needs: `Real.log 0 = 0`, so at `σ² = 1` the degenerate event
-   `{S_T = 0}` is invisible at the `log` level and the `exp`-transfer fails. The
-   project-level fix is to un-`private` Consistency's `armaProfileS_tendstoInProb`.
-2. The commissioned Bartlett route to the PACF CLT was **closed**: `Process/SampleACF.lean`'s
-   Bartlett debt (since removed) carried `MemLp (ε 0) 4 μ`, which the PACF CLT —
-   correctly, FY Prop 3.1 needs two moments — did not assume. The martingale route
-   taken instead was documented in the `PACF` section.
+**Scope.** The Hannan parameter CLT (FY Theorem 3.2: `√T (θ̂_T − θ₀) →d N(0, W)` with
+`W = (hannanVarZBack b₀ a₀)⁻¹`, the inverse covariance of the *backward* score vector — see
+FINDING 26 in `ARMA/ScoreAnalysis.lean`), the PACF CLT (FY Proposition 3.1) and the general
+equivalence of least-squares, Yule–Walker and maximum-likelihood estimators (B&D
+Thm 10.8.2) are not formalized here.
+Variance consistency uses the LLN for `S_T/T` itself: the logarithmic criterion
+alone loses information at `S_T = 0`, because `Real.log 0 = 0`.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §3.3.2,
 Theorem 3.2, eq. (3.14), Prop 3.1 (pp. 96–99); E. J. Hannan, J. Appl. Probab. 10
@@ -168,11 +43,8 @@ section CharFunBricks
 
 /-! ### Measure-splitting bricks
 
-The section's charFun bricks (`charFun_map_eq_integral`, `integrable_cexp_mul_I`,
-`norm_cexp_sub_cexp_le` and the charFun form of Slutsky,
-`tendsto_charFun_of_tendstoInProb_sub`) went with the score-CLT assembly they served; see
-**Removed** in the module docstring. What is left are the two measure-splitting bounds,
-still used by `hannan_sigma2_consistent`. -/
+The two measure-splitting bounds below control unions of bad events in
+`hannan_sigma2_consistent`. -/
 
 /-- Splitting a bad event into two, at the level of the real-valued measure. -/
 private lemma toReal_measure_le_of_subset_union [IsFiniteMeasure μ] {A B C : Set Ω}
@@ -198,7 +70,7 @@ section Sigma2
 
 `S(θ̂_T)/T = (S(θ̂_T)/T − S(θ₀)/T) + S(θ₀)/T`: the second term is the quadratic-form
 LLN at the truth, the first is killed by consistency plus a local equicontinuity
-estimate. Both are recorded as named debts below; everything else is proved. -/
+estimate. Both are stated as separate lemmas below; everything else is proved. -/
 
 /-- At the truth the composite filter is `δ₀`, so the contrast variance is `1`. This is
 the convolution identity `π(θ₀) ∗ ψ(θ₀) = δ` (`armaPi_conv_armaPsi`) read off term by
@@ -216,18 +88,15 @@ private lemma armaContrastVar_self {p q : ℕ} (b0 : Fin p → ℝ) (a0 : Fin q 
 
 /-- **The quadratic-form LLN at the truth**: `T⁻¹ xᵀ Γ_T(θ₀)⁻¹ x →p σ²`.
 
-This is **not a second copy** of Consistency's debt: it is exactly that lane's
-`armaProfileS_tendstoInProb` specialised to `θ = θ₀`, where the contrast variance is
-`1` (`armaContrastVar_self`, above — the coprimality-free half of
+This specializes `armaProfileS_tendstoInProb` from `ARMA/Consistency.lean` to `θ = θ₀`,
+where the contrast variance is `1` (`armaContrastVar_self`, above — the coprimality-free half of
 `armaContrastVar_eq_one_iff`). The public `criterion_tendsto_contrast` is **strictly
 weaker** than what is needed here: it controls `log(S_T/T) + T⁻¹ log det Γ_T`, and
 `Real.log` is not injective at Lean's junk value (`Real.log 0 = 0`), so at `σ² = 1` the
 degenerate event `{S_T = 0}` is invisible at the `log` level and the `exp`-transfer back
 to `S_T/T` fails.
 
-The lemma cited was `private` to `ARMA/Consistency.lean` when this debt was recorded;
-the project-level fix that note asked for — making it public — has now been applied, so
-this statement is a two-line corollary and no longer carries any debt of its own. -/
+Using the quadratic-form LLN directly avoids this loss of information at zero. -/
 private theorem armaProfileS_atTruth_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -242,66 +111,17 @@ private theorem armaProfileS_atTruth_tendstoInProb [IsProbabilityMeasure μ] {p 
   refine congrArg _ (Set.ext fun ω => ?_)
   simp only [Set.mem_ofPred_eq, armaContrastVar_self, mul_one, div_eq_inv_mul]
 
-/-- **Local stochastic equicontinuity of the profiled sum of squares — PROVED**
-(2026-08-09, wave `ts/s1b-arma-finish`): the oscillation of `θ ↦ T⁻¹ S_T(θ)` over a small
-ball around `θ₀` is uniformly (in `T`) negligible in probability. It is a one-line
-corollary of `Consistency.armaProfileS_locallyEquicontinuous`, where the estimate is
-carried out; the note below is kept because two of its predictions were **overturned**
-there (see the last paragraph).
+/-- **Local stochastic equicontinuity of the profiled sum of squares**: the oscillation of
+`θ ↦ T⁻¹ S_T(θ)` over a small ball around `θ₀` is uniformly (in `T`) negligible in
+probability.
 
-Hannan's ergodic route proves this together with the pointwise LLN: `T⁻¹ S_T(θ)` is,
-up to the `O(1/T)` edge effect controlled by `logdet_armaToeplitz_vanishes`'s
-whitened-Toeplitz factorisation, the time average `T⁻¹ Σ_t r_t(θ)²` of the squared
-`θ`-residual process, and `θ ↦ r_t(θ)` is Lipschitz in `θ` on the compact `K ⊆ 𝓑`
-with an `L²`-integrable Lipschitz constant (geometric decay of `∂π_j/∂θ`, uniform on
-`K` by `exists_geometric_bound_armaPi`). The claim that the missing ingredient is "the
-pointwise ergodic theorem, absent from Mathlib" is **WITHDRAWN** (2026-08-08): the
-pointwise LLN it is paired with is now reduced, in Consistency, to the single
-ergodic-theorem-free item (C) (`armaProfileS_tendstoInProb`'s `hCLLN`), and the
-finite-`T` half of the *oscillation* statement is not an ergodic statement at all — it
-is the `θ`-Lipschitz estimate above, uniform in `T`, which needs a locally uniform
-geometric bound on `π(θ)` and on `∂π(θ)` over the compact `K`.
-
-**The brick itself is now PROVED** (2026-08-09, wave `ts/s1-arma-endgame`):
-`Consistency.exists_uniform_geometric_bound_arma` (public) gives, for any compact
-`K ⊆ 𝓑`, one `(C, r)` with `r < 1` bounding `|armaPi θ n|` *and* `|armaPsi θ n|` by
-`C rⁿ` uniformly in `θ ∈ K`. Two amendments to the recipe recorded above:
-
-* the Lipschitz-in-`z` step is **unnecessary**. Pushing the radius past `1` is done by
-  the polar parametrisation `z = s · w` (`‖w‖ ≤ 1`, `s ∈ [1, 2]`): the zero set of
-  `(θ, w, s) ↦ aeval (s·w) (maPoly θ.2)` is compact, so the minimum of its
-  `s`-coordinate is already `> 1`. The rest is `IsCompact.exists_isMinOn` /
-  `exists_isMaxOn` for `inf |den|` and `sup |num|` on `K × closedBall 0 R`;
-* the diagnosis that `exists_geometric_bound_armaPsi` cannot be used as a black box was
-  correct — its Cauchy estimate is redone carrying the radius and the sup-bound
-  (`Consistency.abs_armaPsi_le_of_disc_bounds`, via `norm_cauchyPowerSeries_le` plus
-  uniqueness of power series).
-
-**No `∂π/∂θ` companion is needed.** What the oscillation estimate actually consumes is a
-*modulus of continuity*, `∀ ε > 0, ∃ ρ > 0, ∀ θ θ' ∈ K, dist θ θ' < ρ →
-∑' n, |π_n(θ) − π_n(θ')| < ε`, and that is free from the brick plus compactness of
-`K × K`: it is PROVED as `Consistency.exists_armaPi_l1_modulus` (public).
-
-**AMENDMENT (2026-08-09).** The Gram-tail *difference* modulus asked for below is **not
-needed**, and the two "shortcuts" declared dead below are indeed dead but irrelevant.
-What the oscillation estimate actually consumes is a bound on the correction term
-`T⁻¹uᵀG_T(θ)u` that is `o_p(1)` *uniformly over `θ ∈ K`* — and that is available from the
-entrywise bound `|G_{ij}| ≤ (1−r²)⁻¹h_ih_j`, which factorises the quadratic form into a
-square of a **`θ`-free** envelope (`Consistency.quadForm_gramTail_le_env`). One Markov
-inequality then covers the whole supremum at rate `O(1/T)`. The superseded plan follows.
-
-**What was thought to be left here** was the matching modulus for the Gram tail. Writing
-`Γ_T(θ)⁻¹ = Π_Tᵀ(1 + G_T)⁻¹Π_T` and splitting
-
-  `[Π−Π′]ᵀ(1+G)⁻¹Π  +  Π′ᵀ[(1+G)⁻¹−(1+G′)⁻¹]Π  +  Π′ᵀ(1+G′)⁻¹[Π−Π′]`,
-
-the outer two terms are handled by `exists_armaPi_l1_modulus`, `(1+G)⁻¹ ⪯ 1` and the
-Schur test (`rowSum_kernel_le`); the middle term needs
-`∑_j |G_T(θ)_{ij} − G_T(θ′)_{ij}| ≤ L(ρ)` uniformly in `T` and `i`, i.e.
-`trace_gramTail_le`'s estimate redone in difference form off the same modulus. The two
-apparent shortcuts do not work: the pathwise bound `T⁻¹uᵀG u ≤ K P² · T⁻¹‖x‖²` is
-`O_p(1)`, not `o_p(1)`, and using `(1+K)⁻¹ ⪯ (1+G)⁻¹` in the sandwich costs an additive
-`O(1)` term `log(1+K)` in the criterion. -/
+This is `armaProfileS_locallyEquicontinuous` from `ARMA/Consistency.lean`, where the
+estimate is carried out. Its proof uses the locally uniform geometric bound
+`Consistency.exists_uniform_geometric_bound_arma` and the `ℓ¹` modulus of continuity
+`Consistency.exists_armaPi_l1_modulus` of the inversion filter on a compact parameter set.
+The Gram-tail correction `T⁻¹uᵀG_T(θ)u` is `o_p(1)` uniformly in `θ`, by the `θ`-free
+envelope `Consistency.quadForm_gramTail_le_env` and one Markov inequality; no `∂π/∂θ`
+companion and no pointwise ergodic theorem is needed. -/
 private theorem armaProfileS_equicontinuous [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -413,10 +233,8 @@ section PACF
 
 /-! ### Measurability bricks for the sample PACF
 
-FY Proposition 3.1 (`samplePACF_clt`) and its linearization debt were removed (see
-**Removed** in the module docstring); the padding lemmas that served only them went too.
-These two measurability bricks are kept — they are consumed by `wnYW_measurable`, which
-supports the `ls_yw_mle_equivalent_debt_false` witness below. -/
+These measurability lemmas are used by `wnYW_measurable` in the white-noise
+counterexample `ls_yw_mle_equivalent_debt_false` below. -/
 
 /-- Entrywise measurability of a matrix inverse with measurable entries (via
 `A⁻¹ = (det A)⁻¹ • adj A`, both polynomial in the entries). -/
@@ -466,14 +284,14 @@ end PACF
 
 /-! ### The frozen `ls_yw_mle_equivalent_debt` statement is FALSE — a formalized witness
 
-Found in wave `ts/s12-model-selection` (2026-08-09). The statement quantifies over an
+The statement quantifies over an
 **arbitrary measurable** `bMLE`: no hypothesis ties it to the Gaussian likelihood, to
 least squares, or to the data at all (and no least-squares estimator appears anywhere,
 despite the name). It therefore asserts `√T · dist(b̂_YW, bMLE) →p 0` for *every*
 measurable sequence `bMLE`, which fails for the constant translate
 `bMLE := b̂_YW + 1` as soon as `p ≥ 1`.
 
-The witness below is axiom-clean: the instance is the causal AR(1) with zero coefficient
+In the witness below, the instance is the causal AR(1) with zero coefficient
 (`b(z) = 1`, so `X = ε`) driven by the coordinate white noise on `(ℤ → ℝ, ⊗ N(0,1))`,
 and `bMLE` is the translate, whose measurability comes from `measurable_inv_mulVec` /
 `measurable_sampleACVF` above.
@@ -484,8 +302,6 @@ sequence `bLS`, currently absent) must carry their defining hypotheses — for `
 in place the statement becomes a genuine `√T`-equivalence and the residue is the one
 recorded at `armaMLE_linearization`.
 
-**The repair is applied** to `ls_yw_mle_equivalent_debt` below (wave
-`ts/s12b-model-repairs`, 2026-08-09); see the Statement-strengthening paragraph there.
 This witness is kept verbatim, quantified over the *frozen* shape `H`, as the permanent
 record. -/
 

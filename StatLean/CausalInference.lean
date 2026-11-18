@@ -69,14 +69,12 @@ unconfoundedness fails — and **instrumental variables** (`IV/*`), where noncom
 handled through compliance types, culminating in the LATE/CACE theorem, the testable
 instrumental inequalities, and the equivalence with the linear-IV covariance ratio.
 
-**Scope.** Releases 1–6 of `Causal_plan.md`: randomized experiments, observational
-identification, design of observational studies, sensitivity analysis and instrumental
-variables. Regression discontinuity, principal stratification, mediation and time-varying
-treatments (Release 7) are out of scope for this batch, as are general graphical
-identification, interference and modern semiparametric efficiency theory. The observational
-half is formalized for a **finite covariate type**, which is the setting in which Ding
-states the identification formulas concretely (e.g. eq. (10.8)). Scope revisions and the
-statement repairs made during the batch are recorded in `notes/causal_inference/roadmap.md`.
+**Scope.** Randomized experiments, observational identification, design of observational studies,
+sensitivity analysis and instrumental variables. Regression discontinuity, principal stratification,
+mediation and time-varying treatments are out of scope for this module, as are general graphical
+identification, interference and modern semiparametric efficiency theory. The observational half is
+formalized for a **finite covariate type**, which is the setting in which Ding states the
+identification formulas concretely (e.g. eq. (10.8)).
 
 **Relation to `StatLean.ExperimentalDesign`.** That area models randomization and sampling
 designs as `PMF`s and develops Horvitz–Thompson estimation for *survey sampling*; this area
@@ -84,6 +82,4 @@ models designs as uniform distributions on assignment vectors and develops *caus
 estimands (potential outcomes, science tables, the sharp null). The two are deliberately
 independent: the shared combinatorial content — the moments of simple random sampling — is
 taken by both from `StatLean.HypothesisTesting.ForMathlib.HypergeometricMoments`.
-
-Laptop-only file: edited by the laptop session at wave merges.
 -/

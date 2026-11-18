@@ -16,6 +16,7 @@
     {"id":"StatLean.ExperimentalDesign.populationMean_stratified","label":"populationMean_stratified","full":"StatLean.ExperimentalDesign.populationMean_stratified","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Core.Stratification"},
     {"id":"StatLean.ExperimentalDesign.sum_prod_pmf","label":"sum_prod_pmf","full":"StatLean.ExperimentalDesign.sum_prod_pmf","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Stratified.ProductDesign"},
     {"id":"StatLean.ExperimentalDesign.SamplingDesign","label":"SamplingDesign","full":"StatLean.ExperimentalDesign.SamplingDesign","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Design"},
+    {"id":"PMF.uniformOn","label":"uniformOn","full":"PMF.uniformOn","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
     {"id":"StatLean.ExperimentalDesign.samplesOfCard_nonempty","label":"samplesOfCard_nonempty","full":"StatLean.ExperimentalDesign.samplesOfCard_nonempty","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.SimpleRandomSampling"},
     {"id":"StatLean.ExperimentalDesign.pmfExpect_sum","label":"pmfExpect_sum","full":"StatLean.ExperimentalDesign.pmfExpect_sum","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.ForMathlib.PMFExpectation"},
     {"id":"StatLean.ExperimentalDesign.pmfExpect_smul","label":"pmfExpect_smul","full":"StatLean.ExperimentalDesign.pmfExpect_smul","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.ForMathlib.PMFExpectation"},
@@ -45,8 +46,7 @@
     {"id":"Function.update_self","label":"update_self","full":"Function.update_self","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Function.Basic"},
     {"id":"Function.update_of_ne","label":"update_of_ne","full":"Function.update_of_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Function.Basic"},
     {"id":"Finset.prod_eq_single","label":"prod_eq_single","full":"Finset.prod_eq_single","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
-    {"id":"Finset.mem_univ","label":"mem_univ","full":"Finset.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"},
-    {"id":"StatLean.ExperimentalDesign.productDesign_apply","label":"productDesign_apply","full":"StatLean.ExperimentalDesign.productDesign_apply","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Stratified.ProductDesign"}
+    {"id":"Finset.mem_univ","label":"mem_univ","full":"Finset.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"}
   ],
   "edges": [
     {"source":"StatLean.ExperimentalDesign.stratifiedSRS_mean_unbiased","target":"StatLean.ExperimentalDesign.Stratum"},
@@ -68,6 +68,7 @@
     {"source":"StatLean.ExperimentalDesign.stratifiedMeanEstimator","target":"StatLean.ExperimentalDesign.sampleMean"},
     {"source":"StatLean.ExperimentalDesign.productDesign","target":"StatLean.ExperimentalDesign.sum_prod_pmf"},
     {"source":"StatLean.ExperimentalDesign.simpleRandomSampling","target":"StatLean.ExperimentalDesign.SamplingDesign"},
+    {"source":"StatLean.ExperimentalDesign.simpleRandomSampling","target":"PMF.uniformOn"},
     {"source":"StatLean.ExperimentalDesign.simpleRandomSampling","target":"StatLean.ExperimentalDesign.samplesOfCard_nonempty"},
     {"source":"StatLean.ExperimentalDesign.stratified_expect","target":"StatLean.ExperimentalDesign.pmfExpect"},
     {"source":"StatLean.ExperimentalDesign.stratified_expect","target":"StatLean.ExperimentalDesign.productDesign"},
@@ -119,7 +120,6 @@
     {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Function.update_of_ne"},
     {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Finset.sum_congr"},
     {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Finset.prod_eq_single"},
-    {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Finset.mem_univ"},
-    {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"StatLean.ExperimentalDesign.productDesign_apply"}
+    {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Finset.mem_univ"}
   ]
 }

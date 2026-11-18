@@ -9,8 +9,7 @@ agnostically PAC learnable by any ERM selector with sample complexity
 `m(ε,δ) ≤ ⌈2 log(2|𝓗|/δ)/ε²⌉` (the `ε ↦ ε/2` substitution into the
 uniform-convergence half, exact book constant).
 
-**Reference.** SSBD §4.2, Corollary 4.6. Transcriptions:
-`notes/statistical_learning/book_statements/ch2-5.md`.
+**Reference.** SSBD §4.2, Corollary 4.6.
 
 **Formalization notes.** Chains `finiteClass_hasUniformConvergenceWith`
 through `isAgnosticPACLearnerWith_of_hasUniformConvergenceWith`

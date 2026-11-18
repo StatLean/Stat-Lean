@@ -7,8 +7,7 @@ The Rademacher complexity of a set of vectors `A ⊆ ℝⁿ` (SSBD Eq. (26.5)),
 `R(A) = (1/n) E_{σ∼{±1}ⁿ} sup_{a∈A} ∑ᵢ σᵢ aᵢ`, and its instantiation to a
 loss family evaluated on a sample, `R(ℓ∘𝓗∘S)` (SSBD Eq. (26.4)).
 
-**Reference.** SSBD §26.1. Transcriptions:
-`notes/statistical_learning/book_statements/ch26-31-appB.md`.
+**Reference.** SSBD §26.1.
 
 **Formalization notes.**
 * The `σ`-expectation is a **finite average over all `2ⁿ` sign patterns**
@@ -20,7 +19,7 @@ loss family evaluated on a sample, `R(ℓ∘𝓗∘S)` (SSBD Eq. (26.4)).
   whose junk floor at `0` is a known trap). Edge behavior: `sSup ∅ = 0` and
   `sSup` of an unbounded image is `0` — theorems carry
   nonemptiness/boundedness (typically finiteness) hypotheses.
-* This file is a laptop-only Defs surface: definitions only, 0-sorry.
+* This file is a Defs surface: definitions only.
 
 **Bibliographic comments.** Rademacher averages as a complexity measure are
 due to V. Koltchinskii, "Rademacher penalties and structural risk

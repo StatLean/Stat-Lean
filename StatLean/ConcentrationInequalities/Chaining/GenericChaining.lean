@@ -22,7 +22,7 @@ Cambridge University Press, §8.5.2, Theorem 8.5.2 (proof Steps 1–3,
 Eqs. (8.48)–(8.50)); Remark 8.5.3 for the mean-zero-free $|X_t - X_{t_0}|$
 form.
 
-**Proof formalization notes.** Finite-`T` core per the batch sup policy
+**Proof formalization notes.** Finite-`T` core
 (book WLOG, p. 247 Step 1). The high-probability form
 (`generic_chaining_tail_of_finite`) carries per-level thresholds
 $2^{k/2}(\sqrt{2\log 2} + 1) + u$ over the admissible-sequence levels and a
@@ -32,7 +32,7 @@ expectation forms integrate it via
 tail threshold factor `(12 + 4u)` — the sharp canonical-anchor factor
 `(6 + 2u)` doubled through the arbitrary-anchor triangle; expectation
 constant `20` (book's unnamed absolute `C`, from integrating the
-`(12 + 4u)` tail). Per batch reconciliation R4, the mean-zero assemblies
+`(12 + 4u)` tail). The mean-zero assemblies
 carry the LEAN-ONLY hypothesis `hint : ∀ t ∈ T, Integrable (X t) μ` ruling
 out Bochner-junk means (the per-pair increment means are then genuine).
 
@@ -90,8 +90,8 @@ private lemma le_biSup_of_finite {E : Type*} {T : Set E} (hfin : T.Finite)
   exact le_biSup_finset g (hfin.mem_toFinset.mpr ht)
 
 /-- A uniform **nonnegative** bound on the values dominates the finite
-`biSup`. The nonnegativity `hc` is REQUIRED (junk-value guard, statement fix
-at the debt gate): for `E ⊋ T` the real biSup carries the junk branch value
+`biSup`. The nonnegativity `hc` is REQUIRED (junk-value guard): for
+`E ⊋ T` the real biSup carries the junk branch value
 `0`, so `⨆ s ∈ T, g s = max (max_T g) 0 ≤ c` genuinely needs `0 ≤ c`
 (e.g. `g ≡ -1 ≤ c := -1` on a proper subset, but the biSup is `0`). Every
 use in this file has an `|·|`-valued or otherwise nonnegative bound. -/
@@ -127,11 +127,11 @@ private lemma sum_exp_neg_succ_le_one (n : ℕ) :
 /-- **Generic chaining, high-probability form** (HDP §8.5.2, Theorem 8.5.2
 proof Steps 2–3, Eqs. (8.48)–(8.50)): for any admissible sequence `A`, the
 sup of increments exceeds `(12 + 4u)·K·γ(A)` with probability at most
-`2 exp(−u²)`. This work item's single named-sorry fallback. -/
+`2 exp(−u²)`. -/
 theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure; bridge-B1 tail machinery requires it
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: finite index (book WLOG p.247 Step 1; sup policy core)
+    -- LEAN-ONLY: finite index (book WLOG p.247 Step 1)
     (hfin : T.Finite)
     -- LEAN-ONLY: nonempty index so the sup is genuine
     (hne : T.Nonempty)
@@ -612,7 +612,7 @@ Frozen constant `20` (formula `6 + 2√π ≤ 10`), integrating
 theorem generic_chaining_of_admissible_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: finite index (sup policy core)
+    -- LEAN-ONLY: finite index
     (hfin : T.Finite)
     -- LEAN-ONLY: nonempty index
     (hne : T.Nonempty)
@@ -712,21 +712,21 @@ constant frozen `C = 20`, from the renegotiated tail `(12 + 4u)`): mean-zero
 process with sub-Gaussian increments has `E max_{t ∈ T} X_t ≤ 20·K·γ₂(T,d)`,
 in `ofReal` form.
 
-Carrier note (statement fix at the debt gate): the finite maximum is stated
+Carrier note: the finite maximum is stated
 with the junk-free `Finset.sup'` carrier — the previous set-bounded
 `⨆ t ∈ T, X t ω` form was **false** at `|T| = 1` (left side `∫ (X_{t₀})⁺ > 0`
 against `γ₂ = 0`); see `discrete_dudley_of_finite` for the same renegotiation. -/
 theorem generic_chaining_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: finite index (book WLOG; sup policy core)
+    -- LEAN-ONLY: finite index (book WLOG)
     (hfin : T.Finite)
     -- LEAN-ONLY: nonempty index
     (hne : T.Nonempty)
     -- LEAN-ONLY: a.e.-measurability
     (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
     -- LEAN-ONLY: integrability of the process, ruling out Bochner-junk
-    -- means (batch reconciliation R4; the book's E X_t = 0 presupposes it)
+    -- means (the book's E X_t = 0 presupposes it)
     (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)
     -- USER-INPUT: mean-zero process; HDP Thm 8.5.2
     (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
@@ -1548,7 +1548,7 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: a.e.-measurability
     (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
     -- LEAN-ONLY: integrability of the process, ruling out Bochner-junk
-    -- means (reconciliation R4; the book's E X_t = 0 presupposes it)
+    -- means (the book's E X_t = 0 presupposes it)
     (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)
     -- USER-INPUT: mean-zero process; HDP Thm 8.5.2
     (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)

@@ -24,8 +24,7 @@ gauge-set bijection `K ↦ ‖c‖₊·K`, unconditional for `c ≠ 0`; the `c =
 needs `ψ 0 ≤ 0` (else the zero function might have positive norm) and is split
 off as `orliczNorm_const_mul_zero`. The witness extraction
 `exists_mem_orliczSet_lt_of_orliczNorm_lt` is the ε-free workhorse consumed by
-Lemmas 2.8.5/2.8.6 and the attainment lemma. Named-sorry fallback of this work
-item: `orliczNorm_const_mul` (the gauge-set bijection under scaling).
+Lemmas 2.8.5/2.8.6 and the attainment lemma.
 
 **Bibliographic comments.** The norm axioms for Luxemburg functionals are due
 to W. A. J. Luxemburg, *Banach function spaces*, Thesis, Delft, 1955; the

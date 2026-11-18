@@ -45,7 +45,7 @@ from Lu, *Big Data Analysis* ch. 18–19 (Holm–Bonferroni from Holm 1979):
   `FWER ≤ α`.
 * **Knock-off** (§19): `knockoff_fdr_le` — `FDR ≤ α`.
 
-**Batch 8 — Candès STAT 300C** (large-scale inference; this area is the library's catch-all
+**Candès STAT 300C** (large-scale inference; this area is the library's catch-all
 testing area). Landing incrementally:
 
 * **E-values** (Candès L15, Defs. 3–4, Prop. 3): `IsEVariable` / `IsPVariable`

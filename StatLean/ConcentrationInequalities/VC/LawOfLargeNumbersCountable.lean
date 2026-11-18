@@ -13,15 +13,12 @@ $$ \mathbb{E} \sup_{S \in \mathcal{C}} |\mu_n(S) - \mu(S)|
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, §8.3.6, Theorem 8.3.15.
 
-**Proof formalization notes.** `Countable 𝒞` is LEAN-ONLY regularity per the
-batch sup policy (the book ignores measurability of the uncountable
-supremum; a countable class makes `⨆ S ∈ C` a genuine measurable countable
-sup). The lift adds **no constant**: frozen numeral `5400` inherited from
+**Proof formalization notes.** `Countable 𝒞` is LEAN-ONLY regularity (the
+book ignores measurability of the uncountable supremum; a countable class makes
+`⨆ S ∈ C` a genuine measurable countable sup). The lift adds **no constant**:
+frozen numeral `5400` inherited from
 `vc_lln_finset` (formula `2 × 40 × √6 × 27 = 2160√6 ≈ 5290.9 ≤ 5400`,
-documented there). This work item's single named-sorry fallback is
-`integral_biSup_le_of_forall_finset` (the dominated-convergence exhaustion
-engine); `vc_lln_countable` itself is a short assembly over it and must
-close.
+documented there).
 
 **Bibliographic comments.** The exhaustion argument is folklore measure
 theory; the uniform LLN over VC classes is Vapnik–Chervonenkis (1971),
@@ -35,13 +32,13 @@ namespace StatLean.ConcentrationInequalities
 
 variable {Ω : Type*}
 
-/-- Countable-sup lift engine (LEAN-ONLY, batch sup policy): if every finite
+/-- Countable-sup lift engine (LEAN-ONLY): if every finite
 subfamily's expected sup obeys a bound `B`, so does the countable class's
 expected sup — monotone exhaustion + dominated convergence with constant
-dominant `1`. This work item's single named-sorry fallback. -/
+dominant `1`. -/
 lemma integral_biSup_le_of_forall_finset {Ξ : Type*} [MeasurableSpace Ξ]
     {P : Measure Ξ} [IsProbabilityMeasure P] {C : Set (Set Ω)}
-    -- LEAN-ONLY: countable class per the batch sup policy
+    -- LEAN-ONLY: countable class, so the supremum is measurable
     (hCc : C.Countable)
     -- LEAN-ONLY: nonempty class so the sup is genuine
     (hCne : C.Nonempty)
@@ -191,7 +188,7 @@ theorem vc_lln_countable {Ξ : Type*} [MeasurableSpace Ξ] [MeasurableSpace Ω]
     -- USER-INPUT: each X i has law μ; HDP Thm 8.3.15 (map form)
     (hlaw : ∀ i, P.map (X i) = μ)
     {C : Set (Set Ω)}
-    -- LEAN-ONLY: countable class per the batch sup policy (documented)
+    -- LEAN-ONLY: countable class, so the supremum is measurable (documented)
     (hCc : C.Countable)
     -- LEAN-ONLY: nonempty class
     (hCne : C.Nonempty)

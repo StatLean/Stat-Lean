@@ -52,7 +52,8 @@ theorem mixtureDensity_linear_in_mixing (p : Θ → 𝓧 → ℝ≥0∞) (t : �
 /-- **Existence of an NPMLE on a finite parameter space** (the compactness step, in Lindsay's
 regular/finite setting). On a nonempty finite `Θ` with finite likelihoods, the marginal likelihood
 `G ↦ ∏ⱼ f_G(xⱼ) = ∏ⱼ ∑_θ p(θ,xⱼ)·G{θ}` is a continuous function of the weight vector `w θ = G{θ}`
-on the compact probability simplex `stdSimplex ℝ Θ`, hence attains its maximum. This *derives* the
+on the compact probability simplex `{w | (∀ θ, 0 ≤ w θ) ∧ ∑ θ, w θ = 1}`, hence attains its
+maximum. This *derives* the
 existence that Lindsay 1983 obtains by weak-* compactness in the general (non-finite) setting —
 replacing the former `∃ Ghat, IsNPMLE` provider hypothesis (hypothesis-discipline fix, §2). -/
 private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Finite Θ] [Nonempty Θ]
@@ -65,12 +66,25 @@ private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Fi
   have hcont : Continuous Ψ :=
     continuous_finsetProd _ fun j _ =>
       continuous_finsetSum _ fun θ _ => continuous_const.mul (continuous_apply θ)
-  have hne : (stdSimplex ℝ Θ).Nonempty := by
+  -- The probability simplex of weight vectors: closed and contained in `[0, 1]^Θ`, so compact.
+  set S : Set (Θ → ℝ) := {w | (∀ θ, 0 ≤ w θ) ∧ ∑ θ, w θ = 1} with hS
+  have hScomp : IsCompact S := by
+    refine IsCompact.of_isClosed_subset (isCompact_Icc (a := (0 : Θ → ℝ)) (b := 1)) ?_ ?_
+    · have hSeq : S = (⋂ θ, {w : Θ → ℝ | 0 ≤ w θ}) ∩ {w | ∑ θ, w θ = 1} := by
+        ext w
+        simp [hS]
+      rw [hSeq]
+      exact (isClosed_iInter fun θ => isClosed_le continuous_const (continuous_apply θ)).inter
+        (isClosed_eq (continuous_finsetSum _ fun θ _ => continuous_apply θ) continuous_const)
+    · intro w hw
+      refine ⟨fun θ => hw.1 θ, fun θ => ?_⟩
+      simpa [hw.2] using Finset.single_le_sum (f := w) (fun i _ => hw.1 i) (Finset.mem_univ θ)
+  have hne : S.Nonempty := by
     refine ⟨fun θ => if θ = Classical.arbitrary Θ then 1 else 0, fun θ => ?_, ?_⟩
     · by_cases h : θ = Classical.arbitrary Θ <;> simp [h]
     · simp [Finset.sum_ite_eq' Finset.univ (Classical.arbitrary Θ)]
   obtain ⟨w, hwmem, hwmax⟩ :=
-    (isCompact_stdSimplex (𝕜 := ℝ) (ι := Θ)).exists_isMaxOn hne hcont.continuousOn
+    hScomp.exists_isMaxOn hne hcont.continuousOn
   obtain ⟨hwnn, hwsum⟩ := hwmem
   -- The maximizing measure `Ghat = ∑_θ ofReal (w θ) • δ_θ`.
   set Ghat : Measure Θ := ∑ θ, ENNReal.ofReal (w θ) • Measure.dirac θ with hGhat
@@ -97,7 +111,7 @@ private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Fi
       rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hwnn θ), mul_comm]
   refine ⟨Ghat, hGprob, fun G hG => ?_⟩
   -- `G`'s real weights lie in the simplex.
-  have hμmem : (fun θ => (G {θ}).toReal) ∈ stdSimplex ℝ Θ := by
+  have hμmem : (fun θ => (G {θ}).toReal) ∈ S := by
     refine ⟨fun θ => ENNReal.toReal_nonneg, ?_⟩
     rw [← ENNReal.toReal_sum (fun θ _ => measure_ne_top G _), sum_measure_singleton,
       Finset.coe_univ, measure_univ, ENNReal.toReal_one]

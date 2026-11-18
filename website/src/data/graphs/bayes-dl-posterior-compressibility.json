@@ -11,6 +11,7 @@
     {"id":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","label":"of_completeSpace_metrizable","full":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.CompletelyMetrizable"},
     {"id":"PiLp.completeSpace","label":"completeSpace","full":"PiLp.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
     {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
+    {"id":"completableTopField_of_complete","label":"completableTopField_of_complete","full":"completableTopField_of_complete","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.UniformField"},
     {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
     {"id":"StatLean.Bayesian.dlPrior","label":"dlPrior","full":"StatLean.Bayesian.dlPrior","kind":"repo","decl":"def","module":"StatLean.Bayesian.DirichletLaplace.Defs"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
@@ -45,8 +46,7 @@
     {"id":"lt_of_lt_of_le","label":"lt_of_lt_of_le","full":"lt_of_lt_of_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"one_div","label":"one_div","full":"one_div","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.DivInvMonoid"},
     {"id":"Real.log_inv","label":"log_inv","full":"Real.log_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"},
-    {"id":"Real.log_le_log","label":"log_le_log","full":"Real.log_le_log","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"},
-    {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"}
+    {"id":"Real.log_le_log","label":"log_le_log","full":"Real.log_le_log","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"StatLean.Bayesian.gaussShiftKernel"},
@@ -58,6 +58,7 @@
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"PiLp.completeSpace"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"completableTopField_of_complete"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"EMetricSpace.metrizableSpace"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"StatLean.Bayesian.dlPrior"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
@@ -92,7 +93,6 @@
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"lt_of_lt_of_le"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"one_div"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"Real.log_inv"},
-    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"Real.log_le_log"},
-    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"le_of_not_gt"}
+    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"Real.log_le_log"}
   ]
 }

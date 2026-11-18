@@ -42,8 +42,7 @@ run pointwise under `filter_upwards` (the shape `φ` captures `X t₀ ω`).
 The published `dudley_inequality_countable` (pairwise-distance cap, fused
 `ENNReal.ofReal (40 * K)` constant) is unchanged; the forms here
 standardize on `Metric.diam T ≤ D` and the per-`F` constant shape
-`ENNReal.ofReal 40 * ↑K`. Named-sorry fallback of this work item:
-`dudley_inequality_abs_pair_separable` (the pair transport composition).
+`ENNReal.ofReal 40 * ↑K`.
 
 **Bibliographic comments.** R. M. Dudley, *J. Funct. Anal.* 1 (1967),
 290–330; separable versions per J. L. Doob, *Stochastic Processes*, Wiley
@@ -164,9 +163,9 @@ theorem dudley_inequality_abs_countable_subset {X : E → Ω → ℝ} {K : ℝ�
     -- LEAN-ONLY: positive cap
     (hD0 : 0 < D)
     {C : Set E}
-    -- LEAN-ONLY: the countable approximating subfamily (sup policy)
+    -- LEAN-ONLY: the countable approximating subfamily
     (hC : C ⊆ T)
-    -- LEAN-ONLY: countability of the subfamily (sup policy)
+    -- LEAN-ONLY: countability of the subfamily
     (hCcnt : C.Countable) :
     ∫⁻ ω, ⨆ t ∈ C, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
       ≤ ENNReal.ofReal 40 * K * dudleyLIntegral T D := by
@@ -211,9 +210,9 @@ theorem dudley_inequality_anchored_countable_subset {X : E → Ω → ℝ}
     -- LEAN-ONLY: positive cap
     (hD0 : 0 < D)
     {C : Set E}
-    -- LEAN-ONLY: the countable approximating subfamily (sup policy)
+    -- LEAN-ONLY: the countable approximating subfamily
     (hC : C ⊆ T)
-    -- LEAN-ONLY: countability of the subfamily (sup policy)
+    -- LEAN-ONLY: countability of the subfamily
     (hCcnt : C.Countable) :
     ∫⁻ ω, ⨆ t ∈ C, ENNReal.ofReal (X t ω - X t₀ ω) ∂μ
       ≤ ENNReal.ofReal (12 * Real.sqrt 3) * K * dudleyLIntegral T D := by
@@ -364,7 +363,7 @@ theorem dudley_inequality_abs_countable {X : E → Ω → ℝ} {K : ℝ≥0}
     {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
@@ -392,7 +391,7 @@ theorem dudley_inequality_anchored_countable {X : E → Ω → ℝ} {K : ℝ≥0
     {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
@@ -483,7 +482,7 @@ theorem dudley_inequality_abs_countable_real {X : E → Ω → ℝ} {K : ℝ≥0
     {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
@@ -573,9 +572,9 @@ theorem dudley_inequality_abs_pair_countable_subset {X : E → Ω → ℝ}
     -- LEAN-ONLY: positive cap
     (hD0 : 0 < D)
     {C : Set E}
-    -- LEAN-ONLY: the countable approximating subfamily (sup policy)
+    -- LEAN-ONLY: the countable approximating subfamily
     (hC : C ⊆ T)
-    -- LEAN-ONLY: countability of the subfamily (sup policy)
+    -- LEAN-ONLY: countability of the subfamily
     (hCcnt : C.Countable) :
     ∫⁻ ω, ⨆ t ∈ C, ⨆ s ∈ C, ENNReal.ofReal |X t ω - X s ω| ∂μ
       ≤ ENNReal.ofReal 80 * K * dudleyLIntegral T D := by

@@ -26,9 +26,7 @@ book's "X and Y are sub-Gaussian" inputs; the zero-norm edge (`0 · ⊤` in
 `ℝ≥0∞`) is handled by case split on `orliczNorm_eq_zero_iff` (X = 0 a.e. ⇒
 XY = 0 a.e.); the pointwise chain is Young's split
 `|xy|/(ab) ≤ (x/a)²/2 + (y/b)²/2` followed by AM–GM
-`e^{u+v} ≤ (e^{2u} + e^{2v})/2` (inline `nlinarith`). Named-sorry fallback of
-this work item: `subExponentialNorm_sq` (the `ℝ≥0∞` biInf-squaring
-gymnastics); Lemma 2.8.6 must close.
+`e^{u+v} ≤ (e^{2u} + e^{2v})/2` (inline `nlinarith`).
 
 **Bibliographic comments.** The ψ₂–ψ₁ product/squaring calculus is the
 standard Orlicz-space Hölder inequality specialized to conjugate Young

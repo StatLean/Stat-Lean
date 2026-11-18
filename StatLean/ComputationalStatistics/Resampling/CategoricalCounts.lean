@@ -16,7 +16,7 @@ vector `V_j = #{i | Aᵢ = j}` has the multinomial distribution `ℳ_m(n; q)`.
   `StatLean.Bayesian.ForMathlib.MultinomialDist` construction (reused, not
   reproved).
 
-This is the missing link (noted absent in the 2026-08-10 survey) between
+This is the missing link between
 `StatLean.Bayesian.multinomialKernel` and any i.i.d.-sampling representation;
 the Efron bootstrap-counts representation in
 `Resampling/BootstrapMoments.lean` is the `q = (1/n, …, 1/n)` case.
@@ -36,7 +36,7 @@ n-variate multinomial distribution with parameters `n` and `(1/n, …, 1/n)`"),
   the off-simplex junk value `0`, while the pushforward is a nonzero measure
   for any nonnegative `q`.
 * `categoricalCounts` deliberately coexists with the random-variable-level
-  `StatLean.HypothesisTesting.multinomialCount` (Pearson χ² lane, concept
+  `StatLean.HypothesisTesting.multinomialCount` (Pearson χ² test, concept
   layer, not importable here); this one is a pure data-level statistic.
 
 **Bibliographic comments.** The multinomial law of category counts is

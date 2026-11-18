@@ -9,61 +9,41 @@ the ARCH(p) family with iid noise. FY's key structural observation: **under `H�
 observations are iid**, so the three classical statistics have iid-likelihood
 asymptotics and each has a `χ²_p` null limit.
 
-* `archNullIsIID` — the structural fact that `H₀` collapses the ARCH model to iid
-  scaled noise *(the printed setup (4.48)–(4.49) has two index/sign slips — "`a_j ≥ 0`"
-  for `b_j ≥ 0`, and `b_j X_{t−i}²` for `b_j X_{t−j}²`; corrected here)*;
-* `archLRStat` (**eq. (4.50)**), `archScoreStat` (**eq. (4.52)**), `archWaldStat`
-  (**eq. (4.54)**) and Engle's `archTR2Stat` (**eq. (4.53)**), the auxiliary-regression
-  form asymptotically equivalent to the score test for normal errors;
-* the **Fisher information** (eq. (4.51)) of the ARCH likelihood at the null. The three
-  `χ²_p` limit statements were carried here as named debts and have been removed; see
-  **Removed** immediately below.
+* `IsARCH.iid_of_b_eq_zero` — the structural fact that `H₀` collapses the ARCH model to
+  iid scaled noise *(the printed setup (4.48)–(4.49) has two index/sign slips —
+  "`a_j ≥ 0`" for `b_j ≥ 0`, and `b_j X_{t−i}²` for `b_j X_{t−j}²`; corrected here)*;
+* `archLRStat` (**eq. (4.50)**) and Engle's `archTR2Stat` (**eq. (4.53)**), the
+  auxiliary-regression form asymptotically equivalent to the score test for normal errors;
+* the feasible-set maximization of the ARCH quasi-likelihood, the χ² character identity
+  and the `R²`/ANOVA algebra of the auxiliary regression (see below).
 
-**Removed (2026-08-10, user directive).** The module's three sorried declarations were
-deleted. Nothing consumed them, and every proved declaration in the file is kept — in
-particular the whole χ² character apparatus and the entire `R²`/ANOVA algebra of the
-auxiliary regression, which were built *for* these debts and remain available.
-* `archLRStat_chiSq_debt` — FY eq. (4.50): the likelihood-ratio statistic has the `χ²_p`
-  null limit (repaired, de-vacuated form with a variance floor and a compact search region).
-* `archTR2Stat_chiSq_debt` — FY eqs. (4.52)–(4.53): Engle's `T·R²` / score statistic has
-  the `χ²_p` null limit.
-* `archWaldStat_chiSq_debt` — FY eq. (4.54): the Wald statistic, through the
-  Schur-complement block `I²²` of the information matrix, has the `χ²_p` null limit.
-
-Everything below this point — the analysis of why the in-repo trinity does not discharge
-them, the de-vacuation record, and the brick lists — is kept verbatim as history.
-
-Recover from `bdc8143f`.
-
-The intended route had been to reuse the in-repo iid likelihood trinity,
-`StatLean/HypothesisTesting/LikelihoodMethods/TrinityChiSquared.lean`; where the wiring
-does not fit the ARCH parametrization the limits stayed as named debts.
+**Scope.** The three `χ²_p` null-limit theorems (FY eqs. (4.50), (4.52)–(4.53), (4.54))
+are not stated here; the analysis below records why the in-repo iid likelihood trinity
+`StatLean/HypothesisTesting/LikelihoodMethods/TrinityChiSquared.lean` does not give them,
+and what a proof needs.
 
 **Boundary caveat (documented, not formalized).** The alternative constrains
 `b_j ≥ 0`, so under `H₀` the parameter sits on the boundary of the admissible set and
 the `χ²_p` approximation is *not* valid for the constrained versions of these tests;
-FY notes this and cites the one-sided-testing literature. Our statements are for the
-**unconstrained** parametrization, where the classical limits do hold.
+FY notes this and cites the one-sided-testing literature. The classical limits hold for
+the **unconstrained** parametrization.
 
-## The three `χ²_p` debts: why the in-repo trinity does not discharge them
+## The three `χ²_p` limits: why the in-repo trinity does not give them
 
 `IsARCH.iid_of_b_eq_zero` is proved, so the structural input FY relies on is available.
-The intended follow-up — instantiating `logLR_tendsto_chiSquared_affine` (and its score /
-Wald companions) of `HypothesisTesting/LikelihoodMethods/TrinityChiSquared.lean` at the
-null `b = 0` — was examined and **rejected**. Two independent reasons, in order of
-severity.
+Instantiating `logLR_tendsto_chiSquared_affine` (and its score / Wald companions) of
+`HypothesisTesting/LikelihoodMethods/TrinityChiSquared.lean` at the null `b = 0` does not
+work, for two independent reasons, in order of severity.
 
-**(1) The three frozen statements are false as they stand, for every `p ≥ 1`, so no
-proof of them exists.** None of them constrains its estimator arguments to the data:
-the LR debt took `c0hat`, `bhat`, `c0null` merely measurable, the `TR²` debt took
-`rss`, `tss` merely measurable, and the Wald debt took `bhat` measurable and `Ihat`
-entirely free. Choosing the
+**(1) Statements with unconstrained estimator arguments are false, for every `p ≥ 1`.**
+If the estimator arguments are not tied to the data — the LR statistic's `c0hat`, `bhat`,
+`c0null` merely measurable, the `TR²` statistic's `rss`, `tss` merely measurable, the Wald
+statistic's `bhat` measurable and `Ihat` entirely free — then choosing the
 constants `c0hat = c0null = c0`, `bhat = 0` (resp. `rss = tss = 1`, resp. `bhat = 0`)
 makes each statistic *identically zero*, so its law is `δ₀`, whose characteristic
 function is the constant `1`; the conclusion then forces `charFun chiSq u = 1` for
-every `u`, while `hchi` at `u = 1/2` gives `‖(1 − i)^{−p/2}‖ = 2^{−p/4} < 1`. (Both
-halves of this contradiction were machine-checked.) The repair is not a proof but a
-*statement* amendment, which is out of scope here: each debt needs the missing
+every `u`, while `hchi` at `u = 1/2` gives `‖(1 − i)^{−p/2}‖ = 2^{−p/4} < 1`. The repair is
+not a proof but a *statement* amendment: each statement needs a
 `USER-INPUT` hypothesis that its estimator sequence is the actual (quasi-)MLE — or,
 in the trinity's currency, is asymptotically linear with the ARCH score and information.
 
@@ -86,27 +66,27 @@ each mismatch is to bridge:
   structure makes classical is the behaviour of the score and information *averages* at
   `b = 0`, not the likelihood itself.
 * *Fatal — no truncation parameter.* `archLRStat` carries the presample index `ν`, and
-  the LR debt carried `νseq` with `ν → ∞`, `ν/T → 0`. The trinity has no such
+  an LR limit theorem carries `νseq` with `ν → ∞`, `ν/T → 0`. The trinity has no such
   parameter, so the truncated-versus-exact conditional-likelihood bookkeeping that those
   hypotheses exist to control lies entirely outside its statement.
 * *Serious — regularity currency.* The trinity consumes `IsPDFOf`, joint measurability of
   `(θ, x) ↦ p_θ(x)`, `DifferentiableQuadraticMean` at `θ₀` with an explicit score,
   a positive-definite Fisher matrix in the `⟪u, J v⟫` normalisation, `IsAsymptoticallyLinear`
   estimator sequences in the full *and* restricted charts, and the amended **two-point**
-  second-order envelope `henv` with an integrable envelope `Menv`. The debts here supply
-  only `MemLp (ε 0) 4 μ`. Nothing in this development establishes quadratic-mean
-  differentiability of the ARCH family, and the Fisher information of eq. (4.51) is named
-  in this docstring but never defined.
+  second-order envelope `henv` with an integrable envelope `Menv`. The ARCH setting
+  supplies only `MemLp (ε 0) 4 μ`. Nothing in this development establishes quadratic-mean
+  differentiability of the ARCH family, and the Fisher information of eq. (4.51) is not
+  defined here.
 * *Bridgeable, but not free — the sample law.* The trinity concludes about
-  `productMeasure M μ θ₀ n = Measure.pi …` on `Fin n → 𝓧`, whereas the debts push forward
-  `μ` on the process space `Ω`. `IsARCH.iid_of_b_eq_zero` does give that the null law of
-  `(X₁, …, X_T)` is such a product, so this mismatch alone would be honest work rather
-  than an obstruction.
+  `productMeasure M μ θ₀ n = Measure.pi …` on `Fin n → 𝓧`, whereas the ARCH statements
+  push forward `μ` on the process space `Ω`. `IsARCH.iid_of_b_eq_zero` does give that the
+  null law of `(X₁, …, X_T)` is such a product, so this mismatch alone would be honest
+  work rather than an obstruction.
 * *Bridgeable, but not free — the conclusion form.* The trinity concludes
-  `WeakConverges … (MultipleTesting.chiSquared p)`; the debts ask for pointwise `charFun`
-  convergence to an abstract `chiSq` pinned by `hchi`. Bridging needs both
-  `WeakConverges → charFun` convergence and `charFun (MultipleTesting.chiSquared p) u =
-  (1 − 2iu)^{−p/2}`, and the latter is not proved anywhere in the repo at present.
+  `WeakConverges … (MultipleTesting.chiSquared p)`; the ARCH statements ask for pointwise
+  `charFun` convergence to an abstract `chiSq` pinned by `hchi`. This mismatch is
+  discharged here: `charFun_map_sum_sq_gaussian` and `eq_map_sum_sq_gaussian_of_charFun`
+  (see the `TR²` paragraph below).
 
 Only the affine-null *geometry* lines up cleanly: `k = p + 1` with coordinates
 `(c₀, b₁, …, b_p)`, null subspace `a + range B` for `m = 1`, `B : ℝ → ℝ^{p+1}` the first
@@ -114,20 +94,19 @@ coordinate inclusion, giving exactly the `p` degrees of freedom FY reports (and,
 boundary caveat above, the unconstrained parametrization the trinity needs). That
 agreement is real but superficial: it fixes the degrees of freedom, not the statistic.
 
-**Verdict: the trinity is not reusable here.** The three limits stay as named debts, and
-closing them calls for a *time-series* likelihood theorem — a martingale CLT for the
-conditional score of the ARCH quasi-likelihood, valid over the whole `(c₀, b)` space —
-rather than an instance of the iid one.
+**Verdict: the trinity is not reusable here.** Proving the three limits calls for a
+*time-series* likelihood theorem — a martingale CLT for the conditional score of the ARCH
+quasi-likelihood, valid over the whole `(c₀, b)` space — rather than an instance of the
+iid one.
 
-## The `hMLE` vacuity and its repair (2026-08-09b) — EXECUTED
+## The `hMLE` vacuity and its repair
 
-**The finding (retained).** The `2026-08-09` amendment above, added to repair the falsity
-diagnosed in item (1), overshot: it pinned the estimators by requiring them to *globally
-maximize* `archLogLik` over **all** of `ℝ × ℝᵖ`. No such maximizer exists, so `hMLE` and
-`hMLE0` were unsatisfiable and the two statements carried no statistical content — both
-were proved by deriving `False` from their own hypotheses.
+**The finding.** Pinning the estimators by requiring them to *globally maximize*
+`archLogLik` over **all** of `ℝ × ℝᵖ` overshoots: no such maximizer exists, so such
+`hMLE` and `hMLE0` hypotheses are unsatisfiable and a statement carrying them has no
+statistical content — it is proved by deriving `False` from its own hypotheses.
 
-The witness is `archLogLik_unbounded` (machine-checked, **kept below**): with `b = 0` the
+The witness is `archLogLik_unbounded` (machine-checked, below): with `b = 0` the
 truncated volatility is the *constant* `c₀` (`truncVol_const`, no positivity used, because
 the presample value of `archLogLik` is `c₀` itself), so at `c₀ = −δ < 0`
 
@@ -139,9 +118,9 @@ negative `σ̃_t²`: both summands of `−½(log σ̃_t² + x_t²/σ̃_t²)` div
 `hMLE`/`hMLE0` are contradicted there (`false_of_bddAbove_archLogLik`). This is not an
 artefact of `Real.log`'s totalization: restricting to `c₀ > 0` does not help either, since
 negative `b` coordinates drive `σ̃_t² = c₀ + Σ b_i x_{t−i}²` negative just the same.
-Both lemmas are retained below as the *justification* for the amendment that follows.
+Both lemmas are kept below as the *justification* for the amendment that follows.
 
-**The repair, as executed.** `hMLE`/`hMLE0` now demand maximization over the **feasible
+**The repair.** `hMLE`/`hMLE0` demand maximization over the **feasible
 set** `K ∩ archAdmissible κ`, where
 
 * `archAdmissible κ x ν = {(c₀, b) : σ̃_t²(c₀, b) ≥ κ for all t ∈ Ico ν T}` is the
@@ -169,49 +148,44 @@ Three certificates make this a repair rather than another guess, all proved here
    the one-sided boundary problem flagged above; and `κ = c₀` would do the same on the
    `c₀` axis, which is why the floor is strict.
 
-**What is proved and what is owed.** With the repaired hypotheses, `p = 0` is *proved* for
-both statements (the two feasible sets coincide, the LR statistic is identically `0`, the
-Wald form is an empty sum, and `χ²₀ = δ₀` — this fixes the degrees-of-freedom
-bookkeeping). `p ≥ 1` is an honest, satisfiable **debt**: the ARCH MLE asymptotics. Its
-three bricks — (a) consistency of the constrained maximizer (the ARCH analogue of
+**What a proof of the LR and Wald limits needs.** With the repaired hypotheses, `p = 0` is
+immediate (the two feasible sets coincide, the LR statistic is identically `0`, the Wald
+form is an empty sum, and `χ²₀ = δ₀` — this fixes the degrees-of-freedom bookkeeping).
+`p ≥ 1` is a satisfiable statement whose content is the ARCH MLE asymptotics, in three
+bricks: (a) consistency of the constrained maximizer (the ARCH analogue of
 `mle_consistent`), (b) the local quadratic expansion around the interior truth, (c) the
-martingale CLT for the ARCH conditional score plus continuous mapping — were listed at the
-theorems. The limit-law side of (c) is already discharged here
-(`charFun_map_sum_sq_gaussian`, `eq_map_sum_sq_gaussian_of_charFun`).
+martingale CLT for the ARCH conditional score plus continuous mapping. The limit-law side
+of (c) is available here (`charFun_map_sum_sq_gaussian`,
+`eq_map_sum_sq_gaussian_of_charFun`).
 
-The `TR²` debt's `hrss`/`htss` never had this defect: a least-squares minimum is
-always attained, so its hypotheses were consistent throughout and it remained an honest
-debt.
+## The `TR²` statistic: the limit law is identified, the LM limit is what is left
 
-## The `TR²` debt: the limit law is now identified, the LM limit is what was left
+The `TR²` hypotheses `hrss`/`htss` never had the vacuity defect: a least-squares minimum is
+always attained. Two pieces concerning the *statement* of the limit rather than the
+statistic are proved here:
 
-Two of the five mismatches listed above are **discharged**, both concerning the *statement*
-of the limit rather than the statistic:
-
-* the χ² **character identity** — recorded above as "not proved anywhere in the repo at
-  present" — is proved here as `charFun_map_sum_sq_gaussian`:
+* the χ² **character identity**, as `charFun_map_sum_sq_gaussian`:
   `charFun (law of Σ_{i<p} Z_i²) u = (1 − 2iu)^{−p/2}`, from the complex Gaussian integral
   `∫ exp(−b x²) = (π/b)^{1/2}` at `b = (1 − 2iu)/2` tensored over the `p` coordinates;
 * the **conclusion form** — `eq_map_sum_sq_gaussian_of_charFun` turns `hchi` into
   `chiSq = (Measure.pi (gaussianReal 0 1)).map (Σ_i x_i²)` outright, so neither a χ²
-  construction nor a `WeakConverges → charFun` bridge is needed anywhere. The debt's proof
-  uses this to rewrite its goal into convergence towards that concrete law.
+  construction nor a `WeakConverges → charFun` bridge is needed anywhere.
 
-What that statement's `sorry` still needed is exactly Engle's LM limit: under `H₀` with
+What the limit theorem still needs is exactly Engle's LM limit: under `H₀` with
 Gaussian innovations the squared data `Y_t = X_t²` are iid with mean `c₀` and variance
 `2c₀² > 0`, `hrss`/`htss` make the statistic the auxiliary regression's `T·R²`, and the
 normal equations turn it into a quadratic form in the lag-`1..p` sample autocovariances of
 `Y`; the LLN sends the Gram matrix to `Var(Y)·I_p`, the iid CLT sends `√T γ̂` to
-`N(0, Var(Y)²I_p)`, and continuous mapping finishes. Of the three bricks originally listed,
-**(a) the least-squares/`R²` algebra out of `hrss` is now closed** (2026-08-09b):
+`N(0, Var(Y)²I_p)`, and continuous mapping finishes. Of the three bricks,
+**(a) the least-squares/`R²` algebra out of `hrss` is proved**:
 `archLS_normalEq` reads the normal equations off minimality alone, `archLS_anova` gives the
 split `tss = rss + ess` at an *arbitrary* centring constant (the sample mean is not needed,
 which is why `htss`'s `((T:ℝ) − p)⁻¹` normalisation costs nothing), and
 `archTR2Stat_eq_ess_div_tss` delivers `TR² = T · ess/tss`, with `arch_rss_le_tss` confirming
 `R² ∈ [0,1]`. Two bricks remain, both probabilistic: **(b)** the `p`-dimensional iid CLT for
 the autocovariance vector of `Y`, and **(c)** the continuous-mapping step (its limit-law
-target is already available here). Note `p = 0` is consistent (both sides are `δ₀`); it is
-*not* proved for this statement, unlike its two companions, because at `p = 0` the identity
+target is already available here). Note `p = 0` is consistent (both sides are `δ₀`), but
+not immediate as for the other two statistics, because at `p = 0` the identity
 `rss = tss` only gives `TR² = 0` on `{tss ≠ 0}`, and `tss ≠ 0` a.s. is itself the
 nondegeneracy fact recorded in the next paragraph.
 Also, `hgauss` is not decoration *(this remark is documented, not formalized)*: with `ε`
@@ -594,18 +568,15 @@ private lemma nonempty_of_isProbabilityMeasure {Ω : Type*} [MeasurableSpace Ω]
 
 /-! ### The χ²_p character identity and the identification of the abstract limit law
 
-The three debts take their limit law abstractly, pinned only by
+A `χ²_p` limit law can be specified abstractly, pinned only by
 `hchi : charFun chiSq u = (1 − 2iu)^{−p/2}`. That normalisation is *exactly* the
 characteristic function of a Gaussian quadratic form `Σ_{i<p} Z_i²`, which is proved here
 (`charFun_map_sum_sq_gaussian`) and used to identify `chiSq` outright
-(`eq_map_sum_sq_gaussian_of_charFun`). This discharges two of the mismatches listed in the
-module docstring — the χ² character identity, recorded there as "not proved anywhere in the
-repo at present", and the "conclusion form" item: no χ² *construction* is needed, and no
-`WeakConverges → charFun` bridge either. The route is the Fresnel-type Gaussian integral
+(`eq_map_sum_sq_gaussian_of_charFun`). The proof uses the Fresnel-type Gaussian integral
 `∫ exp(−b x²) = (π/b)^{1/2}` at `b = (1 − 2iu)/2`, tensored over the `p` coordinates by
-Fubini. These belong in `MultipleTesting/ForMathlib/ChiSquared.lean` (whose `chiSquared p`
-is `Gamma(p/2, 1/2)`, and where `map_sum_sq_eq_chiSquared` already identifies the law of
-`Σ Z_i²`); they are `private` here only because that file is outside this lane's touch set. -/
+Fubini. For the Gamma-distribution formulation, see
+`MultipleTesting/ForMathlib/ChiSquared.lean`: its `chiSquared p` is `Gamma(p/2, 1/2)`,
+and `map_sum_sq_eq_chiSquared` identifies the law of `Σ Z_i²`. -/
 
 /-- The principal square root of a right-half-plane point has positive real part: its
 argument is halved into `(−π/4, π/4)`, where the cosine is positive. -/
@@ -920,7 +891,8 @@ theorem arch_rss_le_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss : (T : ℕ) 
 `T · ess/tss`, the explained sum of squares of the auxiliary regression normalised by the
 total. This is the object the LM limit theory acts on — the normal equations turn `ess`
 into the quadratic form `γ̂ᵀ Γ̂⁻¹ γ̂` in the lag-`1..p` sample autocovariances — so with this
-identity the residual `sorry` below is purely probabilistic (bricks (b) and (c)). -/
+identity what remains of the limit theorem is purely probabilistic (bricks (b) and
+(c)). -/
 theorem archTR2Stat_eq_ess_div_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss : (T : ℕ) → Ω → ℝ}
     (hrss : ∀ (T : ℕ) (ω : Ω), IsLeast
       {r : ℝ | ∃ (β0 : ℝ) (β : Fin p → ℝ), r = ∑ t ∈ Finset.Ico p T,

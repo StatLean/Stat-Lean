@@ -631,7 +631,9 @@ theorem randQuantile_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
   have hp1 : (1 : ℝ) - α < 1 := by linarith
   have hSM : StrictMono (cdf R) := strictMono_cdf_gaussianReal hvne
   obtain ⟨q, hq⟩ := exists_cdf_eq R hp0 hp1
-  have hqquant : cdfQuantile R (1 - α) = q := quantile_eq_of_strictMono hSM hq
+  have hqquant : cdfQuantile R (1 - α) = q := by
+    simpa only [cdfQuantile, quantile, bindCDF_eq_cdf] using
+      (quantile_eq_of_strictMono hSM hq)
   have hcont : ContinuousAt (cdf R) (cdfQuantile R (1 - α)) :=
     continuousAt_cdf_of_noAtoms R _
   have hstrict : ∀ ε > (0 : ℝ), cdf R (cdfQuantile R (1 - α) - ε) < 1 - α ∧
@@ -645,8 +647,9 @@ theorem randQuantile_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
   have hSM1 : StrictMono (cdf (gaussianReal 0 1)) := strictMono_cdf_gaussianReal one_ne_zero
   have hscale : cdf (gaussianReal 0 1) (q / τ) = 1 - α := by
     rw [← cdf_gaussianReal_scale hτpos q]; exact hq
-  have hq0 : cdfQuantile (gaussianReal 0 1) (1 - α) = q / τ :=
-    quantile_eq_of_strictMono hSM1 hscale
+  have hq0 : cdfQuantile (gaussianReal 0 1) (1 - α) = q / τ := by
+    simpa only [cdfQuantile, quantile, bindCDF_eq_cdf] using
+      (quantile_eq_of_strictMono hSM1 hscale)
   have hτ0 : τ ≠ 0 := ne_of_gt hτpos
   have hlimit : cdfQuantile R (1 - α) = τ * cdfQuantile (gaussianReal 0 1) (1 - α) := by
     rw [hqquant, hq0]; field_simp

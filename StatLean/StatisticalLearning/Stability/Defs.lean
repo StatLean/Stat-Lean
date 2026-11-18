@@ -1,5 +1,6 @@
 import StatLean.StatisticalLearning.Core.Defs
 import Mathlib.Analysis.InnerProductSpace.Basic
+import StatLean.ForMathlib.BindProd
 
 /-!
 # Algorithmic stability — replace-one data model
@@ -10,18 +11,17 @@ on-average-replace-one stability (SSBD Definition 13.3), and the regularized
 loss minimization (RLM/Tikhonov) objective and minimizer predicate
 (SSBD Eqs. (13.1)–(13.2)).
 
-**Reference.** SSBD Ch. 13. Transcriptions:
-`notes/statistical_learning/book_statements/ch12-13.md`.
+**Reference.** SSBD Ch. 13.
 
 **Formalization notes.**
-* The joint law of `(S, z')` is `(sampleLaw D n).prod D` and the uniform index
+* The joint law of `(S, z')` is `(sampleLaw D n).bindProd D` and the uniform index
   average is the explicit `n⁻¹ ∑ᵢ` — no `[m]`-valued random variable.
 * Stability is defined **on-average** exactly as the book's only formal notion
   (Definition 13.3); the Lipschitz analysis later proves the stronger
   pointwise bound and relaxes it.
 * The RLM *minimizer* is a predicate (`IsRLMMin`); the selector is data
   downstream, per the hypothesis discipline for argmins.
-* This file is a laptop-only Defs surface: definitions only, 0-sorry.
+* This file is a Defs surface: definitions only.
 
 **Bibliographic comments.** Uniform stability and its generalization bounds
 are due to O. Bousquet & A. Elisseeff, "Stability and generalization," *JMLR*
@@ -50,7 +50,7 @@ noncomputable def stabilityGap [MeasurableSpace Z] (D : Measure Z)
   (n : ℝ)⁻¹ * ∑ i : Fin n,
     ∫ p : Sample Z n × Z,
       (ℓ (A (replaceOne p.1 i p.2)) (p.1 i) - ℓ (A p.1) (p.1 i))
-      ∂((sampleLaw D n).prod D)
+      ∂((sampleLaw D n).bindProd D)
 
 /-- **On-average-replace-one stability with rate `rate`** (SSBD Definition
 13.3, one size class per `n`): for every distribution the averaged replace-one

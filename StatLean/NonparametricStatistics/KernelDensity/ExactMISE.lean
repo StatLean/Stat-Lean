@@ -13,8 +13,7 @@ the parabolic (Epanechnikov) kernel; the theorem is stated here in the ε-form
 $$ \bigl|\mathrm{MISE} - A(n,h)\bigr| \;\le\; \varepsilon\,\Bigl(\frac{1}{nh} + h^4\Bigr),
    \qquad 0 < h < h_0(\varepsilon),\ n \ge 1, $$
 which is equivalent to the multiplicative form because `A(n,h) ≍ (nh)⁻¹ + h⁴` (both
-coefficients `∫K² > 0` and `S_K²∫(p'')² > 0` are bounded away from zero; the equivalence is
-recorded in the batch ledger).
+coefficients `∫K² > 0` and `S_K²∫(p'')² > 0` are bounded away from zero).
 
 **Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
 Statistics, Springer, New York, 2009. Chapter 1, §1.2.3, Proposition 1.6 (exact asymptotic MISE;
@@ -209,7 +208,7 @@ theorem kde_exact_mise {p K w : ℝ → ℝ}
     -- USER-INPUT: square-integrable second derivative; second-order smoothness input
     (hw2 : MemLp w 2 volume)
     -- USER-INPUT: square-integrable density; input of the exact variance asymptotics
-    -- (documented: derivable in principle, kept as an input in this batch)
+    -- (documented: derivable in principle, kept as an input in this module)
     (hp2 : MemLp p 2 volume)
     -- USER-INPUT: kernel of order 1 with nonvanishing second moment `S_K ≠ 0`; classical
     -- inputs of the second-order expansion

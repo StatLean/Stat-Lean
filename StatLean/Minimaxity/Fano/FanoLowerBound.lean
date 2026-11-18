@@ -1,6 +1,7 @@
 import StatLean.Minimaxity.EstimationToTesting
 import StatLean.Minimaxity.Fano.MutualInformation
 import Mathlib.Analysis.SpecialFunctions.BinaryEntropy
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Fano's method for minimax lower bounds
@@ -433,7 +434,7 @@ private lemma mapError_integral_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧
   have hpt : ∀ k : Fin M, (uniformPrior M) {k} = (M : ℝ≥0∞)⁻¹ := by
     intro k
     rw [uniformPrior, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton k),
-      PMF.uniformOfFintype_apply, Fintype.card_fin]
+      PMF.uniform_apply, Fintype.card_fin]
   -- the `0–1` Bayes risk is `≤ 1`, hence finite
   have hq1 : multiwayTestingError Q ≤ 1 := by
     rw [multiwayTestingError]
@@ -530,20 +531,13 @@ information-theoretic half): the posterior entropy `H(J | Z)` is controlled by t
 ```
 H(J | Z) ≤ log 2 + q · log M,        q = multiwayTestingError Q.
 ```
-This is the single named residual of the Fano lower bound. (The other half — the mutual-information
+This is the main lemma of the Fano lower bound. (The other half — the mutual-information
 identity `I = log M − H(J | Z)` — is fully proved in `mutualInformation_toReal_eq`, and the
 surrounding `ℝ≥0∞` bookkeeping in `fano_entropy_continuous` / the division rearrangement in
 `fano_inequality`.) The hypothesis `q ≠ ⊤` is genuine: for `q = ⊤` the bound (with `q.toReal = 0`)
 would read `H(J|Z) ≤ log 2`, false for large `M`; it is supplied by the finite branch of
 `fano_entropy_continuous` (and in fact always holds, the Bayes risk of the `0–1` loss being `≤ 1`).
-
-TODO(mmx, named debt — strictly smaller than the former whole-crux `fano_real`): prove the sharp
-Fano chain `H(J | Z) ≤ h(e) + e·log(M−1) ≤ log 2 + q·log M`, where `e(z) = 1 − maxⱼ ℙ(J=j|Z=z)` is
-the pointwise MAP error. The route: (i) a pointwise discrete Fano `∑ⱼ negMulLog pⱼ ≤ binEntropy (1 −
-maxⱼ pⱼ) + (1 − maxⱼ pⱼ)·log (M−1)` for a pmf `p` on `Fin M`; (ii) integrate over `mixture Q`,
-using concavity of `Real.binEntropy` (Jensen) to pull `∫ binEntropy (e z) ≤ binEntropy (∫ e z)`;
-(iii) identify `∫ e z ∂(mixture Q) = multiwayTestingError Q` (the MAP test attains the Bayes risk of
-the `0–1` loss); (iv) close with `Real.binEntropy_le_log_two` and `log (M−1) ≤ log M`. -/
+-/
 private lemma condEntropy_le_fano {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkovKernel Q]
     (hM : 2 ≤ M) (hq : multiwayTestingError Q ≠ ⊤) :
     condEntropy Q ≤ Real.log 2 + (multiwayTestingError Q).toReal * Real.log (M : ℝ) := by

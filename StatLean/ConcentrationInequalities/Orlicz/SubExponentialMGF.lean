@@ -26,9 +26,7 @@ This ψ₁-norm sub-exponential coexists with the Lu-BDA α-form carrier in
 `SubExponential/Defs.lean`: our bridge lands exactly in that structure,
 discharging both of its fields (`mgf_le` and `integrable_exp_mul`).
 Integrability is derived, not laundered (`e^{lx} ≤ e^{|x|/K}` on the range;
-`|x|/K ≤ e^{|x|/K}`). Named-sorry fallback of this work item:
-`mgf_le_of_lintegral_exp_abs_le_two`, with the norm wrapper and the
-`IsSubExponential` bridge derived from it.
+`|x|/K ≤ e^{|x|/K}`).
 
 **Bibliographic comments.** Restricted-range MGF control of sub-exponential
 variables goes back to S. N. Bernstein's 1924 inequality; the modern

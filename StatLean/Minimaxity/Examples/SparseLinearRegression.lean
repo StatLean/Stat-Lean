@@ -308,7 +308,7 @@ Gaussian model with design map `A : ℝᵈ → ℝⁿ`, noise variance `v`, and 
 `c·min(v·s·log((d−s)/s)/(γ²n), 1)`, witnessed by a `1/2`-packing of `S_d(s)` rescaled into the ball
 (the `min(·,1)` is the bounded-ball cap).
 
-The leading constant is loosened from the book's (CLAUDE.md §1), forced by the
+The leading constant is loosened from the book's, forced by the
 `(s/2)log((d−s)/s) − s·log2` sparse-packing brick; the result holds for `10 ≤ s` and `8s ≤ d`.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,

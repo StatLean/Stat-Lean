@@ -27,10 +27,7 @@ coordinate `i₀` with `a i₀ ∉ {±1}`, write `a i₀ = θ·1 + (1−θ)·(�
 pointwise by the triangle inequality *before* integrating, and strong-induct
 on the number of non-vertex coordinates; (iii) the vertex case is the change
 of variables `signVec_map_mul_pm` (`(aᵢεᵢ) =ᵈ (εᵢ)` for `a ∈ {±1}^N`).
-Total for all `N` (both sides `0` at `N = 0`). Named-sorry fallback of this
-work item: `contraction_principle_of_abs_le_one` (the cube-normalized
-induction core), with the scaling wrapper `contraction_principle` proven from
-it.
+Total for all `N` (both sides `0` at `N = 0`).
 
 **Bibliographic comments.** The contraction principle is due to J.-P. Kahane
 (*Some Random Series of Functions*, 1968); the general Lipschitz-contraction
@@ -120,7 +117,7 @@ private lemma card_filter_update_le {N : ℕ} (a : Fin N → ℝ) (i₀ : Fin N)
 
 /-- **Contraction principle, cube-normalized core** (HDP §6.6,
 Theorem 6.6.1): for coefficients in the unit cube (`|aᵢ| ≤ 1`),
-`E‖∑ aᵢεᵢxᵢ‖ ≤ E‖∑ εᵢxᵢ‖`. Named-sorry debt candidate of this work item. -/
+`E‖∑ aᵢεᵢxᵢ‖ ≤ E‖∑ εᵢxᵢ‖`. -/
 theorem contraction_principle_of_abs_le_one {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
     [SecondCountableTopology E] {N : ℕ} {x : Fin N → E} {a : Fin N → ℝ}

@@ -45,8 +45,8 @@ negative-log-likelihood cost `glmCost` matching Eq. 9.7/9.61, and the column-nor
 with dispersion $c(\sigma) = 1$, exactly the normalization used in the Corollary 9.26 proof (p.
 288). The exponential-family curvature facts are recorded as constitutive structure fields:
 `hψ''_nonneg` ($0 \le \psi''$, convexity of $\psi$) and `hψ''_le` ($\psi'' \le B^2$, condition G2).
-Fixed design makes the score a function of `y i` only, so no conditioning is carried. Laptop-only
-shared data model; consumed by `ScoreSubGaussian`, `GoodEvent`, `GLMCorollaries`.
+Fixed design makes the score a function of `y i` only, so no conditioning is carried. Shared
+data model; consumed by `ScoreSubGaussian`, `GoodEvent`, `GLMCorollaries`.
 
 **Bibliographic comments.** The unified high-dimensional M-estimator framework that these GLM
 corollaries instantiate originates with S. Negahban, P. Ravikumar, M. J. Wainwright and B. Yu, "A

@@ -453,9 +453,8 @@ the swap pair is proportional to the current value:
 
 `λ = N / (m (N − m))`,
 
-since there are `m (N − m)` elementary swaps. (The wave-6 status note of
-`tendsto_perm_cdf_blockSum` recorded `λ = 1/(m(N-m))`; the correct value carries the extra
-factor `N`, as the computation below shows.) -/
+since there are `m (N − m)` elementary swaps. (The value `λ = 1/(m(N-m))` is wrong; the
+correct value carries the extra factor `N`, as the computation below shows.) -/
 theorem sum_swapIndex_increment (a : Fin m → Fin N) (ha : Function.Injective a)
     (d : Fin N → ℝ) (hd : ∑ l, d l = 0) (u : ℝ) (σ : Equiv.Perm (Fin N)) :
     ∑ k : SwapIndex a, (stdBlockSumSwap a d u σ k - stdBlockSum a d u σ)
@@ -1586,7 +1585,7 @@ core analytic brick. Under the hypotheses of `tendsto_perm_cdf_blockSum`, the gr
 of `h` evaluated at the standardized block sum converges to the standard normal expectation
 of `h`, for every bounded Lipschitz `h`.
 
-STATUS (wave 9): PROVED, axiom-clean. Route: Stein's method for exchangeable pairs
+Proof method: Stein's method for exchangeable pairs
 (`ForMathlib/SteinMethod`) applied to the **truncated** population, plus a diagonal argument
 in the truncation level `ε`.
 
@@ -1614,7 +1613,7 @@ in the truncation level `ε`.
   `min_div_two_le_mul_div` — `min(m,N−m)/2 ≤ m(N−m)/N ≤ min(m,N−m)` — are what convert the
   Stein scale `√(m(N−m)/N)` into Hájek's scale `√(min (m, N−m))` at both error terms.
 
-WARNING (wave 8, and the reason for the truncation). It is not merely that a naive bound on
+WARNING (the reason for the truncation). It is not merely that a naive bound on
 the third moment fails: the raw third-moment error term of `abs_avg_sub_le`, applied to the
 *untruncated* pair, can itself **diverge** under the hypotheses of this theorem, so any
 reduction of this statement to "the two error terms of the raw swap pair tend to `0`" is a
@@ -1778,7 +1777,7 @@ condition at scale `√(min (m k) (N k - m k))`, then the block sum standardized
 `blockSumScale` is asymptotically standard normal — stated here in the group-average
 c.d.f. form in which randomization distributions are defined.
 
-STATUS (wave 7): DISCHARGED to the single core brick `tendsto_perm_avg_lipschitz` below —
+Reduced to the core lemma `tendsto_perm_avg_lipschitz` below —
 the same theorem tested against *Lipschitz* functions instead of a half-line indicator. The
 de-smoothing step performed here is the elementary one: the indicator of `Iic t` is squeezed
 between two ramps of width `ε` (`ForMathlib/EsseenSmoothing.ramp`), the ramps are `ε⁻¹`-

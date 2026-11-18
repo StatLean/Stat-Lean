@@ -7,7 +7,7 @@ import Mathlib.Analysis.Normed.Group.Tannery
 **FY Theorem 2.11**: when `Σ_k |γ(k)| < ∞`, the spectral measure has the continuous
 density `g(λ) = (2π)⁻¹ Σ_{k ∈ ℤ} γ(k) e^{−ikλ}` with respect to the mass-`2π` Haar
 measure on the circle (FY's unnormalized eq. (2.38); the `1/2π` sits in the density,
-never in the forward transform — batch design D7). We define `spectralDensityOf` by the
+never in the forward transform). We define `spectralDensityOf` by the
 real part of that series (γ even makes the series real) and prove: nonnegativity,
 continuity, the inversion identity `γ(k) = ∫ e^{ikλ} g(λ) dλ`, and that
 `(2π • haar).withDensity g` **is** the spectral measure.

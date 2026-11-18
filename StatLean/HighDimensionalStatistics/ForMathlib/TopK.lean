@@ -1,7 +1,7 @@
 import StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
 import Mathlib.Data.Finset.Sort
 import Mathlib.Data.Finset.Card
-import Mathlib.Data.Prod.Lex
+import Mathlib.Order.Prod.Lex.Basic
 
 /-!
 # Top-`k` coordinate blocks ("shelling")

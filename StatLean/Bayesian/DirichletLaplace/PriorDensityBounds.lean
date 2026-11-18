@@ -36,7 +36,7 @@ Lemma 3.2, eqs. (13)–(14).
 (`PiLp.volume_preserving_toLp`). The product bounds are `Finset` products of the univariate C3
 bounds; `prod_dlDensity_ge` combines the per-coordinate uniform log-form P4 with `Real.exp_sum`. The
 Lebesgue comparisons are `withDensity_apply` + `setLIntegral_mono`/`setLIntegral_le`.
-*Deviations (see the milestone plan).* D5: the mixture-restriction lower bound has exponent
+*Deviations.* D5: the mixture-restriction lower bound has exponent
 `−(7/2)√|x|` (not the paper's sketched `−2√|x|`), which is why `prod_dlDensity_ge` carries the
 `7/2` factor. D8: the density **upper** bound (and hence `prod_dlDensity_le`) genuinely needs
 `a ≤ 1/2` (the `Γ(1−a)` blow-up), whereas the lower bound needs only `a ≤ 1`.

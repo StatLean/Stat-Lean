@@ -25,16 +25,14 @@ close); the p. 227 footnote ("the general case typically follows by
 approximation") is exactly this approximation.
 
 **Proof formalization notes.** Each lemma is a direct application of the
-Batch-10 finite maximal inequalities to the family
+finite maximal inequalities to the family
 `fun t => X t ω − X (netProj N t) ω` indexed by the finite subset `F`: the
 mean-zero form via the B2 bridge (`SubGaussianIncrements.isSubGaussian_sub`,
 proxy `3(K·nndist)² ≤ 3(K·ε)²`) + `expectation_max_finset_le`
 (bound `√3·Kε·√(2 log |F|)`); the absolute form via `expectation_abs_max_le`
 (bound `2·Kε·√(log(2|F|))`); the tail via `tail_abs_max_le`
 (bound `2|F|·exp(−δ²/(Kε)²)`). All three vanish as `ε → 0` for fixed finite
-`F`, which is the only limit the faithful assemblies need. Named-sorry
-fallback of this work item: `residual_tail_le` (the two expectation forms
-land first).
+`F`, which is the only limit the faithful assemblies need.
 
 **Bibliographic comments.** The truncation-and-limit reading of the chaining
 argument for non-finite index sets is folklore, implicit in R. M. Dudley,

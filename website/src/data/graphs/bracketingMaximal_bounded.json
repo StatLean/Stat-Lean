@@ -9,7 +9,8 @@
     {"id":"AsymptoticStatistics.EmpiricalProcess.BoundedChainingData","label":"BoundedChainingData","full":"AsymptoticStatistics.EmpiricalProcess.BoundedChainingData","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.MaximalBoundedChaining"},
     {"id":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_of_boundedChainingData","label":"bracketingMaximal_of_boundedChainingData","full":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_of_boundedChainingData","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.MaximalBoundedChaining"},
     {"id":"iSup_congr_Prop","label":"iSup_congr_Prop","full":"iSup_congr_Prop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
-    {"id":"iSup_neg","label":"iSup_neg","full":"iSup_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
+    {"id":"iSup_of_empty'","label":"iSup_of_empty'","full":"iSup_of_empty'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Bounds.Basic"},
+    {"id":"sSup_empty","label":"sSup_empty","full":"sSup_empty","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Bounds.Basic"},
     {"id":"bot_eq_zero'","label":"bot_eq_zero'","full":"bot_eq_zero'","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Canonical.Defs"},
     {"id":"ciSup_const","label":"ciSup_const","full":"ciSup_const","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompletePartialOrder.Indexed"},
     {"id":"MeasureTheory.outerExpectation_const","label":"outerExpectation_const","full":"MeasureTheory.outerExpectation_const","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectation"},
@@ -45,8 +46,7 @@
     {"id":"AsymptoticStatistics.EmpiricalProcess.bounded_chain_supNorm_le_pointwise","label":"bounded_chain_supNorm_le_pointwise","full":"AsymptoticStatistics.EmpiricalProcess.bounded_chain_supNorm_le_pointwise","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.MaximalBoundedChaining"},
     {"id":"AddSemigroup.to_isAssociative","label":"to_isAssociative","full":"AddSemigroup.to_isAssociative","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"AddCommMagma.to_isCommutative","label":"to_isCommutative","full":"AddCommMagma.to_isCommutative","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
-    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.bounded_chain_remainder_bound","label":"bounded_chain_remainder_bound","full":"AsymptoticStatistics.EmpiricalProcess.bounded_chain_remainder_bound","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.MaximalBoundedChaining"}
+    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"MeasureTheory.outerExpectation"},
@@ -56,7 +56,8 @@
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"AsymptoticStatistics.EmpiricalProcess.BoundedChainingData"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_of_boundedChainingData"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"iSup_congr_Prop"},
-    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"iSup_neg"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"iSup_of_empty'"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"sSup_empty"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"bot_eq_zero'"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"ciSup_const"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded","target":"MeasureTheory.outerExpectation_const"},
@@ -99,7 +100,6 @@
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_of_boundedChainingData","target":"AddSemigroup.to_isAssociative"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_of_boundedChainingData","target":"AddCommMagma.to_isCommutative"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_of_boundedChainingData","target":"Nat.cast_one"},
-    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_of_boundedChainingData","target":"AsymptoticStatistics.EmpiricalProcess.bounded_chain_remainder_bound"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_of_boundedChainingData","target":"mul_one"}
   ]
 }

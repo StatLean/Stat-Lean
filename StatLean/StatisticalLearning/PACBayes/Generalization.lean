@@ -14,8 +14,7 @@ with probability `≥ 1 − δ` over `S ∼ Dⁿ`, **simultaneously for every**
 (possibly sample-dependent) posterior `Q`,
 `L_D(Q) ≤ L_S(Q) + √((D(Q‖P) + ln(2n/δ)) / (2(n−1)))`.
 
-**Reference.** SSBD §31.1, Theorem 31.1 and Exercise 31.1. Transcription:
-`notes/statistical_learning/book_statements/ch26-31-appB.md`.
+**Reference.** SSBD §31.1, Theorem 31.1 and Exercise 31.1.
 
 **Formalization notes.** Proof chain exactly as the book: Markov on
 `e^{f(S)}` for `f(S) = sup_Q (2(n−1) E_Q[Δ²] − D(Q‖P))`, change of measure +

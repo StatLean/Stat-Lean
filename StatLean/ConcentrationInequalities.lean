@@ -99,7 +99,7 @@ import StatLean.ConcentrationInequalities.VC.Generalization
 # ConcentrationInequalities — area umbrella
 
 Sub-Gaussian / sub-exponential / Bernstein / maximal inequalities, formalized
-from Lu, *Big Data Analysis*, ch. 2–4, plus the Batch-10 Vershynin HDP layer
+from Lu, *Big Data Analysis*, ch. 2–4, plus the Vershynin HDP layer
 (Orlicz/ψ-norms, symmetrization, Dudley + generic chaining, empirical
 processes, VC theory; `HDP §X.Y` tags). Modules are imported above as each
 lands.

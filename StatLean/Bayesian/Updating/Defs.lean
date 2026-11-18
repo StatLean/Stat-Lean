@@ -12,7 +12,7 @@ i.e. the composition `KY ∘ₖ (KX†π)` of the future experiment with the pos
 **Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §1.3, p. 6.
 
-**Proof formalization notes.** Laptop-only data model — definitions only. `KX†π : Kernel 𝓧 Θ` and
+**Proof formalization notes.** Definitions and basic constructions. `KX†π : Kernel 𝓧 Θ` and
 `Kernel.comp : Kernel Θ 𝓨 → Kernel 𝓧 Θ → Kernel 𝓧 𝓨`, so `KY ∘ₖ (KX†π)` typechecks directly and
 is Markov whenever `KY` is. The identification of this kernel with the conditional law of the
 future given the data under the joint model — the theorem that justifies the definition — is

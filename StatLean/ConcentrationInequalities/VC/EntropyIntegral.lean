@@ -19,8 +19,8 @@ Cambridge University Press, §8.3.6 — the "bounded entropy integral" step in
 the proof of Theorem 8.3.15 (the book leaves the integral as an unnamed
 absolute constant).
 
-**Proof formalization notes.** VC owns its own entropy integral (batch
-decision R7): this file is self-contained interval-integral analysis with no
+**Proof formalization notes.** VC owns its own entropy integral: this file
+is self-contained interval-integral analysis with no
 stub dependencies, and `VC/LawOfLargeNumbers.lean` plugs it into the
 chaining cluster's `dudley_inequality_abs` directly. The `22` (not the
 covering theorem's `21`) absorbs the factor-2 covering loss from the
@@ -33,9 +33,7 @@ symmetrized index set `T' = empProj '' F ∪ (−(empProj '' F))`, and the
 integrand near `0` is by domination by `ε^{−1/2}` (integrable rpow,
 exponent `> −1`). Edge behavior: the integrand is junk (`log` of a
 nonpositive argument) outside `(0, 4)`, but the interval of integration is
-`(0, 2)`. Named-sorry fallback of this work item: `entropyIntegral_le`
-(keep the two helper lemmas real; sorry only the final interval-integral
-assembly).
+`(0, 2)`.
 
 **Bibliographic comments.** The entropy integral is R. M. Dudley's ("The
 sizes of compact subsets of Hilbert space and continuity of Gaussian

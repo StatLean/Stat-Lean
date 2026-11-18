@@ -22,7 +22,6 @@ Its consequence for the score (vdV p.380): "Because the conditional densities
 satisfy CAR, the function `b₀(δ | y)` must actually be a function `b(x)` of `x`
 only." The theorem `conditionalScore_factorsThrough` proves this descent by an
 L²-closedness argument.
-
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory

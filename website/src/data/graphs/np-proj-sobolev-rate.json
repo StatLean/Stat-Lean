@@ -45,8 +45,8 @@
     {"id":"Real.one_le_rpow","label":"one_le_rpow","full":"Real.one_le_rpow","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Pow.Real"},
     {"id":"le_of_lt","label":"le_of_lt","full":"le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"Nat.ceil_lt_add_one","label":"ceil_lt_add_one","full":"Nat.ceil_lt_add_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Floor.Semiring"},
-    {"id":"Nat.cast_pos'","label":"cast_pos'","full":"Nat.cast_pos'","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Order.Basic"},
-    {"id":"NeZero.charZero_one","label":"charZero_one","full":"NeZero.charZero_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"}
+    {"id":"IsLeftCancelAdd.addLeftStrictMono_of_addLeftMono","label":"addLeftStrictMono_of_addLeftMono","full":"IsLeftCancelAdd.addLeftStrictMono_of_addLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
+    {"id":"AddGroup.addLeftReflectLE_of_addLeftMono","label":"addLeftReflectLE_of_addLeftMono","full":"AddGroup.addLeftReflectLE_of_addLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.proj_sobolev_rate","target":"StatLean.NonparametricStatistics.MemEllipsoid"},
@@ -92,7 +92,7 @@
     {"source":"StatLean.NonparametricStatistics.proj_sobolev_rate","target":"Real.one_le_rpow"},
     {"source":"StatLean.NonparametricStatistics.proj_sobolev_rate","target":"le_of_lt"},
     {"source":"StatLean.NonparametricStatistics.proj_sobolev_rate","target":"Nat.ceil_lt_add_one"},
-    {"source":"StatLean.NonparametricStatistics.proj_sobolev_rate","target":"Nat.cast_pos'"},
-    {"source":"StatLean.NonparametricStatistics.proj_sobolev_rate","target":"NeZero.charZero_one"}
+    {"source":"StatLean.NonparametricStatistics.proj_sobolev_rate","target":"IsLeftCancelAdd.addLeftStrictMono_of_addLeftMono"},
+    {"source":"StatLean.NonparametricStatistics.proj_sobolev_rate","target":"AddGroup.addLeftReflectLE_of_addLeftMono"}
   ]
 }

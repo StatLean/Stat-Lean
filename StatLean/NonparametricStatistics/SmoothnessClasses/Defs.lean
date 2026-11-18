@@ -36,8 +36,7 @@ Nikol'skii class $\mathcal{H}(\beta, L)$ and $\mathcal{P}_H(\beta, L)$).
   condition forces continuity of $f^{(\ell)}$, and derivatives of lower order are continuous
   wherever the next derivative exists. For the Nikol'skii class, `ContDiff ℝ ℓ f` is a genuine
   (mild) strengthening of the a.e.-flavoured classical class; the deviation is deliberate — it
-  is what makes the order-$\ell$ Taylor identity with integral remainder available pointwise —
-  and is recorded in the batch status ledger.
+  is what makes the order-$\ell$ Taylor identity with integral remainder available pointwise.
 * *Lower Lebesgue integral in `MemNikolski`.* The translate condition is stated with `∫⁻` and
   `ENNReal.ofReal`: with the Bochner integral, a non-square-integrable difference would return
   the junk value `0` and satisfy the bound vacuously, silently emptying the hypothesis.

@@ -722,7 +722,7 @@ theorem localized_absoluteCover
           rw [Finset.mem_image] at hgS
           obtain ⟨k, hkT, rfl⟩ := hgS
           change MemLp (A.indicator k) (ENNReal.ofReal 1) Q
-          rw [memLp_indicator_iff_restrict hA]
+          rw [memLp_indicator_iff_restrict hA.nullMeasurableSet]
           rw [hRQ]
           exact (hTcover.1 k hkT).smul_measure hQAtop
         · rintro _ ⟨f, hf, rfl⟩

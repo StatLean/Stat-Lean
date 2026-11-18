@@ -71,13 +71,12 @@ contamination → equivariance → statistical functionals →
   quantile formula, MMY (3.66)–(3.68)); `MedianMinimaxBias` (Huber's minimax-bias
   property of the median, MMY §3.8.5).
 
-**Scope.** Round 1: measuring robustness (MMY ch. 2–3) plus the reuse-driven asymptotics
-(MMY ch. 10) and the foundational regression/multivariate layer (MMY §4.4, §6.17.1).
-Round 2 (breadth + modern): sub-Gaussian mean estimation under heavy tails (LM 2019 —
-median-of-means, Catoni, trimmed mean, the deviation lower bound, the dimension-free
-multivariate ball-MoM), scale M-functionals and dispersion breakdown, maximum-bias
+**Scope.** Measuring robustness (MMY ch. 2–3), the asymptotics (MMY ch. 10) and the foundational
+regression/multivariate layer (MMY §4.4, §6.17.1); in addition, sub-Gaussian mean estimation under
+heavy tails (LM 2019 — median-of-means, Catoni, trimmed mean, the deviation lower bound, the
+dimension-free multivariate ball-MoM), scale M-functionals and dispersion breakdown, maximum-bias
 theory with the median's minimax-bias property, and regression quantiles.
-Deferred: LM Thm 3 (1+α moments) and Thm 7 (multiple-δ impossibility, after
+Not formalized: LM Thm 3 (1+α moments) and Thm 7 (multiple-δ impossibility, after
 Devroye–Lerasle–Lugosi–Oliveira 2016), the Catoni–Giulini thresholding estimator and
 median-of-means tournaments (LM §3.3–3.4), the geometric median-of-means (Minsker
 2015), contamination-robust trimmed means (Lugosi–Mendelson 2021), the median influence
@@ -95,8 +94,6 @@ RobustStatistics.
 tags) — the classical spine; G. Lugosi and S. Mendelson, *Mean estimation and
 regression under heavy-tailed distributions — a survey*, Found. Comput. Math. (2019),
 arXiv:1906.04280v1 (`LM Thm N` / `LM (x.y)` in tags) — the modern spine.
-
-Laptop-only file: edited by the laptop session at wave merges.
 
 **Bibliographic comments.** The subject begins with Tukey's contaminated-normal alarm ("A
 survey of sampling from contaminated distributions," in *Contributions to Probability and

@@ -70,11 +70,13 @@ lemma measurable_openHalfLineIndicator (t : ℝ) :
 
 lemma halfLineIndicator_memLp (P : Measure ℝ) [IsProbabilityMeasure P]
     (t : ℝ) (p : ℝ≥0∞) : MemLp (halfLineIndicator t) p P := by
-  exact memLp_indicator_const p measurableSet_Iic 1 (Or.inr (measure_ne_top P _))
+  exact memLp_indicator_const p measurableSet_Iic.nullMeasurableSet 1
+    (Or.inr (measure_ne_top P _))
 
 lemma openHalfLineIndicator_memLp (P : Measure ℝ) [IsProbabilityMeasure P]
     (t : ℝ) (p : ℝ≥0∞) : MemLp (openHalfLineIndicator t) p P := by
-  exact memLp_indicator_const p measurableSet_Iio 1 (Or.inr (measure_ne_top P _))
+  exact memLp_indicator_const p measurableSet_Iio.nullMeasurableSet 1
+    (Or.inr (measure_ne_top P _))
 
 /-- Population integral of a half-line indicator is the CDF coordinate. -/
 lemma integral_halfLineIndicator (P : Measure ℝ) [IsProbabilityMeasure P]

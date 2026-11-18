@@ -23,8 +23,7 @@ the book's $e = $ `Real.exp 1`; no numeric slack is taken here. Edge
 behavior: the hypothesis `1 ≤ d` rules out the degenerate `0^0` division;
 `d ≤ n` is the book's stated regime (the bound is false for `d > n` as
 stated, e.g. `n = 1, d = 2`). Pure real algebra, zero probability content;
-candidate upstream. Named-sorry fallback of this work item:
-`sum_choose_le_exp_mul_pow` (already in final consumable form).
+candidate upstream.
 
 **Bibliographic comments.** The bound is folklore in combinatorics and
 statistical learning theory; it appears as the standard companion to the

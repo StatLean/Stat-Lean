@@ -46,7 +46,7 @@
     {"id":"Pi.isScalarTower","label":"isScalarTower","full":"Pi.isScalarTower","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Pi"},
     {"id":"IsScalarTower.right","label":"right","full":"IsScalarTower.right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
     {"id":"AlgEquivClass.toAlgHomClass","label":"toAlgHomClass","full":"AlgEquivClass.toAlgHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Equiv"},
-    {"id":"mul_apply_eq_comp","label":"mul_apply_eq_comp","full":"mul_apply_eq_comp","kind":"mathlib","decl":"thm","module":"Mathlib.Data.FunLike.IsApply"}
+    {"id":"mul_apply_eq_comp","label":"mul_apply_eq_comp","full":"mul_apply_eq_comp","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.IsApply"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansionVec.rawMovingBias_normalized_expansion_2559_vec","target":"AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorModelShift.QMDModel"},

@@ -39,9 +39,8 @@ invariant acceptance regions). (`TSH4 §6.11 Lem 6.11.1`.)
 
 **Dependency note.** `confidenceSet`, `IsConfidenceFamily`, `acceptanceTest` and the two
 bridge lemmas `isCriticalFn_acceptanceTest` / `power_acceptanceTest` come from the sibling
-`Tests/Confidence.lean` (work item `ht/test-foundations`), which carries the
-test–confidence-set duality and is itself `sorry`-free; the optimality transfer below is
-proved through those bridges.
+`Tests/Confidence.lean`, which carries the test–confidence-set duality; the optimality
+transfer below is proved through those bridges.
 
 **Proof formalization notes.**
 * The induced action on parameter sets is the image `(g • ·) '' S`, so equivariance reads

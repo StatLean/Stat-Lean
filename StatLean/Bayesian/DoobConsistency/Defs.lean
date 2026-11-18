@@ -27,7 +27,7 @@ and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 10 (Bay
 Procedures), §10.4 (Consistency), p. 149 (the construction of `(X₁, X₂, …, Θ̄)` and the
 definition of consistency).
 
-**Proof formalization notes.** Laptop-only data model. vdV defines consistency via weak
+**Proof formalization notes.** Shared definitions. vdV defines consistency via weak
 convergence to `δ_θ`; the ball form used here is equivalent for point limits (portmanteau on
 open balls plus monotonicity) and avoids weak convergence of random measures. The a.s. set
 does not depend on `ε` (the quantifier `∀ ε` is inside `∀ᵐ`).
@@ -61,7 +61,6 @@ def doobData (n : ℕ) (ω : (ℕ → 𝓧) × Θ) : Fin n → 𝓧 :=
 experiment (as a plain σ-algebra; the `Filtration` packaging is done at the point of use). -/
 def doobSigma (n : ℕ) : MeasurableSpace ((ℕ → 𝓧) × Θ) :=
   MeasurableSpace.comap (doobData n) inferInstance
-
 
 
 /-- **Strong posterior consistency at `θ`** (vdV §10.4, p. 149): for `K θ`-iid-almost-every

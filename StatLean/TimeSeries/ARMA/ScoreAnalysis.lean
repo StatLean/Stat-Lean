@@ -8,9 +8,9 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 /-!
 # Score analysis for ARMA maximum likelihood (FY §3.3.2, eq. (3.14); Hannan program)
 
-The analytic layer of the commissioned Hannan Theorem 3.2 proof (time-domain route,
-`notes/time_series/roadmap.md`): residual inversion, the auxiliary AR processes, the
-information matrix, and the martingale-difference property of the quasi-score.
+The analytic layer of the Hannan Theorem 3.2 proof (time-domain route): residual inversion,
+the auxiliary AR processes, the information matrix, and the martingale-difference property
+of the quasi-score.
 
 * `armaPi` — the **AR(∞) inversion coefficients** `π(z) = b(z)/a(z)` (invertibility
   makes them geometrically decaying: `summable_abs_armaPi`);
@@ -822,15 +822,15 @@ theorem hannanVarZ_posDef {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hcop : IsCoprime (arPoly b) (maPoly a))
     -- USER-INPUT: FY's minimal-orders convention *in full* — the lag polynomials
     -- genuinely have degrees `p` and `q` (i.e. `b_{p−1} ≠ 0`, `a_{q−1} ≠ 0`).
-    -- Added 2026-08-09 after a machine-checked counterexample showed coprimality alone
+    -- A machine-checked counterexample shows coprimality alone
     -- is insufficient: with `b = (1/2, 0)`, `a = (1/3, 0)` (degrees 1 < p = q = 2) the
     -- Gram matrix is singular, since `(U_t − ½U_{t−1}) − (V_t + ⅓V_{t−1}) = 0`.
     -- Hannan 1973 §2 assumes the orders are exact; FY inherits it silently.
     (hbdeg : (arPoly b).natDegree = p) (hadeg : (maPoly a).natDegree = q) :
     (hannanVarZ b a).PosDef := by
-  -- **Was FALSE as originally frozen**; the degree hypotheses above were added by the
-  -- laptop session on 2026-08-09 in response to the counterexample recorded below,
-  -- which is kept as documentation. Under `hbdeg` the Bézout argument closes — see the
+  -- **Was FALSE as originally frozen**; the degree hypotheses above were added in response
+  -- to the counterexample recorded below, which is kept as documentation. Under `hbdeg`
+  -- the Bézout argument closes — see the
   -- section header above for the route. (Only `hbdeg` is consumed: once `C = 0` the
   -- identity collapses to `D · b = 0` and `b ≠ 0` finishes, so the symmetric hypothesis
   -- `hadeg` is redundant. It is kept in the signature as FY's minimal-orders convention
@@ -884,11 +884,11 @@ in place of the forward pair. The reduced factors `C₀(z) = Σ_i cᵢ zⁱ`,
 count that closes the argument (`deg C₀ ≤ p − 1 < p = deg b`, under `hbdeg`) is if
 anything more comfortable; the hypotheses are exactly those of `hannanVarZ_posDef`.
 
-**FINDING 29 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** This has to be **proved**,
-not transported: the two Grams are conjugate by the block-wise reversal permutation only
-when `p = q`, and `hannanVarZ_quadForm_ne_back` witnesses that they are genuinely different
-quadratic forms at ARMA(2,1). The permutation route fails for a reason worth recording,
-since it is what makes finding 26 possible at all: a *common* shift of all coordinates
+This has to be **proved**, not transported: the two Grams are conjugate by the block-wise
+reversal permutation only when `p = q`, and `hannanVarZ_quadForm_ne_back` witnesses that
+they are genuinely different quadratic forms at ARMA(2,1). The permutation route fails for
+a reason worth recording, since it is what makes finding 26 possible at all: a *common*
+shift of all coordinates
 leaves a Gram matrix unchanged, and the reversal `i ↦ p−1−i` turns the backward AR shifts
 `1+i` into `p−i` and the backward MA shifts `1+j` into `q−j`, whereas the forward shifts
 are `p+q−i` and `p+q−j`. The two offsets are `q−1` and `p`, which agree only when `p = q`
@@ -1592,12 +1592,7 @@ private lemma measurable_sigmaLT {Z : ℤ → Ω → ℝ} {s t : ℤ} (hst : s <
     (comap_le_sigmaLT hst) le_rfl
 
 /-- **One-vs-past independence of i.i.d. noise**: `ε_t` is independent of
-`σ(ε_s : s < t)` (the `Stationarity/ARCH.lean` pull, replayed here).
-
-**Made public 2026-08-09** (wave `ts/s1b-arma-finish`), as the cross-file scope blocker
-recorded at what was then `MLEAsymptotics.hannanScore_brownInputs` (since removed): inputs
-(1) and (3) of that debt both consumed this independence, and it was not citeable while
-`private`. -/
+`σ(ε_s : s < t)` (the `Stationarity/ARCH.lean` pull, replayed here). -/
 lemma indep_noise_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
     (hi : iIndepFun ε μ) (t : ℤ) :
     Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT ε t) μ := by

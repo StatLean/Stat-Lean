@@ -31,10 +31,7 @@ improper integral `∫_{(0,∞)} t·e^{−ct²} dt = 1/(2c)` via
 chain and its `Γ(x) ≤ 3x^x` brick, which is absent from Mathlib. B3 takes
 no measurability hypothesis beyond the frozen signature:
 `HasSubgaussianMGF.aemeasurable` supplies it; tails come from
-`HasSubgaussianMGF.measure_ge_le` on `X` and `−X` (via `.neg`). Named-sorry
-fallback of this work item: `integral_Ioi_self_mul_exp_neg_mul_sq` (isolated
-improper-integral computation); the layer-cake assembly and B3 close modulo
-it.
+`HasSubgaussianMGF.measure_ge_le` on `X` and `−X` (via `.neg`).
 
 **Bibliographic comments.** The layer-cake (distribution-integral) identity
 is classical (see Lieb–Loss, *Analysis*, 2nd ed., §1.13); the tails-to-Orlicz
@@ -61,8 +58,7 @@ private lemma hasDerivAt_gaussianAntideriv {c : ℝ} (hc : c ≠ 0) (t : ℝ) :
   try field_simp
 
 /-- Improper integral `∫_{(0,∞)} t·exp(−c·t²) dt = 1/(2c)` (antiderivative
-`−e^{−ct²}/(2c)` + `integral_Ioi_of_hasDerivAt_of_tendsto`); designated
-named-sorry fallback of the tail-to-norm work item. -/
+`−e^{−ct²}/(2c)` + `integral_Ioi_of_hasDerivAt_of_tendsto`). -/
 lemma integral_Ioi_self_mul_exp_neg_mul_sq {c : ℝ}
     -- LEAN-ONLY: positive decay rate; integral diverges for c ≤ 0
     (hc : 0 < c) :

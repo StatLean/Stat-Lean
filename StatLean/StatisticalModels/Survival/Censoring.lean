@@ -1,5 +1,6 @@
 import StatLean.StatisticalModels.Survival.CumulativeHazard
 import Mathlib.MeasureTheory.Measure.Prod
+import StatLean.ForMathlib.BindProd
 
 /-!
 # Right censoring — the random censorship model and crude = net hazard
@@ -27,7 +28,7 @@ E. L. Kaplan and P. Meier, *J. Amer. Statist. Assoc.* **53** (1958), 457–481, 
 crude-vs-net identification) (`KM58 §2`); the nonidentifiability of the joint law without
 independence: A. Tsiatis, "A nonidentifiability aspect of the problem of competing risks,"
 *Proc. Nat. Acad. Sci.* **72** (1975), 20–22 (`Tsiatis75`) — documented as a non-theorem
-here; the dependent-censoring counterexample construction is a named future debt.
+here; the dependent-censoring counterexample construction is not formalized.
 
 **Proof formalization notes.** Tie convention `Δ = decide (T ≤ C)` (ties count as events) —
 *Book vs Lean:* ABGK assume `P(T = C) = 0`, making the convention immaterial there. S2.2 is
@@ -64,7 +65,7 @@ theorem measurable_censorObserve : Measurable censorObserve := by
 the product joint `(T, C) ∼ μT ⊗ μC` pushed through `censorObserve` (ABGK §III.2;
 Breslow–Crowley 1974). Independence is structural here, not a hypothesis. -/
 noncomputable def censoredLaw (μT μC : Measure ℝ) : Measure (ℝ × Bool) :=
-  (μT.prod μC).map censorObserve
+  (μT.bindProd μC).map censorObserve
 
 instance (μT μC : Measure ℝ) [IsProbabilityMeasure μT] [IsProbabilityMeasure μC] :
     IsProbabilityMeasure (censoredLaw μT μC) :=
@@ -86,7 +87,7 @@ noncomputable def crudeCumHazard (P : Measure (ℝ × Bool)) : Measure ℝ :=
 /-- LEAN-ONLY: the observed time is the pushforward of the joint law under `min`
 (`Prod.fst ∘ censorObserve = min`, collapsed by `Measure.map_map`). -/
 private theorem observedTimeLaw_censoredLaw_eq (μT μC : Measure ℝ) :
-    observedTimeLaw (censoredLaw μT μC) = (μT.prod μC).map fun p => min p.1 p.2 := by
+    observedTimeLaw (censoredLaw μT μC) = (μT.bindProd μC).map fun p => min p.1 p.2 := by
   rw [observedTimeLaw, censoredLaw, Measure.map_map measurable_fst measurable_censorObserve]
   rfl
 
@@ -99,7 +100,7 @@ theorem observedTimeLaw_censoredLaw_Ioi (μT μC : Measure ℝ) [IsProbabilityMe
     Measure.map_apply (measurable_fst.min measurable_snd) measurableSet_Ioi]
   have hpre : (fun p : ℝ × ℝ => min p.1 p.2) ⁻¹' Ioi t = Ioi t ×ˢ Ioi t := by
     ext p; simp
-  rw [hpre, Measure.prod_prod]
+  rw [hpre, Measure.bindProd_eq_prod, Measure.prod_prod]
 
 /-- **S2.1 (`Ici` form)**: `P(T̃ ≥ t) = S_T(t^-) · S_C(t^-)`. -/
 theorem observedTimeLaw_censoredLaw_Ici (μT μC : Measure ℝ) [IsProbabilityMeasure μT]
@@ -109,7 +110,7 @@ theorem observedTimeLaw_censoredLaw_Ici (μT μC : Measure ℝ) [IsProbabilityMe
     Measure.map_apply (measurable_fst.min measurable_snd) measurableSet_Ici]
   have hpre : (fun p : ℝ × ℝ => min p.1 p.2) ⁻¹' Ici t = Ici t ×ˢ Ici t := by
     ext p; simp [Prod.le_def]
-  rw [hpre, Measure.prod_prod]
+  rw [hpre, Measure.bindProd_eq_prod, Measure.prod_prod]
 
 /-- **S2.2 (sub-distribution formula, fully general)**: under independent censoring,
 `P(T̃ ∈ dt, Δ = 1) = S_C(t^-)\,dF_T(t)` — exactly, for arbitrary (atomic or not) laws
@@ -135,6 +136,7 @@ theorem uncensoredSubLaw_censoredLaw (μT μC : Measure ℝ) [IsProbabilityMeasu
   rw [uncensoredSubLaw, Measure.map_apply measurable_fst hA,
     Measure.restrict_apply (measurable_fst hA), censoredLaw,
     Measure.map_apply measurable_censorObserve ((measurable_fst hA).inter hE), hpre,
+    Measure.bindProd_eq_prod,
     Measure.prod_apply hS, withDensity_apply _ hA]
   -- Fubini section: `{c | t ≤ c} = Ici t` on `A`, empty off `A`.
   have hsec : ∀ x : ℝ, μC (Prod.mk x ⁻¹' (Prod.fst ⁻¹' A ∩ {p : ℝ × ℝ | p.1 ≤ p.2}))

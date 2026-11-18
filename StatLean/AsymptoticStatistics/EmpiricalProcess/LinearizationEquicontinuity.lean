@@ -23,7 +23,6 @@ The proof uses `uniform_donsker_random_function_consistency`. Feeding
 Lipschitz class `𝓕`), the theorem gives `𝔾ₙ(fhat) − 𝔾ₙ(ψθ₀) →ₚ 0` (uniform,
 random `fhat`) from `IsAsymptoticallyEquicontinuous 𝓕 P` and the
 `L²(P)`-distance convergence `distL2(fhat, ψθ₀) →ₚ 0`.
-
 -/
 
 set_option linter.style.longFile 2300

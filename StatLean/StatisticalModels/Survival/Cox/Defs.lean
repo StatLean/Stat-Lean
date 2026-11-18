@@ -23,7 +23,7 @@ parametric family.
 **34** (1972), 187–220, §1–2 (`Cox72`); ABGK §III.1.2 (the multiplicative intensity/hazard
 form) (verify §).
 
-**Proof formalization notes.** Laptop-only data model — definitions only. The
+**Proof formalization notes.** Data model — definitions only. The
 proportionality predicate is stated on cumulative-hazard *measures* (`cumHazard`, S-B1) —
 fully distribution-agnostic, no hazard densities. The `ENNReal.ofReal ∘ exp` coefficient is
 strictly positive, so no degenerate-scaling corner. Baseline conventions (mass on `(0, ∞)`,

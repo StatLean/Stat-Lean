@@ -69,8 +69,8 @@ test margin `d − ρ ≥ jr − 2ρ = (1 − √5/2)jr < 0` is negative and no 
 the floor to `2jr` restores a positive margin `d − ρ ≥ 2jr − 2ρ = (2 − √5/2)jr ≥ (7/8)jr` (for
 `j ≥ 2`), which is exactly what `shell_ratio_le`'s Type I/II error `e^{−j²r²/12}` needs. This is the
 geometry the paper's `2jrₙ`-ball language actually intends; only the net *radius* `(√5/4)jr` and
-error *constant* `1/12` differ from the paper's unspecified numerals (charter §1 "state the
-constants that are provable"). The outer series in `PosteriorContraction` is unaffected:
+error *constant* `1/12` differ from the paper's unspecified numerals; the statement uses
+constants that are provable. The outer series in `PosteriorContraction` is unaffected:
 `⋃_{j ≥ M} [2jr, 2(j+1)r) = [2Mr, ∞)` still tiles the complement of the
 contraction ball, with the ball radius rescaled by the harmless factor 2. -/
 noncomputable def dlShell (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) (j : ℕ) (r δ : ℝ) :

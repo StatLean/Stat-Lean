@@ -22,7 +22,7 @@ and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 10, §1
 **Proof formalization notes.** vdV derives the hypothesis `√n(θ̂ₙ − θ) − Δ_{n,θ} →ᵖ 0` from
 best-regularity via his Theorem 8.14; here the expansion itself is taken as the definition
 of asymptotic efficiency (USER-INPUT), which is exactly what the argument consumes —
-best-regularity theory is out of scope for this batch. Chain: triangle with
+best-regularity theory is out of scope for this module. Chain: triangle with
 `bernstein_von_mises`; `tvDist_multivariateGaussian_le` (Pinsker) turns the vanishing
 center difference into vanishing TV between the two Gaussians; the unrescaling to the
 original parameter scale is `tvDist_map_measurableEmbedding` along `bvmLocalUnscale`

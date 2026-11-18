@@ -3,6 +3,7 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license.
 -/
 import StatLean.AsymptoticStatistics.EmpiricalProcess.HalfLineIndicators
+import StatLean.ForMathlib.BindCDF
 
 /-!
 # Atom-safe CDF quantiles and grids
@@ -26,7 +27,7 @@ Edge behavior: this raw `sInf` definition is total. The textbook quantile
 specification is asserted only for `0 < u < 1`, where the defining set is
 nonempty and bounded below. -/
 noncomputable def cdfQuantile (P : Measure ℝ) (u : ℝ) : ℝ :=
-  sInf {x : ℝ | u ≤ cdf P x}
+  sInf {x : ℝ | u ≤ bindCDF P x}
 
 private lemma cdf_leftLim_eq_real_Iio (P : Measure ℝ) [IsProbabilityMeasure P]
     (x : ℝ) :
@@ -61,6 +62,7 @@ theorem cdfQuantile_spec (P : Measure ℝ) [IsProbabilityMeasure P]
     by_contra hax
     have hxa : x ≤ a := le_of_not_ge hax
     exact (not_lt_of_ge hx) ((monotone_cdf P hxa).trans_lt (ha a le_rfl))
+  simp only [cdfQuantile, bindCDF_eq_cdf]
   change u ≤ cdf P (sInf S) ∧ P.real (Iio (sInf S)) ≤ u
   constructor
   · rw [← (cdf P).iInf_Ioi_eq (sInf S)]

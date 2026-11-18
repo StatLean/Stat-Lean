@@ -22,11 +22,11 @@ it is *not* θ-free in a parametric reading. The value of this theorem is the ex
 slice-wise reconstruction kernel — deterministic recovery on complete cases, a `Y ∣ X`
 redraw on incomplete ones — whose correctness on the incomplete slice is exactly what MAR
 buys. The substantive family-level bridge (one θ-free reconstruction kernel serving every
-outcome law simultaneously, the form the semiparametric theory actually consumes) is a named
-future debt (`D-C1`).
+outcome law simultaneously, the form the semiparametric theory actually consumes) is not
+formalized here.
 
-This file deliberately imports another area's concept layer (`Operators.CAR`) — the
-sanctioned adapter exception, same pattern as `Adapters/`.
+This file deliberately imports another area's concept layer (`Operators.CAR`) — an
+adapter exception, same pattern as `Adapters/`.
 
 **Reference.** D. F. Heitjan and D. B. Rubin, "Ignorability and coarse data," *Ann.
 Statist.* **19** (1991), 2244–2253 (`HR91`; CAR as the generalization of MAR); R. D. Gill,
@@ -41,8 +41,7 @@ outcome is redrawn from the conditional law of `Y` given `X` under `Q` (`Q.condK
 disintegrating over the standard Borel factor `ℝ`) — MAR is exactly what makes the
 `Y ∣ X, R = 0` conditional equal the `Y ∣ X` conditional. The bind identity is verified
 slice-by-slice against `Ignorability.observedLaw_restrict_true/false`; the fibre condition is
-definitional on the deterministic slice and holds by construction on the other. Designated
-XL theorem of the batch — the single allowed carry.
+definitional on the deterministic slice and holds by construction on the other.
 
 **Bibliographic comments.** That MAR is the single-outcome instance of CAR is `HR91`'s
 founding observation; the kernel-disintegration formulation is Gill–van der Laan–Robins
@@ -129,8 +128,8 @@ private theorem bool_measure_split (ν : Measure Bool) (S : Set Bool) :
 missingness mechanism makes the coarsening map `missingObserve` coarsening-at-random for the
 full-data law — the model-level missing-data slice plugs into the semiparametric
 observed-data theory. Single-measure instance witnessed by the explicit slice-wise kernel
-`carKernel Q`; see the module docstring's scope-honesty note (family-level θ-free bridge =
-debt `D-C1`). -/
+`carKernel Q`; see the module docstring's scope-honesty note (the family-level θ-free bridge
+is not formalized). -/
 theorem isCoarseningAtRandom_of_isMAR [MeasurableSingletonClass 𝓧]
     (Q : Measure (𝓧 × ℝ)) [IsProbabilityMeasure Q] {ρ : Kernel (𝓧 × ℝ) Bool}
     [IsMarkovKernel ρ]

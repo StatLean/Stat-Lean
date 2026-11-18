@@ -28,8 +28,6 @@ sub-Gaussian bound): route `mgf_gaussianReal` + `mgf_map`/`mgf_id_map` +
 via mean zero; negation by `HasSubgaussianMGF.neg`. The abs-moment lemma
 transports `ForMathlib/GaussianAbsMoment` along the coordinate evaluation.
 Edge behavior: all statements are per-coordinate, so `N = 0` is vacuous.
-Named-sorry fallback of this work item: `hasSubgaussianMGF_eval_gaussVec`
-(the MGF-bridge fiddle isolated; eval/mean/abs lemmas proven).
 
 **Bibliographic comments.** Gaussian multipliers as the comparison class for
 Rademacher sums are classical Banach-space probability (Ledoux–Talagrand,
@@ -91,8 +89,7 @@ theorem integral_abs_eval_gaussVec (N : ℕ) (i : Fin N) :
   exact integral_abs_id_gaussianReal
 
 /-- Each coordinate has the sub-Gaussian MGF bound with proxy `1` — sharp,
-since the Gaussian MGF *equals* `exp(t²/2)`. Named-sorry debt candidate of
-this work item. -/
+since the Gaussian MGF *equals* `exp(t²/2)`. -/
 -- LEAN-ONLY: MGF bridge via `mgf_gaussianReal`; no scope change.
 theorem hasSubgaussianMGF_eval_gaussVec (N : ℕ) (i : Fin N) :
     HasSubgaussianMGF (fun g => g i) 1 (gaussVec N) := by

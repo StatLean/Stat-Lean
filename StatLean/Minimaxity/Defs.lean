@@ -1,5 +1,6 @@
 import Mathlib.Probability.Decision.Risk.Basic
 import Mathlib.Probability.Distributions.Uniform
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Minimax lower bounds — core data model (minimax risk, M-ary testing, separated families)
@@ -34,7 +35,7 @@ than $> 2\delta$, per Wainwright's footnote 2).
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.1–§15.1.2,
 Eq. (15.2), (15.3); mixture distribution §15.3.1, Eq. (15.30).
 
-**Proof formalization notes.** This is a laptop-only shared data model — definitions only,
+**Proof formalization notes.** This is a shared data model — definitions only,
 no theorems. We build directly on Mathlib's decision-theoretic risk framework
 (`ProbabilityTheory.minimaxRisk` / `bayesRisk` / `avgRisk`, in
 `Mathlib/Probability/Decision/Risk/`):
@@ -116,7 +117,7 @@ drawn uniformly from `[M] = {1,…,M}` in an M-ary hypothesis test.
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.2. -/
 noncomputable def uniformPrior (M : ℕ) [NeZero M] : Measure (Fin M) :=
-  (PMF.uniformOfFintype (Fin M)).toMeasure
+  (PMF.uniform (Fin M)).toMeasure
 
 instance (M : ℕ) [NeZero M] : IsProbabilityMeasure (uniformPrior M) := by
   unfold uniformPrior; infer_instance

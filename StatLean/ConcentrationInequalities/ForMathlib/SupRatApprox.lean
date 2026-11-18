@@ -27,7 +27,6 @@ restriction. `right_approx_of_rightContinuous` derives the approximability
 hypothesis from right-continuity (`ContinuousWithinAt h (Set.Ici x) x`) via
 `exists_rat_btwn`. Edge behavior: ℝ and ℚ are both nonempty, so the `ciSup`s
 are honest suprema under `hbd`. Pure order/topology; candidate upstream.
-Named-sorry fallback of this work item: `iSup_eq_iSup_rat_of_right_approx`.
 
 **Bibliographic comments.** The reduction of the Kolmogorov–Smirnov /
 Glivenko–Cantelli supremum to a countable dense set is classical (V. Glivenko

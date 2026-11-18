@@ -32,9 +32,8 @@ The closed form is `sum_choose_le_exp_mul_pow`
 (`ForMathlib/BinomialSumBound.lean`). Constants are the book's exactly.
 Edge/degenerate behavior: `two_pow_le_growthFunction` needs `[Infinite Ω]`
 and attainment of the `ℕ∞`-valued `vcDim` (`exists_shatters_card_eq`) —
-nothing downstream consumes it, so it is this file's allowed named-sorry
-fallback together with `pajor` decorations; the one lemma Theorem 8.3.13
-needs is `card_traceFamily_le_sum_choose`.
+nothing downstream consumes it; the one lemma Theorem 8.3.13 needs is
+`card_traceFamily_le_sum_choose`.
 
 **Bibliographic comments.** The counting lemma was found independently by
 V. N. Vapnik and A. Ya. Chervonenkis (*Theory Probab. Appl.* 16 (1971),
@@ -186,8 +185,7 @@ theorem exists_shatters_card_eq {C : Set (Set Ω)} {d : ℕ}
     omega
 
 /-- Growth-function lower bound (HDP §8.3.4, Eq. (8.30), left inequality):
-`2^d ≤ Π_C(n)` for `n ≥ d = vc(C)`. Decorative for downstream (nothing
-consumes it); allowed to degrade to a named sorry. -/
+`2^d ≤ Π_C(n)` for `n ≥ d = vc(C)`. -/
 theorem two_pow_le_growthFunction [Infinite Ω] {C : Set (Set Ω)} {d n : ℕ}
     -- LEAN-ONLY: nonempty class so a shattered d-set exists; no scope change.
     (hC : C.Nonempty)

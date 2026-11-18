@@ -3,11 +3,10 @@ import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Probability.Moments.Variance
 
 /-!
-# Martingale-difference arrays — data model (laptop-only)
+# Martingale-difference arrays — data model
 
 The triangular-array martingale-difference structure underlying the Brown/Hall–Heyde
-martingale CLT (commissioned 2026-08-04 as the probability pillar of the Hannan
-Theorem 3.2 program; see `notes/time_series/roadmap.md`):
+martingale CLT:
 
 for each row `n`, a filtration `𝓕_{n,0} ≤ 𝓕_{n,1} ≤ ⋯ ≤ 𝓕_{n,k_n}` and differences
 `X_{n,i}` (`i < k_n`) that are `𝓕_{n,i+1}`-measurable, square-integrable, and have
@@ -24,7 +23,7 @@ Application*, Academic Press, 1980, Thm 3.2 and Cor 3.1. Consumed by FY Theorem 
 (Hannan's ARMA MLE asymptotics) through the score-as-MDS representation.
 (`Hall–Heyde Thm 3.2` in tags.)
 
-**Design notes (laptop-only file).**
+**Design notes.**
 * Filtrations are plain monotone families `Fin (k n + 1) → MeasurableSpace Ω` (not
   Mathlib `Filtration`s over a preorder) — rows are finite and re-indexed each `n`, so
   the lightweight form avoids `Filtration` coercion friction; `i.castSucc` is "before",

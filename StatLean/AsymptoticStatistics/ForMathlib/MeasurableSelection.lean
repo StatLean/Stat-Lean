@@ -158,6 +158,9 @@ private theorem nullMeasurableSet_approx_argmin_graph
     -- For the upper-level set we use the complement of `{φ ≤ q}`. We prove
     -- `{φ ≤ q}` null-measurable as a countable intersection.
     have h_phi_le : NullMeasurableSet {x : α | φ x ≤ (q : ℝ≥0∞)} m := by
+      by_cases hq : q = ⊤
+      · subst q
+        simpa only [le_top, Set.ofPred_true] using nullMeasurableSet_univ (μ := m)
       have hset_eq : {x : α | φ x ≤ (q : ℝ≥0∞)}
           = ⋂ n : ℕ, {x : α | φ x < (q : ℝ≥0∞) + ((n + 1 : ℕ) : ℝ≥0∞)⁻¹} := by
         ext x
@@ -166,7 +169,7 @@ private theorem nullMeasurableSet_approx_argmin_graph
         · intro hx n
           have hpos : (0 : ℝ≥0∞) < ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
             rw [ENNReal.inv_pos]; exact ENNReal.natCast_ne_top _
-          have hqne : (q : ℝ≥0∞) ≠ ⊤ := ENNReal.coe_ne_top
+          have hqne : (q : ℝ≥0∞) ≠ ⊤ := hq
           exact lt_of_le_of_lt hx (ENNReal.lt_add_right hqne hpos.ne')
         · intro hx
           by_contra hcontra
@@ -182,7 +185,7 @@ private theorem nullMeasurableSet_approx_argmin_graph
                     exact_mod_cast Nat.le_succ k
               _ < φ x - (q : ℝ≥0∞) := hk
           have hxn := hx n
-          have hqne : (q : ℝ≥0∞) ≠ ⊤ := ENNReal.coe_ne_top
+          have hqne : (q : ℝ≥0∞) ≠ ⊤ := hq
           have h1 : (q : ℝ≥0∞) + ((n + 1 : ℕ) : ℝ≥0∞)⁻¹
               < (q : ℝ≥0∞) + (φ x - (q : ℝ≥0∞)) :=
             (ENNReal.add_lt_add_iff_left hqne).mpr hn

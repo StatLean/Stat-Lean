@@ -1,24 +1,34 @@
 .lake
 .DS_Store
 site/
-# tools/check.sh writes a throwaway #check buffer at the repo root.
+
+# Local dependency and build outputs.
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Temporary proof checks and cluster build output.
 scratch.lean
-# Cluster build artifacts (sbatch scripts + SLURM logs) created by cluster-claude
-# proof sessions when they build via sbatch; never part of the library.
+Scratch.lean
 slurm-logs/
 *.sbatch
 slurm-*.out
 slurm-*.err
-# Claude/AI collaboration scaffolding + meta — laptop-local only, never published.
-.claude/
-notes/
-tools/
-AGENTS.md
-CLAUDE.md
 classicallimits-build.log
 
-# lean-fasrc-fan-out session artifacts: the launcher writes these INTO each cluster
-# worktree, and its auto-close runs `git add -A`, so without this they get committed
-# onto every harvested proof branch.
+# Local assistant configuration, development notes and audit evidence.
+.claude/
+.codex/
+.agents/
+notes/
+tools/
+[Cc][Ll][Aa][Uu][Dd][Ee].md
+[Aa][Gg][Ee][Nn][Tt][Ss].md
+CLAUDE.local.md
+AGENTS.local.md
+/upgrade-audits/
+/release-candidates/
+
+# Local execution transcripts.
 .fanout-prompt.md
 .claude-session.log

@@ -29,9 +29,7 @@ $k_{i+1} - k_i + 1 \in \{0,1,2\}$ by trichotomy; on non-class members the
 clamps make it total but carry no claim (`gridPath_snapStep_eq` is stated
 only for class members). Covering is closed via our `IsEpsilonNet` bridge
 (`IsEpsilonNet.isCover` + `Metric.IsCover.coveringNumber_le_encard`) — not
-the packing route. Named-sorry fallback of the work item `hdp-emp-approx`:
-`exists_mem_lipschitzNet_dist_le` (all downstream statements compile against
-it).
+the packing route.
 
 **Bibliographic comments.** The knot-snapping argument is the classical
 Kolmogorov–Tikhomirov (1959) upper bound for the ε-entropy of Lipschitz
@@ -320,8 +318,7 @@ theorem le_coneFun_snap_add (m : ℕ) [NeZero m] {f : C(unitInterval, ℝ)}
   linarith [hterm, hj, habs.1, habs.2, hval.1, hval.2]
 
 /-- **Approximation lemma** (HDP Exercise 8.9): every class member is within
-`L∞`-distance `3/m` of a net member (via `ContinuousMap.dist_le`).
-Named-sorry fallback of `hdp-emp-approx`. -/
+`L∞`-distance `3/m` of a net member (via `ContinuousMap.dist_le`). -/
 theorem exists_mem_lipschitzNet_dist_le (m : ℕ) [NeZero m]
     {f : C(unitInterval, ℝ)}
     -- USER-INPUT: class membership; HDP §8.2, Eq. (8.24)

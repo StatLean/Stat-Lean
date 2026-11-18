@@ -19,7 +19,7 @@
     {"id":"StatLean.HypothesisTesting.preservesFamily_one","label":"preservesFamily_one","full":"StatLean.HypothesisTesting.preservesFamily_one","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Invariance.MaximalInvariant"},
     {"id":"StatLean.HypothesisTesting.PreservesFamily.inv","label":"inv","full":"StatLean.HypothesisTesting.PreservesFamily.inv","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Invariance.MaximalInvariant"},
     {"id":"Measurable","label":"Measurable","full":"Measurable","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
-    {"id":"EquivLike.toFunLike","label":"toFunLike","full":"EquivLike.toFunLike","kind":"mathlib","decl":"def","module":"Mathlib.Data.FunLike.Equiv"},
+    {"id":"EquivLike.toFunLike","label":"toFunLike","full":"EquivLike.toFunLike","kind":"mathlib","decl":"def","module":"Mathlib.Basic.FunLike.Equiv"},
     {"id":"Equiv","label":"Equiv","full":"Equiv","kind":"mathlib","decl":"def","module":"Mathlib.Logic.Equiv.Defs"},
     {"id":"Equiv.symm","label":"symm","full":"Equiv.symm","kind":"mathlib","decl":"def","module":"Mathlib.Logic.Equiv.Defs"},
     {"id":"StatLean.HypothesisTesting.InducesOn","label":"InducesOn","full":"StatLean.HypothesisTesting.InducesOn","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Invariance.MaximalInvariant"},

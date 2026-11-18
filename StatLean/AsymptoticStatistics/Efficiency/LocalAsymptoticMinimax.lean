@@ -801,7 +801,6 @@ private theorem lanIntegrand_measurable_in_h
   exact (measurable_const.sub ψDot.continuous.measurable)
 
 
-
 /-! ## vdV §8.7 direct proof path
 
 The direct vdV §8.7 proof path: joint tightness of `(√n(T_n - ψθ₀), score sum)`

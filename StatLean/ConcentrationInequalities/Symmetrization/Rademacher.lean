@@ -29,10 +29,7 @@ simple function, hence integrable), via `integral_dirac` +
 `radLaw_ae_pm` / `signVec_ae_pm`. The `2^N` finite-average representation of
 `signVec` is deliberately not provided: contraction uses coordinate-convexity
 induction and the symmetrization flip uses measure-preserving maps, so only
-the pushforward API below is ever consumed. Named-sorry fallback of this work
-item: `signVec_map_mul_pm` (the vertex change of variables of Theorem 6.6.1),
-via `Measure.pi_map_pi` + `radLaw_map_mul_pm`; all scalar `radLaw` lemmas are
-provable directly from `integral_dirac` / `Measure.map_dirac`.
+the pushforward API below is ever consumed.
 
 **Bibliographic comments.** Rademacher functions originate with H. Rademacher,
 "Einige Sätze über Reihen von allgemeinen Orthogonalfunktionen," *Math. Ann.*
@@ -143,8 +140,7 @@ theorem measurePreserving_eval_signVec (N : ℕ) (i : Fin N) :
 
 /-- Flipping the coordinates of the sign vector by any fixed sign pattern
 `c ∈ {±1}^N` preserves the law: `(cᵢεᵢ)ᵢ =ᵈ (εᵢ)ᵢ` (HDP §6.6, Theorem 6.6.1
-vertex step). Named-sorry debt candidate of this work item; via
-`Measure.pi_map_pi` + `radLaw_map_mul_pm`. -/
+vertex step), via `Measure.pi_map_pi` + `radLaw_map_mul_pm`. -/
 theorem signVec_map_mul_pm {N : ℕ} {c : Fin N → ℝ}
     -- USER-INPUT: c is a fixed deterministic sign pattern; HDP §6.6 Thm 6.6.1
     (hc : ∀ i, c i = 1 ∨ c i = -1) :

@@ -26,9 +26,7 @@ centered sub-Gaussian with `σ² = 1` by
 two-sided maximum; the `N ≥ 2` corollary consumed by
 `gaussian_symmetrization_lower_log` absorbs it via `log(2N) ≤ 2 log N`.
 The Pi-norm ↔ `ciSup`-of-abs bridge `pi_norm_eq_ciSup_abs` is `LEAN-ONLY`
-glue (`pi_norm_le_iff_of_nonneg` + `norm_le_pi_norm`). Named-sorry fallback
-of this work item: `integral_ciSup_abs_gaussVec_le` (the bridge lemma
-proven); `expectation_max_le` is reused, never re-derived.
+glue (`pi_norm_le_iff_of_nonneg` + `norm_le_pi_norm`).
 
 **Bibliographic comments.** The $\sqrt{2\log N}$ growth of Gaussian maxima is
 classical extreme-value theory (Cramér, 1946); the sub-Gaussian
@@ -79,9 +77,8 @@ private theorem twoSided_subG (N : ℕ) (j : Fin (2 * N)) :
 
 /-- **Expected two-sided Gaussian maximum** (HDP §6.6, p. 186, explicit
 constant): `E max_i |gᵢ| ≤ √(2 log(2N))`. The `2N` is the union-bound cost of
-two-sidedness (documented deviation from the book's `C√(log N)`). Named-sorry
-debt candidate of this work item; reuses `expectation_max_le` on the
-`2N`-family `(gᵢ, −gᵢ)`. -/
+two-sidedness (documented deviation from the book's `C√(log N)`). Reuses
+`expectation_max_le` on the `2N`-family `(gᵢ, −gᵢ)`. -/
 theorem integral_ciSup_abs_gaussVec_le (N : ℕ) [NeZero N] :
     ∫ g, ⨆ i, |g i| ∂(gaussVec N) ≤ Real.sqrt (2 * Real.log (2 * N)) := by
   have : Nonempty (Fin N) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero N)

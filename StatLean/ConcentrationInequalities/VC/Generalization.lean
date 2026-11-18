@@ -27,9 +27,7 @@ the labeling bijection `T ↦ T ∆ (Λ ∩ Θ)`). Frozen numeral
 book's Definition 8.4.3 presupposes an ERM); `hRmeas` is LEAN-ONLY
 selection regularity (the book's `E R(f*_n)` silently assumes the risk of
 the selected hypothesis is measurable in the sample); `Countable 𝒞` is
-LEAN-ONLY per the batch sup policy. Work-item single named-sorry fallback:
-`vcDim_symmDiff_image` (Exercise 8.29); the excess-risk chain
-(`excess_risk_le_two_mul_sup`) and the integral assembly must close.
+LEAN-ONLY (a countable class keeps the supremum over it measurable).
 
 **Bibliographic comments.** Theorem 8.4.5 is the classical
 Vapnik–Chervonenkis generalization bound in in-expectation form; the
@@ -73,8 +71,7 @@ theorem shatters_symmDiff_image {C : Set (Set Ω)} (Θ : Set Ω)
 
 
 /-- **Exercise 8.29** (HDP §8.4.3, we prove it): the loss class of a Boolean
-class has the same VC dimension, `vc({(f − T)² : f ∈ ℱ}) = vc(ℱ)`. This
-work item's single named-sorry fallback. -/
+class has the same VC dimension, `vc({(f − T)² : f ∈ ℱ}) = vc(ℱ)`. -/
 theorem vcDim_symmDiff_image {C : Set (Set Ω)} (Θ : Set Ω) :
     vcDim ((· ∆ Θ) '' C) = vcDim C := by
   unfold vcDim
@@ -273,7 +270,7 @@ theorem vc_generalization {Ξ : Type*} [MeasurableSpace Ξ] [MeasurableSpace Ω]
     -- USER-INPUT: each X i has law μ; HDP Thm 8.4.5 (map form)
     (hlaw : ∀ i, P.map (X i) = μ)
     {C : Set (Set Ω)}
-    -- LEAN-ONLY: countable class per the batch sup policy (documented)
+    -- LEAN-ONLY: countable class, so the supremum is measurable (documented)
     (hCc : C.Countable)
     -- LEAN-ONLY: nonempty class
     (hCne : C.Nonempty)

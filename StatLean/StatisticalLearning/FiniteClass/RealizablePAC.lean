@@ -10,8 +10,7 @@ with zero empirical error only with probability `≤ (1−ε)ⁿ ≤ e^{−εn}`
 2, no ceiling), hence PAC learnability with `m(ε,δ) ≤ ⌈log(|𝓗|/δ)/ε⌉`
 (SSBD Cor. 3.2, ceiling explicit).
 
-**Reference.** SSBD §2.3, Corollary 2.3; §3.1, Corollary 3.2. Transcriptions:
-`notes/statistical_learning/book_statements/ch2-5.md`.
+**Reference.** SSBD §2.3, Corollary 2.3; §3.1, Corollary 3.2.
 
 **Formalization notes.** `{s | ∀ i, h (s i) = f (s i)}` is a product cylinder,
 so its `sampleLaw` mass is `(D.real {x | h x = f x})^n` exactly (`Measure.pi`

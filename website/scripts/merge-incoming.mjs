@@ -3,7 +3,7 @@
  * Merge authored `website/incoming/<area>.results.json` + `<area>.refs.json`
  * batches into the site data, then delete the incoming files.
  *
- * Lanes author into `incoming/` rather than editing `results.json` directly so
+ * Contributors author into `incoming/` rather than editing `results.json` directly so
  * that several areas can be written in parallel without conflicting on one
  * 2 MB file. This script is the single place that knows how to fold them in:
  *
@@ -59,9 +59,7 @@ for (const f of resultFiles) {
       continue;
     }
     byId.add(r.id);
-    // lanes were briefed with `alsoIn` before the repo settled on `crossListed`
-    // (upstream's name, already used by the RKHS / exponential-family batch);
-    // normalise here so only one field ever reaches the site data.
+    // Normalize the legacy `alsoIn` alias to the canonical `crossListed` field.
     if (r.alsoIn) {
       const merged = new Set([...(r.crossListed || []), ...r.alsoIn]);
       r.crossListed = [...merged].sort();

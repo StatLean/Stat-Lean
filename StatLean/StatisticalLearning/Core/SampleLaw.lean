@@ -10,8 +10,7 @@ evaluations are measure-preserving and jointly independent (the Lean form of
 measurable in the sample, unbiased for the true risk (the "preliminary
 observation" of SSBD p. 33), and bounded when the loss is bounded.
 
-**Reference.** SSBD §2.1, §4.2 (p. 33). Transcriptions:
-`notes/statistical_learning/book_statements/ch2-5.md`.
+**Reference.** SSBD §2.1, §4.2 (p. 33).
 
 **Formalization notes.** The independence/measure-preservation content is
 Mathlib's (`ProbabilityTheory.iIndepFun_pi`, `Measure.pi` marginals); this file
@@ -86,7 +85,7 @@ theorem integral_empRisk {ℓ : H → Z → ℝ} {h : H}
 
 /-- Pointwise bounds on the empirical risk from bounds on the loss
 (LEAN-ONLY convenience; used throughout the finite-class and Rademacher
-lanes). -/
+files). -/
 theorem empRisk_mem_Icc {ℓ : H → Z → ℝ} {h : H} {a b : ℝ}
     -- USER-INPUT: the loss of `h` has range in `[a,b]`; SSBD §4.2 / Ex. 4.2
     (hab : ∀ z, ℓ h z ∈ Set.Icc a b)

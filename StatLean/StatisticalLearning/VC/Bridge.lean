@@ -17,7 +17,7 @@ an XOR-mask of the trace vectors, so their number is bounded by the growth
 function).
 
 **Reference.** SSBD Definitions 6.2/6.3/6.5/6.9, Lemma 6.10, and §28.1
-step 1. Transcriptions: `notes/statistical_learning/book_statements/ch6-28.md`.
+step 1.
 
 **Formalization notes.** VC hypotheses downstream are phrased as
 `vcDim (setClassOf 𝓗) ≤ d` — no new Boolean `vcDim` is introduced. The trace

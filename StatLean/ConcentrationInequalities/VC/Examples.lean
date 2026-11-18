@@ -24,9 +24,7 @@ containing `a` and `c` contains the middle point `b`) — extraction via
 `Finset.card_eq_three`; for the three-point class, the only 3-set `{0,1,2}`
 is not shattered (`{0,1}` is not a trace). `decide` is unavailable for
 `Set`-membership propositions, so the case analyses are by hand. Constants:
-exact equalities, no slack. Named-sorry fallback of this work item:
-`vcDim_intervalClass` (the harder computation; `vcDim_threePointClass` on
-`Fin 3` must close).
+exact equalities, no slack.
 
 **Bibliographic comments.** Both examples are standard warm-up computations
 for the VC dimension; the interval class goes back to the original

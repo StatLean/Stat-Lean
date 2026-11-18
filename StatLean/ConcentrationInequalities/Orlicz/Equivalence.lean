@@ -35,9 +35,7 @@ encoded as `HasSubgaussianMGF X (2·K₄²) μ` (Mathlib proxy convention
 `E e^{λX} ≤ e^{cλ²/2}`, so `c = 2K₄²`), the two-sided tail from
 `HasSubgaussianMGF.measure_ge_le` on `X` and `−X` (`.neg`) + union bound.
 The ψ₁ moment property (HDP Prop 2.8.1(ii), book's Exercise 2.41) is OUT OF
-SCOPE — not needed by the batch contract or Theorem 2.9.1. Named-sorry
-fallback of the owning work item (shared with `SubGaussianTail.lean`):
-`eLpNorm_le_of_tail_le` (this file's composite); the B1 pair must close.
+SCOPE — not needed for Theorem 2.9.1.
 
 **Bibliographic comments.** The equivalence of tail, moment, and MGF
 characterizations of sub-Gaussianity is folklore systematized by

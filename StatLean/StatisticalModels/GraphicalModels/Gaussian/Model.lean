@@ -76,7 +76,7 @@ compact description `Σ⁻¹ ∈ S⁺(G)`); Proposition 3.1, p. 29 (a strictly p
 density satisfies (C5)); §3.2, p. 32 — the pairwise (P), local (L) and global (G) Markov
 properties, all three **unnumbered** definitions; and Proposition 3.4 / Theorem 3.7, pp. 33–35
 (the hierarchy, and its collapse for a positive density) (`Lauritzen §5.2`, `Lauritzen §3.1`,
-`Lauritzen §3.2`). Page numbers and item kinds follow `notes/factor_graphical/books.md`.
+`Lauritzen §3.2`).
 
 **Proof formalization notes.**
 

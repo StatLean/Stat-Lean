@@ -42,7 +42,7 @@ the zero-subgradient/KKT condition is §7.5.2, Eq (7.48); the regularization con
 the $\ell^\infty$ bound $B(\lambda; X)$ is Eq (7.45) (Theorem 7.21(c)); the column-normalization
 condition is Corollary 7.22.
 
-**Proof formalization notes.** These are the concept-layer (laptop-only) predicates and
+**Proof formalization notes.** These are the concept-layer predicates and
 quantities consumed by the support-recovery assembly:
 
 * `LowerEigenvalue X S cmin` — condition (A3), Eq (7.43a), in Rayleigh-quotient form.

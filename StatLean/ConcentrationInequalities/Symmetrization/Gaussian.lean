@@ -40,9 +40,7 @@ contraction with `a := g` conditionally on `(ω, s)`, factorize with
 Triple products `μ ⊗ signVec ⊗ gaussVec` are handled in iterated-integral
 style (`integral_prod` twice) — no `Measure.prod` associativity plumbing.
 `N = 0` in the all-`N` lower bound is a case split (both sides `0`; `Real.log`
-junk makes the constant harmless). Named-sorry fallback of this work item:
-`gaussian_symmetrization_lower` (the upper chain with the `√(2π)`/`3`
-constants fully proven; the `N ≥ 2` corollary inherits the debt).
+junk makes the constant harmless).
 
 **Bibliographic comments.** Gaussian–Rademacher comparison is classical
 Banach-space theory: the upper direction and the `√(log N)` loss trace to
@@ -310,7 +308,7 @@ theorem gaussian_symmetrization_upper {μ : Measure Ω} [IsProbabilityMeasure μ
 /-- **Gaussian symmetrization, lower bound, explicit constant** (HDP §6.6,
 Lemma 6.6.2): `E‖∑ gᵢXᵢ‖ ≤ 2√(2 log(2N)) · E‖∑ Xᵢ‖` for all `N` (both sides
 `0` at `N = 0`). Documented deviation: `√(log 2N)` vs the book's `√(log N)`
-(two-sided union-bound cost). Named-sorry debt candidate of this work item. -/
+(two-sided union-bound cost). -/
 theorem gaussian_symmetrization_lower {μ : Measure Ω} [IsProbabilityMeasure μ]
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] {N : ℕ}

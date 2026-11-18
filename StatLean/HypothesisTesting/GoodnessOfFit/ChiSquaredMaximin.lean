@@ -524,7 +524,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     (hlevel : Tendsto (fun n => power (Q n) (φ n) 0) atTop (nhds α)) :
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' multinomialShell π b n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- CLOSED this batch (the STATEMENT WAS FALSE AS FROZEN — repaired by `hφX` above).
+  -- The STATEMENT WAS FALSE AS FROZEN — repaired by `hφX` above.
   --
   -- COUNTEREXAMPLE to the frozen statement (no `hφX`).  Take `k = 1` (two cells),
   -- `Ω = (ℕ → Fin 2) × ℝ`, `X n i ω = ω.1 i`, and
@@ -1733,7 +1733,7 @@ alone, so it is untouched by the abstract-`Q` counterexample recorded at
 mixture apparatus of `AsymptoticMaximin.asymptotic_maximin_upper_bound` does not help — it
 bounds every competitor from ABOVE, whereas this is an attainment statement.
 
-PROOF (wave 8; the wave-7 route, with one simplification).  The two Parseval identities
+PROOF.  The two Parseval identities
 `pearsonQ_eq_normSq` and `multinomialNoncentrality_eq_normSq` turn the statement into one
 about the whitened score vector `Zₙ`, whose drifting local limit law is BRICK 1
 (`mScoreVec_weakConverges_drift`).  The outer bookkeeping is the twin's: `limsup ≤` by

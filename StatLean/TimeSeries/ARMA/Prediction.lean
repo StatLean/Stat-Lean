@@ -15,8 +15,7 @@ For a zero-mean weakly stationary process:
 * the **innovation variances** `ν_t = γ(0) − Σ_j φ_{tj} γ(j)` (eq. (3.7));
 * the **innovation algorithm** (B&D Prop 5.2.2) — Gram–Schmidt recursion for the
   one-step predictors; stated as a correctness claim for the recursively defined
-  coefficients, proof attempted (demoted to a named debt if it exceeds the wave
-  budget, per the roadmap).
+  coefficients.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §3.2,
 Definition 3.1, Theorem 3.1, eqs. (3.3)–(3.8) (pp. 91–93). (`FY §3.2`.)

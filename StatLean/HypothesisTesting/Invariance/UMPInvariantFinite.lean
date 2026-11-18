@@ -50,7 +50,7 @@ Thm 6.3.1, Thm 6.3.2`.)
   choice is free. `isInvariantTest_orbitAverage` shows that the ratio itself is always
   invariant, so the hypothesis only constrains that free choice.
 * The Neyman–Pearson input is used through the declarations of the fundamental lemma
-  planned for the sibling `Tests` layer (work item `ht/test-foundations`); the predicates
+  planned for the sibling `Tests` layer; the predicates
   `IsMostPowerful` / `IsLevel` / `power` used here all come from `Tests.Defs`.
 
 **Bibliographic comments.** The reduction of an invariant testing problem with a transitive

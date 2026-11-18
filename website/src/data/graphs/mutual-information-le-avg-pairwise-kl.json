@@ -15,7 +15,10 @@
     {"id":"sq","label":"sq","full":"sq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"ENNReal.mul_inv","label":"mul_inv","full":"ENNReal.mul_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Inv"},
     {"id":"ENNReal.natCast_ne_top","label":"natCast_ne_top","full":"ENNReal.natCast_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
-    {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"}
+    {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"PMF.uniform","label":"uniform","full":"PMF.uniform","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
+    {"id":"PMF.uniformOn","label":"uniformOn","full":"PMF.uniformOn","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
+    {"id":"Finset.univ_nonempty","label":"univ_nonempty","full":"Finset.univ_nonempty","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.BooleanAlgebra"}
   ],
   "edges": [
     {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"StatLean.Minimaxity.mutualInformation"},
@@ -32,6 +35,9 @@
     {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"ENNReal.mul_inv"},
     {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"ENNReal.natCast_ne_top"},
     {"source":"StatLean.Minimaxity.mutualInformation","target":"StatLean.Minimaxity.mixture"},
-    {"source":"StatLean.Minimaxity.mixture","target":"StatLean.Minimaxity.uniformPrior"}
+    {"source":"StatLean.Minimaxity.mixture","target":"StatLean.Minimaxity.uniformPrior"},
+    {"source":"StatLean.Minimaxity.uniformPrior","target":"PMF.uniform"},
+    {"source":"PMF.uniform","target":"PMF.uniformOn"},
+    {"source":"PMF.uniform","target":"Finset.univ_nonempty"}
   ]
 }

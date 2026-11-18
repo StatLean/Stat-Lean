@@ -31,8 +31,8 @@ p. 84).  (`ECS §2.5`.)
 * The sample space of indices is finite, so no integrability hypotheses are
   needed; simplex hypotheses on `w` are genuine user inputs.
 * Sequential Monte Carlo itself (the propagate–reweight–resample recursion,
-  Feynman–Kac laws) is deliberately out of scope for Round 1; this file is
-  the reusable single-step correctness brick.
+  Feynman–Kac laws) is out of scope; this file proves the reusable
+  single-step correctness result.
 
 **Bibliographic comments.** Multinomial resampling enters the particle-filter
 literature with N. Gordon, D. Salmond, A. F. M. Smith, "Novel approach to

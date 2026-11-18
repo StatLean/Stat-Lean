@@ -11,8 +11,8 @@ where `γ̂` is the divisor-`T`, mean-corrected sample ACVF (FY eq. (2.23); §2.
 free mean-centering by root-of-unity sums, then reindex `τ = t − s`).
 
 (FY Theorem 2.14 — the asymptotic distribution of the periodogram over a linear
-process — is a batch-C target: its part (i) consumes the commissioned triangular-array
-CLT; the statement will be added alongside `ForMathlib/Probability/TriangularCLT`.)
+process — is proved in `Spectral/PeriodogramAsymptotics.lean`; its part (i) consumes the
+triangular-array CLT of `ForMathlib/Probability/TriangularCLT`.)
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.4.2,
 Definition 2.8, Theorem 2.13 (pp. 62–63) and §2.7.5 (p. 81).

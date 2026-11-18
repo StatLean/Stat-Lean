@@ -15,6 +15,7 @@ import StatLean.ExperimentalDesign
 import StatLean.StatisticalLearning
 import StatLean.ComputationalStatistics
 import StatLean.RobustStatistics
+import StatLean.ForMathlib
 
 /-!
 # StatLean
@@ -109,6 +110,9 @@ theory, organized into per-area sublibraries.
   leverage counterexample, and affine equivariance of multivariate location and
   scatter (Maronna, Martin, Yohai & Salibián-Barrera, *Robust Statistics: Theory
   and Methods*, 2nd ed.).
+* `StatLean.ForMathlib` — Mathlib extensions shared across areas: products,
+  convolutions and CDFs of arbitrary measures, and the uniform and Poisson mass
+  functions used by the probability-mass-function interfaces.
 
 Per-area umbrellas are imported above as each area lands.
 -/

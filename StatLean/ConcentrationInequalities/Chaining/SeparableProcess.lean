@@ -38,8 +38,6 @@ form can feed the countable sup of continuous shapes back through it; the
 real transport carries a nonnegativity hypothesis `hφ0` — WITHOUT it the
 equality is false at `T = Set.univ` with all-negative values (the `T`-side
 supremum has no `Real.sSup ∅ = 0` junk branch while the `C`-side does).
-Named-sorry fallback of this work item: the real transport
-`biSup_real_comp_eq_of_forall_mem_closure`.
 
 **Bibliographic comments.** Separable versions go back to J. L. Doob,
 *Stochastic Processes*, Wiley 1953, Ch. II; the modern treatment for
@@ -75,7 +73,7 @@ def IsSeparableProcess {E : Type*} (X : E → Ω → ℝ) (T : Set E)
 a.e.): each value lies in its own closure. -/
 theorem IsSeparableProcess.of_countable {E : Type*} {X : E → Ω → ℝ}
     {T : Set E} {μ : Measure Ω}
-    -- LEAN-ONLY: countable index set per the sup policy
+    -- LEAN-ONLY: countable index set
     (hcnt : T.Countable) :
     IsSeparableProcess X T μ := by
   refine ⟨T, subset_rfl, hcnt, Filter.Eventually.of_forall fun ω t ht => ?_⟩

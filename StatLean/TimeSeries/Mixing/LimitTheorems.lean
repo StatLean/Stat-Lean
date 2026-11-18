@@ -24,8 +24,8 @@ import StatLean.TimeSeries.ForMathlib.Ergodic.Birkhoff
   distributed*, so the factorized characteristic function is the single power
   `(φ_n)^{k_n}` — no independent-copy triangular array (and hence no appeal to the
   Lindeberg double-array CLT) is needed.
-  **STATUS: PROVED, axiom-clean** (wave `ts/s5b`), by the **cubic/adaptive-block** route,
-  not by a Lindeberg split. (a) small-block negligibility, (b) the Volkonskii–Rozanov
+  **PROVED** by the **cubic/adaptive-block** route, not by a Lindeberg split.
+  (a) small-block negligibility, (b) the Volkonskii–Rozanov
   factorization and (c) the closing scalar limit `(φ_n)^{k_n} → e^{−σ²u²/2}` are all
   proved. (c) runs through the block expansion `E e^{i v B} − 1 = −(v²/2) E B² + R`
   (`charFun_block_expand`) and the **global cubic** bound on `R`
@@ -35,14 +35,14 @@ import StatLean.TimeSeries.ForMathlib.Ergodic.Birkhoff
   sorted-4-tuple largest-gap split plus a Cesàro count), and the block lengths by
   `exists_block_scheme_adaptive` (an `α`-dependent `l_n ≍ √n a_n`, `s_n ≍ k_n ≍ √n/a_n`,
   with `a_n → ∞` slowly enough that `E S_{l_n}⁴ = o(l_n n)`).
-  The former named debt `lindeberg_blocks_debt` is **no longer used by anything**, and is
-  itself now **PROVED** (wave `ts/s10`): being *equivalent* to 2.21(ii) (see its docstring),
-  it cannot be closed by the cubic route, but it *is* a corollary of the finished CLT —
-  `S_l/√l →d N(0,σ²)` plus `E S_l²/l → σ²` makes `S_l²/l` uniformly integrable. That
-  derivation (`tail_le_sub_min`, `exists_tail_threshold`) goes through Lévy continuity,
-  which is why this file now imports `MeasureTheory.Measure.LevyConvergence`.
-* **Theorem 2.20(i)** (Bosq 1998 §1.5) — the `δ`-moment variance rate: **PROVED**, and
-  axiom-clean. The Billingsley bound `|γ(n)| ≤ 4α(n)C²` is replaced by **Davydov**
+  The statement `lindeberg_blocks_debt` is **PROVED** as well: being *equivalent* to
+  2.21(ii) (see its docstring), it cannot be closed by the cubic route, but it *is* a
+  corollary of the finished CLT — `S_l/√l →d N(0,σ²)` plus `E S_l²/l → σ²` makes `S_l²/l`
+  uniformly integrable. That derivation (`tail_le_sub_min`, `exists_tail_threshold`) goes
+  through Lévy continuity, which is why this file imports
+  `MeasureTheory.Measure.LevyConvergence`.
+* **Theorem 2.20(i)** (Bosq 1998 §1.5) — the `δ`-moment variance rate: **PROVED**.
+  The Billingsley bound `|γ(n)| ≤ 4α(n)C²` is replaced by **Davydov**
   (`Mixing/Inequalities.abs_covariance_le_davydov` at `p = q = δ`), whose side condition
   `1/p + 1/q < 1` is exactly `δ > 2`: `|γ(n)| ≤ 8 α(n)^{1−2/δ} ‖X_0‖_δ²`. The limit itself
   is the shared Fejér/Tannery core `tendsto_var_rate_of_summable`, which 2.20(ii) also uses.
@@ -54,12 +54,12 @@ import StatLean.TimeSeries.ForMathlib.Ergodic.Birkhoff
   limits in `M` both come from 2.20(i): `σ_Z(M)² = Σ_k γ_{Z^M}(k) → 0` by dominated
   convergence over the lags (dominant: Davydov on `Z^M` with the `M`-uniform envelope
   `|Z^M_0| ≤ |X_0| + E|X_0|`; per-lag limit: the AM–GM bound `|γ_{Z^M}(k)| ≤ E(Z^M_0)²`),
-  and `σ_Y(M)² → σ²` by Minkowski at every `n`. **Now axiom-clean**, since 2.21(ii) is.
+  and `σ_Y(M)² → σ²` by Minkowski at every `n`.
 * **Proposition 2.8 (SLLN)** — α-mixing + `E|X| < ∞` ⇒ `S_n/n → EX` a.s.: **PROVED**
-  (wave `ts/s10b`) and axiom-clean, by the cited route, which wave `ts/s10` had shown to be
-  the *only* one the frozen hypotheses support (`E|X_0| < ∞` and `α(n) → 0` with no rate
-  give no second moment for Chebyshev, and the file's fourth-moment brick needs `|X| ≤ C`
-  **and** `Σ α < ∞`). The four steps — shift invariance of the path law on `ℤ → ℝ`,
+  by the cited route, the *only* one the frozen hypotheses support (`E|X_0| < ∞` and
+  `α(n) → 0` with no rate give no second moment for Chebyshev, and the file's
+  fourth-moment brick needs `|X| ≤ C` **and** `Σ α < ∞`). The four steps — shift
+  invariance of the path law on `ℤ → ℝ`,
   `α(n) → 0 ⇒` ergodicity of the shift, Birkhoff, transport back to `Ω` — are executed in
   the `BirkhoffSLLN` section below; the pointwise ergodic theorem itself is the new
   `ForMathlib/Ergodic/Birkhoff.lean` (Garsia's maximal inequality ⇒ a.e. convergence to the
@@ -610,9 +610,9 @@ private lemma tendsto_natSqrt_div : Tendsto (fun n : ℕ => (Nat.sqrt n : ℝ) /
 `l_n s_n > n` forces `k_n ≤ s_n`, which is exactly what turns `m α(m) → 0` into the
 Volkonskii–Rozanov budget `k_n α(s_n) → 0`.
 
-**Superseded** (wave `ts/s5b`) by `exists_block_scheme_adaptive`, which the CLT now uses:
-the fixed exponent `3/4` cannot meet the cubic budget `E S_{l_n}⁴ = o(l_n n)` under
-summability alone (that needs `√n · η_{n^{3/4}} → 0`, i.e. a *rate* for `η`). Kept as the
+**Superseded** by `exists_block_scheme_adaptive`, which the CLT uses: the fixed exponent
+`3/4` cannot meet the cubic budget `E S_{l_n}⁴ = o(l_n n)` under summability alone (that
+needs `√n · η_{n^{3/4}} → 0`, i.e. a *rate* for `η`). Kept as the
 `s_n = ⌊n^{1/4}⌋ + 1` instance of `exists_block_scheme_of_small`, which is what the
 adaptive scheme is built from. -/
 private lemma exists_block_scheme [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
@@ -3151,7 +3151,7 @@ theorem clt_of_bounded_alphaMixing [IsProbabilityMeasure μ]
   refine hfin.congr fun n => ?_
   ring
 
-/-! ### The Lindeberg-level debt, closed as a corollary of Theorem 2.21(ii)
+/-! ### The Lindeberg-level statement, closed as a corollary of Theorem 2.21(ii)
 
 The statement `lindeberg_blocks_debt` below is *asymptotic uniform integrability of the
 normalised block squares* `Y_l = S_l²/l` — see its docstring for why that is **equivalent
@@ -3443,7 +3443,7 @@ private lemma exists_tail_threshold [IsProbabilityMeasure μ] {X : ℤ → Ω �
     rw [setIntegral_measure_zero _ hnull]
     positivity
 
-/-- **FORMER NAMED PRIVATE DEBT — now PROVED** (Ibragimov–Linnik, *Independent and
+/-- **Lindeberg-level uniform integrability** (Ibragimov–Linnik, *Independent and
 Stationary Sequences of Random Variables*, 1971, Theorem 18.5.3; the technical lemma
 behind FY Theorem 2.21(ii)).
 
@@ -3451,10 +3451,10 @@ Under `|X| ≤ C`, strict stationarity, zero mean and `Σ α(j) < ∞`, the norm
 sums `S_l²/l` are **uniformly integrable**, so the Lindeberg mass at a level `ε√n` with
 `l_n/n → 0` vanishes.
 
-**STATUS (wave `ts/s10`): PROVED, as a corollary of Theorem 2.21(ii).** Nothing depends on
-it — `clt_of_bounded_alphaMixing` (2.21(ii)) and `clt_of_alphaMixing_debt` (2.21(i)) were
-closed in wave `ts/s5b` by the cubic/adaptive-block route, which bypasses the Lindeberg
-split entirely. The analysis below (retained) explains why that route does **not** deliver
+Proved as a corollary of Theorem 2.21(ii). Nothing depends on it —
+`clt_of_bounded_alphaMixing` (2.21(ii)) and `clt_of_alphaMixing_debt` (2.21(i)) are proved
+by the cubic/adaptive-block route, which bypasses the Lindeberg split entirely. The
+analysis below explains why that route does **not** deliver
 this statement, and why the only way to close it is to run the equivalence backwards, from
 the finished CLT. That is what `exists_tail_threshold` above does.
 
@@ -3468,7 +3468,7 @@ statement allows a *bounded* `l_n` — e.g. `l ≡ 1` — so the uniformity must
 `l ≥ 1`, which is why `exists_tail_threshold` absorbs the small block lengths separately
 through the a.s. bound `|S_m| ≤ C m`.)
 
-**Consequently the debt is *equivalent* to the theorem it serves, not a weaker ingredient
+**Consequently the statement is *equivalent* to the theorem it serves, not a weaker ingredient
 — which is exactly why the cubic/adaptive route cannot close it.** That route proves the
 CLT; it does not produce this uniform-integrability statement as a by-product. Concretely,
 the best the fourth moment gives here is
@@ -3484,7 +3484,7 @@ in distribution with converging means, hence uniformly integrable — via
 `∫_{Y ≥ 2c} Y ≤ 2 (E Y − E[Y ∧ c])` (`tail_le_sub_min`) and `E[σ²Z² ∧ c] ↑ σ²`. The
 distributional step needs Lévy continuity
 (`MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_charFun`), since 2.21(ii) is stated
-in characteristic-function form; that is the one import this file gained in wave `ts/s10`.
+in characteristic-function form.
 The degenerate case `σ² = 0` never reaches the CLT (which requires `σ² > 0`): there
 `E Y_l → 0` bounds the tail integral directly.
 
@@ -3500,7 +3500,7 @@ Volkonskii–Rozanov budget needs `k_n ≤ s_n` (all `Σ α < ∞` gives is `m �
 block lengths makes the Lindeberg event empty or Chebyshev-negligible — and this is *not*
 what the proof below does: it never chooses block lengths at all.
 
-**The route that closes the theorem** (wave `ts/s5b`, recorded here for context). Do *not*
+**The route that closes the theorem** (recorded here for context). Do *not*
 split the remainder at a Lindeberg level — use the global cubic half of `norm_expI_taylor`.
 With `v_n = u n^{-1/2}` and `k_n ≍ n / l_n`,
 `k_n ‖R n‖ ≤ 4 |u|³ · E|S_{l_n}|³ / (l_n √n)`, so it suffices that `E|S_l|³ = o(l √n)`;
@@ -3948,7 +3948,7 @@ theorem summable_acvf_and_var_rate_debt [IsProbabilityMeasure μ]
     summable_abs_acvf_davydov hmeas hstat hδ hLδ hws hα
   exact ⟨hsum, tendsto_var_rate_of_summable hws hsum⟩
 
-/-- **DEBT (Peligrad; FY Theorem 2.21(i))**: the `δ`-moment CLT under the Thm 2.20(i)
+/-- **FY Theorem 2.21(i) (Peligrad)**: the `δ`-moment CLT under the Thm 2.20(i)
 hypotheses and positive long-run variance. -/
 theorem clt_of_alphaMixing_debt [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
@@ -4688,7 +4688,7 @@ private lemma preErgodic_shiftPath [IsProbabilityMeasure μ] {X : ℤ → Ω →
       (cylinderEvents (Set.Ici (p + (m : ℤ)))) cylinderEvents_le_pi cylinderEvents_le_pi,
       hL, hG]
     exact hstat.alphaMixCoeff_shift hmeas p m
-  refine ⟨fun A hA hinv => ?_⟩
+  refine PreErgodic.of_preimage_eq hMP.quasiMeasurePreserving fun A hA hinv => ?_
   set a : ℝ := (pathLaw X μ).real A with hadef
   have ha0 : 0 ≤ a := measureReal_nonneg
   have ha1 : a ≤ 1 := by
@@ -4825,14 +4825,14 @@ private lemma preErgodic_shiftPath [IsProbabilityMeasure μ] {X : ℤ → Ω →
 
 end BirkhoffSLLN
 
-/-- **DEBT (Doob 1953 / Ibragimov–Linnik 1971; FY Proposition 2.8)**: the strong law
+/-- **FY Proposition 2.8 (Doob 1953 / Ibragimov–Linnik 1971)**: the strong law
 for α-mixing strictly stationary sequences with a first moment. The cited route is
 "α-mixing ⇒ ergodicity" + the Birkhoff pointwise ergodic theorem, which the Mathlib
 pin does not provide.
 
-**STATUS (wave `ts/s10b`): PROVED, axiom-clean**, by exactly the cited route. The wave-`ts/s10`
-four-item build list below is executed in full; the moment-route analysis that follows it is
-still the reason this is the *only* available route, and is kept.
+Proved by exactly the cited route. The four-item build list below is executed in full; the
+moment-route analysis that follows it is still the reason this is the *only* available
+route, and is kept.
 
 **No moment/Borel–Cantelli route exists under the frozen hypotheses.** They are exactly
 `E|X_0| < ∞` (`hL1`) and `α(n) → 0` (`hmix`, i.e. `IsAlphaMixing`, which is *convergence to
@@ -4852,10 +4852,10 @@ So the cited ergodic route is not one convenient proof among several: it is the 
 the hypotheses support, and it is what the statement is *equivalent* to (Birkhoff for an
 ergodic shift is exactly this statement for the coordinate process).
 
-**The former named residue — the Birkhoff pointwise ergodic theorem — is now supplied by
+**The Birkhoff pointwise ergodic theorem is supplied by
 `StatLean/TimeSeries/ForMathlib/Ergodic/Birkhoff.lean`** (`maximal_ergodic`,
-`birkhoffAverage_ae_tendsto_condexp`, `birkhoffAverage_ae_tendsto_integral`; that file is
-`0`-sorry and axiom-clean). The pin's own `Mathlib/Dynamics/BirkhoffSum/*` still carry only
+`birkhoffAverage_ae_tendsto_condexp`, `birkhoffAverage_ae_tendsto_integral`). The pin's own
+`Mathlib/Dynamics/BirkhoffSum/*` still carry only
 the algebraic bookkeeping for `birkhoffSum`/`birkhoffAverage`, and
 `Mathlib/Analysis/InnerProductSpace/MeanErgodic.lean` is von Neumann's **mean** (`L²`)
 ergodic theorem, which does not give the a.e. statement.
@@ -4866,8 +4866,8 @@ ergodic theorem, which does not give the a.e. statement.
     finite-dimensional invariance of `IsStrictlyStationary` through `s ≃ Fin s.card`).
 (ii) `α(n) → 0 ⇒ the shift is ergodic for ν`: `preErgodic_shiftPath`. For measurable
     shift-invariant `A` and any `δ > 0`, a cylinder `B = cylinder s S` with
-    `ν (B Δ A) < δ` exists — **the approximation step *is* in the pin**, contrary to what
-    wave `ts/s10` recorded: `MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing`
+    `ν (B Δ A) < δ` exists — **the approximation step *is* in the pin**:
+    `MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing`
     (`Mathlib/MeasureTheory/Measure/MeasuredSets.lean`) applied to the set ring
     `MeasureTheory.isSetRing_measurableCylinders`
     (`Mathlib/MeasureTheory/Constructions/ProjectiveFamilyContent.lean`) with

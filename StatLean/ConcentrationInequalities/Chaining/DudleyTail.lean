@@ -32,12 +32,9 @@ probability `≤ 2/(e−1)·e^{−u²} ≤ 1.17·e^{−u²} ≤ 2e^{−u²}` —
 per-level threshold algebra). The display form absorbs the bare `diam` term
 via `diam·√log2 ≤ 8·dudleyIntegral` (`Chaining/EntropySum.lean`) into the
 frozen display constant `200`. This file shares the Step-2/Step-3 event
-pattern with `Chaining/GenericChaining.lean` — accepted small duplication in
-exchange for pairwise-disjoint parallel proof sessions; the shared
+pattern with `Chaining/GenericChaining.lean`; the shared
 tail-integrates-to-expectation step is factored in
-`Chaining/TailToExpectation.lean`. Named-sorry fallback of this work item:
-`dudley_tail_of_finite` (the display form with diameter absorption), with
-`dudley_tail_three_term_of_finite` proved.
+`Chaining/TailToExpectation.lean`.
 
 **Bibliographic comments.** The high-probability form of Dudley's bound is a
 folklore refinement of R. M. Dudley, "The sizes of compact subsets of Hilbert
@@ -1335,7 +1332,7 @@ below along a finite exhaustion of the per-subset form. -/
 theorem dudley_tail_three_term_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)

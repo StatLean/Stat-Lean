@@ -81,7 +81,7 @@ lemma frequently_mem_nhds_liminf_ennreal
 extraction `ψ : ℕ → ℕ` along which `u ∘ ψ` converges to `Filter.liminf u atTop`.
 
 Combines `frequently_mem_nhds_liminf_ennreal` (cluster-point property) with
-`TopologicalSpace.FirstCountableTopology.tendsto_subseq`. -/
+`MapClusterPt.tendsto_subseq`. -/
 lemma exists_strictMono_tendsto_liminf_ennreal (u : ℕ → ℝ≥0∞) :
     ∃ ψ : ℕ → ℕ, StrictMono ψ ∧
       Filter.Tendsto (u ∘ ψ) Filter.atTop
@@ -91,7 +91,7 @@ lemma exists_strictMono_tendsto_liminf_ennreal (u : ℕ → ℝ≥0∞) :
     rw [mapClusterPt_iff_frequently]
     intro s hs
     exact frequently_mem_nhds_liminf_ennreal u hs
-  exact MapClusterPt.tendsto_subseq hCluster
+  exact hCluster.tendsto_subseq
 
 /-! ### Main theorem: diagonal Cantor extraction on a monotone finset chain -/
 

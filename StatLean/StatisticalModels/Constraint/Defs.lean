@@ -27,7 +27,7 @@ S. L. Zeger, "Longitudinal data analysis using generalized linear models," *Biom
 (1986), 13–22, §2. Identified sets and point identification of functionals: C. F. Manski,
 *Partial Identification of Probability Distributions*, Springer, 2003, Ch. 1 (verify §).
 
-**Proof formalization notes.** Laptop-only data model — definitions only. The relations to the
+**Proof formalization notes.** Data model — definitions only. The relations to the
 fully specified theory (`SeparatesTarget (singletonFibers P) ψ ↔ IdentifiesTarget P ψ`,
 monotonicity of separation under observation) live in `Identifiability.Transfer`. Substantive
 constraint-model theorems (GEE unbiasedness under a conditional-mean restriction) arrive with

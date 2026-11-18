@@ -3,6 +3,7 @@
   "nodes": [
     {"id":"StatLean.StatisticalModels.Survival.cond_single_failure","label":"cond_single_failure","full":"StatLean.StatisticalModels.Survival.cond_single_failure","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.Survival.Cox.PartialLikelihood"},
     {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
+    {"id":"unitInterval.ofNNReal","label":"ofNNReal","full":"unitInterval.ofNNReal","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UnitInterval"},
     {"id":"Finset.prod_pos","label":"prod_pos","full":"Finset.prod_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset"},
     {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
@@ -45,6 +46,7 @@
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.Survival.cond_single_failure","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.StatisticalModels.Survival.cond_single_failure","target":"unitInterval.ofNNReal"},
     {"source":"StatLean.StatisticalModels.Survival.cond_single_failure","target":"Finset.prod_pos"},
     {"source":"StatLean.StatisticalModels.Survival.cond_single_failure","target":"lt_of_not_ge"},
     {"source":"StatLean.StatisticalModels.Survival.cond_single_failure","target":"Nat.cast_one"},
