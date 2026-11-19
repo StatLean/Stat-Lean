@@ -12,7 +12,7 @@ Asymptotic Statistics — Prékopa-Leindler inequality.
 
 The functional generalisation of Brunn-Minkowski. Foundational tool for
 log-concave measure theory; the route by which we prove Anderson's lemma
-(`ForMathlib/Anderson.lean`) for multivariate Gaussian shifts.
+(`StatLean/AsymptoticStatistics/ForMathlib/Anderson.lean`) for multivariate Gaussian shifts.
 
 Mathlib has neither Prékopa-Leindler nor Brunn-Minkowski directly. We build
 the 1D form first, then n-dim by induction over Fubini (each marginal is
@@ -860,7 +860,7 @@ the inner fibres gives the Prékopa-Leindler hypothesis for these three marginal
 functions on `ℝ`, and `prekopaLeindler_1d` completes the step.
 
 This is the form directly consumed by `anderson_lemma_set` in
-`ForMathlib/Anderson.lean`: apply with `f(x) := ρ(x) · 𝟙_{C-y}(x)`,
+`StatLean/AsymptoticStatistics/ForMathlib/Anderson.lean`: apply with `f(x) := ρ(x) · 𝟙_{C-y}(x)`,
 `g(x) := ρ(x) · 𝟙_{C+y}(x)`, `h(x) := ρ(x) · 𝟙_C(x)` (where `ρ` is the
 Gaussian density, in `(ι → ℝ)`-coordinates) and `t = 1/2`; the pointwise
 hypothesis follows from log-concavity of `ρ` and midpoint-convexity of `C`. -/

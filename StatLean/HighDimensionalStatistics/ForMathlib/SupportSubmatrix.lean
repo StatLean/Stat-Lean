@@ -19,9 +19,10 @@ This file provides:
   consumed by `GramMatrix.lean` (Gram quadratic form, positive-definiteness) and the
   dual-certificate assembly.
 
-Reuses `designMap` (`LinearModel/Defs.lean`) and the ℓ¹/ℓ∞/`restrict` bricks
-(`ForMathlib/VecNorms.lean`). Pure linear algebra — no book hypotheses, hence no
-`USER-INPUT`/`LEAN-ONLY` tags (all lemmas are hypothesis-free identities).
+Reuses `designMap` (`StatLean/HighDimensionalStatistics/LinearModel/Defs.lean`) and the
+ℓ¹/ℓ∞/`restrict` bricks (`StatLean/HighDimensionalStatistics/ForMathlib/VecNorms.lean`). Pure linear
+algebra — no book hypotheses, hence no `USER-INPUT`/`LEAN-ONLY` tags (all lemmas are hypothesis-free
+identities).
 -/
 
 open Matrix

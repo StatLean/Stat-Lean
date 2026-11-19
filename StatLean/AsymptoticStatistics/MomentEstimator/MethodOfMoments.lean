@@ -31,7 +31,8 @@ whence consistency and `O_P(1)` are derived; `delta_method_remainder` linearises
 `√n(φ(ℙₙ f) − θ₀) = e_{θ₀}⁻¹ √n(ℙₙ f − μ) + o_P(1)`, and the linear part's limit is
 `N(0, Σ_f).map e_{θ₀}⁻¹ = N(0, e_{θ₀}⁻¹ Σ_f e_{θ₀}⁻ᵀ)` (`momentGaussian_map_eq`).
 
-## Sample-space convention (matches `EmpiricalProcess/ZEstimatorNormality.lean`)
+## Sample-space convention (matches
+`StatLean/AsymptoticStatistics/EmpiricalProcess/ZEstimatorNormality.lean`)
 
 The i.i.d. sample is `X : ℕ → Ξ → Ω` on a base `(Ξ, μ)` with `μ.map (X 0) = P`.  The
 `delta_method_remainder` engine is used at the *constant* varying base `Ω k := Ξ`,

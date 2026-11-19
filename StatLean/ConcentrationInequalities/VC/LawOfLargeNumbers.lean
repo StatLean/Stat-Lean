@@ -46,7 +46,8 @@ valid pointwise in the sample because Theorem 8.3.13 holds for *every*
 probability measure, in particular the random empirical measure; the
 unconditioning is `integral_mono` against a constant plus Fubini
 (`MeasureTheory.integral_integral_swap` / `Measure.prod`). (4) The entropy
-integral `≤ 27√d` is `entropyIntegral_le` (`VC/EntropyIntegral.lean`).
+integral `≤ 27√d` is `entropyIntegral_le`
+(`StatLean/ConcentrationInequalities/VC/EntropyIntegral.lean`).
 
 **Constants (frozen numerals, recomputed from the formalization's frozen
 interfaces — DEVIATION from the design's provisional 500/1000).**

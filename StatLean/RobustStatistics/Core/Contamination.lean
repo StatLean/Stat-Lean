@@ -19,9 +19,9 @@ fraction `ε` of the data comes from an arbitrary outlier-generating distributio
 **Design note (real weight, clamped coefficients).** The weight is a *real* `ε`, encoded
 through `ENNReal.ofReal`, so that curves `t ↦ contaminate P Q t` are literally real-parameter
 families — the influence function is a one-sided derivative in `t` at `0`
-(`Core/InfluenceFunction.lean`). For `ε ∈ [0,1]` the definition is the book's mixture; outside
-`[0,1]` the coefficients clamp at `0` (junk values, never used by the theorems). The
-definition is definitionally the mixture form
+(`StatLean/RobustStatistics/Core/InfluenceFunction.lean`). For `ε ∈ [0,1]` the definition is the
+book's mixture; outside `[0,1]` the coefficients clamp at `0` (junk values, never used by the
+theorems). The definition is definitionally the mixture form
 `ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • Q` used by the von Mises calculus in
 `StatLean/AsymptoticStatistics/Core/MassMethod.lean`, so those results apply verbatim.
 

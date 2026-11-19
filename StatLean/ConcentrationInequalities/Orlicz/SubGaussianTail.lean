@@ -18,8 +18,8 @@ invisible in the statement). Proof is Markov (`mul_meas_ge_le_lintegral₀`) on
 `exp(X²/K²)` after the event identity
 `{t ≤ |X|} = {exp(t²/K²) ≤ exp((X/K)²)}`. Tail events use the ≤-form
 `μ {ω | t ≤ |X ω|}` with `ENNReal.ofReal` right-hand side, the carrier
-convention of `SubGaussian/TailBounds.lean`; strict-< consumers weaken via
-`measure_mono`. The raw core takes the book-literal threshold-2 condition and
+convention of `StatLean/ConcentrationInequalities/SubGaussian/TailBounds.lean`; strict-< consumers
+weaken via `measure_mono`. The raw core takes the book-literal threshold-2 condition and
 holds for any measure; the norm-facing wrapper (the frozen B1 bridge) derives
 it via the attainment lemma and hence assumes `[IsProbabilityMeasure μ]`.
 

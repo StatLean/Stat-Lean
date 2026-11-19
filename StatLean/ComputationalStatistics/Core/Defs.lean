@@ -26,8 +26,8 @@ The shared substrate for every sampling and resampling algorithm in the area:
   all lemma content lives in the sibling files.
 * Weights are **real** (`w : Fin n → ℝ`), converted by `ENNReal.ofReal`; negative
   weights are silently clipped to `0`, and the probability-measure instance in
-  `Core/EmpiricalMeasure.lean` carries the simplex hypotheses explicitly.  This
-  matches the simplex conventions of `StatLean.Bayesian.multinomialWeight`.
+  `StatLean/ComputationalStatistics/Core/EmpiricalMeasure.lean` carries the simplex hypotheses
+  explicitly.  This matches the simplex conventions of `StatLean.Bayesian.multinomialWeight`.
 * Edge behaviour: for `n = 0`, `empiricalMeasure` is the zero measure
   (`(0 : ℝ≥0∞)⁻¹ = ∞` collapses against the empty sum) and `mcEstimate` is junk
   `0` (`(0 : ℝ)⁻¹ = 0`); probability statements carry `[NeZero n]`.
@@ -58,7 +58,7 @@ variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 
 (ECS ch. 4, p. 83: the sample viewed as a finite population).  Edge behaviour:
 for `n = 0` this is the zero measure; the `IsProbabilityMeasure` instance is
-stated under `[NeZero n]` in `Core/EmpiricalMeasure.lean`. -/
+stated under `[NeZero n]` in `StatLean/ComputationalStatistics/Core/EmpiricalMeasure.lean`. -/
 noncomputable def empiricalMeasure {n : ℕ} (x : Fin n → 𝓧) : Measure 𝓧 :=
   (n : ℝ≥0∞)⁻¹ • ∑ i : Fin n, Measure.dirac (x i)
 

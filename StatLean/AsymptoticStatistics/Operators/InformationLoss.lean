@@ -197,7 +197,7 @@ the raw operator preserves the Bochner integral.
 
 The proof pushes the integral back along `M` (`integral_map`), applies the Doob
 behavioral identity `doobL2Equiv_comp_apply` (`(doobL2Equiv hM g) ∘ M =ᵐ[P] g`,
-exposed publicly in `ForMathlib/CondExpL2.lean`), and finishes with
+exposed publicly in `StatLean/AsymptoticStatistics/ForMathlib/CondExpL2.lean`), and finishes with
 `integral_condExpL2_eq` over `Set.univ` (`∫ condExpL2 x = ∫ x`). -/
 theorem integral_informationLossRaw
     {M : Ω_full → Ω_obs} (hM : Measurable M)

@@ -192,7 +192,7 @@ noncomputable def pairAlphaCoeff (X e : ℤ → Ω → ℝ) (μ : Measure Ω) (n
 
 /-! ### Elementary properties of `pairAlphaCoeff`
 
-Transported from the `alphaMixCoeff` lemmas of `Mixing/Relations.lean`; the pair
+Transported from the `alphaMixCoeff` lemmas of `StatLean/TimeSeries/Mixing/Relations.lean`; the pair
 σ-algebras are `⨆`-sups, so `iSup_le`/`le_iSup` do the monotonicity transport. -/
 
 section PairAlpha
@@ -5482,7 +5482,7 @@ private theorem tendsto_truncArray_variance [IsProbabilityMeasure μ]
 
 
 /-- A Borel isomorphism `ℝ × ℝ ≃ᵐ ℝ`, used to encode the pair series as a real series so
-that the shift lemma of `Mixing/Relations.lean` applies to it. -/
+that the shift lemma of `StatLean/TimeSeries/Mixing/Relations.lean` applies to it. -/
 private noncomputable def pairCode : (ℝ × ℝ) ≃ᵐ ℝ :=
   PolishSpace.measurableEquivOfNotCountable
     (Uncountable.not_countable) (Uncountable.not_countable)
@@ -6669,8 +6669,8 @@ why `l_n = [√(n h_n)/log n]` is chosen. The block-variance input is ledger (a)
 The proof combines three inputs: (i) ledger (a) (`var_localized_sum`, and
 its truncated analogue `tendsto_truncArray_variance` built here), (ii)
 `tendsto_smallBlock_variance`, (iii) the Volkonskii–Rozanov factorization
-(`norm_integral_prod_sub_prod_integral_le_of_pos` in `Mixing/Inequalities.lean`; the frozen
-`norm_integral_prod_sub_prod_integral_le` keeps only its false `k = 0` corner, and every
+(`norm_integral_prod_sub_prod_integral_le_of_pos` in `StatLean/TimeSeries/Mixing/Inequalities.lean`;
+the frozen `norm_integral_prod_sub_prod_integral_le` keeps only its false `k = 0` corner, and every
 consumer here has `k = k_n ≥ 1`). Its *rate* input (2.78) is
 `tendsto_blockCount_mul_pairAlpha`.
 
@@ -6763,7 +6763,7 @@ private apparatus, in the order it is built above, is:
   comap σ-algebra is exactly `σ(X_t) ⊔ σ(e_t)`; fdd stationarity of the pair upgrades to
   `IsStrictlyStationary` of the coded series (`map_tuple_shift`: an arbitrary finite tuple is
   covered by one contiguous window), and `IsStrictlyStationary.alphaMixCoeff_shift` of
-  `Mixing/Relations.lean` applies.
+  `StatLean/TimeSeries/Mixing/Relations.lean` applies.
 * the big-block apparatus `bigBlockIdx` (+ disjointness, `bigBlockIdx_card = k_n l_n`, the
   bookkeeping identity `k l + k s + n mod (l+s) = n`) with the two new ratio limits
   `l_n/n → 0` and `s_n/n → 0` (the latter from (C5) through
@@ -6778,9 +6778,9 @@ private apparatus, in the order it is built above, is:
 * `tendsto_prod_charFun_of_uniformly_small` — the row CLT in **product-of-charFuns** form,
   with *no* independence assumed. `tendsto_charFun_rowSum_gaussian_of_uniformly_small` is only
   available in its `iIndepFun` form (its product-form core is `private` in
-  `ForMathlib/Probability/TriangularCLT.lean`), so the product `∏_j φ_{Y_{n,j}}(u)` is
-  transported to an independent surrogate on `Measure.infinitePi` of the individual laws,
-  where the theorem applies verbatim.
+  `StatLean/TimeSeries/ForMathlib/Probability/TriangularCLT.lean`), so the product
+  `∏_j φ_{Y_{n,j}}(u)` is transported to an independent surrogate on `Measure.infinitePi` of the
+  individual laws, where the theorem applies verbatim.
 * `tendsto_bigBlockLen_div_sqrt` — the envelope `l_n/√(n h_n) → 0` (with `n h_n → ∞` from
   (C5)), which is what makes the block array uniformly negligible; and the `L² ⇒ L¹` glue
   `tendsto_integral_abs_of_tendsto_sq`.

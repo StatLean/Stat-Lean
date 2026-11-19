@@ -36,13 +36,15 @@ University, 2023, Lecture 11, §11.5.
 
 **Proof formalization notes.** This file assembles the two halves of the argument:
 
-* `knockoff_fdp_le` (`Knockoff/FdpBound.lean`, deterministic): the pointwise bound
-  $\mathrm{FDP}(t^\star) \le \alpha \cdot V_+(t^\star)/(1+V_-(t^\star))$, where $V_+$ counts null
-  statistics above the threshold and $V_-$ counts null statistics whose negation is above it;
-* `knockoff_ratio_stopped_le_one` (`Knockoff/Supermartingale.lean`, the supermartingale +
-  optional-stopping core): $\mathbb{E}\!\left[V_+(t^\star)/(1+V_-(t^\star))\right] \le 1$, obtained
-  by showing the reverse-time ratio process is a supermartingale and applying optional stopping at
-  the data-dependent threshold $t^\star$.
+* `knockoff_fdp_le` (`StatLean/MultipleTesting/Knockoff/FdpBound.lean`, deterministic): the
+  pointwise bound $\mathrm{FDP}(t^\star) \le \alpha \cdot V_+(t^\star)/(1+V_-(t^\star))$, where
+  $V_+$ counts null statistics above the threshold and $V_-$ counts null statistics whose negation
+  is above it;
+* `knockoff_ratio_stopped_le_one` (`StatLean/MultipleTesting/Knockoff/Supermartingale.lean`, the
+  supermartingale + optional-stopping core):
+  $\mathbb{E}\!\left[V_+(t^\star)/(1+V_-(t^\star))\right] \le 1$, obtained by showing the
+  reverse-time ratio process is a supermartingale and applying optional stopping at the
+  data-dependent threshold $t^\star$.
 
 Combining them, $\mathrm{FDR} = \int \mathrm{FDP} \le \int \alpha\,V_+/(1+V_-)
 = \alpha \int V_+/(1+V_-) \le \alpha$ by integral monotonicity, factoring out $\alpha$, and the

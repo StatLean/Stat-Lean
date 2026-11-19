@@ -29,8 +29,8 @@ qualified). Mathlib's `Finset.card_shatterer_le_sum_vcDim` requires
 every trace-shattered `T` is `C`-shattered (hence `T.card ≤ d`) and `T ⊆ Λ`,
 so `Finset.card_powersetCard` bounds the count by `∑_{k ≤ d} C(|Λ|, k)`.
 The closed form is `sum_choose_le_exp_mul_pow`
-(`ForMathlib/BinomialSumBound.lean`). Constants are the book's exactly.
-Edge/degenerate behavior: `two_pow_le_growthFunction` needs `[Infinite Ω]`
+(`StatLean/ConcentrationInequalities/ForMathlib/BinomialSumBound.lean`). Constants are the book's
+exactly. Edge/degenerate behavior: `two_pow_le_growthFunction` needs `[Infinite Ω]`
 and attainment of the `ℕ∞`-valued `vcDim` (`exists_shatters_card_eq`) —
 nothing downstream consumes it; the one lemma Theorem 8.3.13 needs is
 `card_traceFamily_le_sum_choose`.

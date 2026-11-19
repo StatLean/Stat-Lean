@@ -29,7 +29,7 @@ anchored form IS Theorem 8.1.3. Absolute forms use
 Cambridge University Press, §8.1, Theorem 8.1.3, Eqs. (8.13), (8.14),
 (8.16); the uncountable forms realize the p. 227 footnote ("the general
 case typically follows by approximation") through separable versions
-(`Chaining/SeparableProcess.lean`).
+(`StatLean/ConcentrationInequalities/Chaining/SeparableProcess.lean`).
 
 **Proof formalization notes.** Frozen constants unchanged from the
 per-finite-subset family: `12√3` (anchored/mean-zero), `40` (absolute),
@@ -61,7 +61,7 @@ variable {E : Type*} [PseudoMetricSpace E]
 `F ⊆ T`, with the anchor `t₀` required only in `T` (not in `F`): the ψ₂
 bounds come from `hinc` against the diameter of `T`, which is finite by
 `isBounded_of_coveringNumber_ne_top`. Replay of the leg block of
-`dudley_inequality_abs_pair` (`Chaining/Dudley.lean`). -/
+`dudley_inequality_abs_pair` (`StatLean/ConcentrationInequalities/Chaining/Dudley.lean`). -/
 private lemma integrable_sup'_abs_sub_of_coveringNumber {X : E → Ω → ℝ}
     {K : ℝ≥0} {T : Set E} [IsProbabilityMeasure μ]
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)

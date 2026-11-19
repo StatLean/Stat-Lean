@@ -67,8 +67,9 @@ minimizers of a parametrized convex scan. (`TPE2 §3.1 Thm 1.10, Cor 1.11`.)
 * **Coercivity is `Tendsto (f ω) (cocompact ℝ) (𝓝 ⊤)`, not `… atTop`.** In `ℝ≥0∞`,
   `Filter.atTop = pure ⊤` (`OrderTop.atTop_eq`), so the `atTop` phrasing would read "`f ω`
   equals `⊤` off a compact set" — true but useless. The `𝓝 ⊤` form is the intended "`f ω`
-  blows up at infinity"; for `ℝ`-valued scans (see `ForMathlib/ConvexMinimizers.lean`) the
-  two coincide and `atTop` is used there.
+  blows up at infinity"; for `ℝ`-valued scans (see
+  `StatLean/PointEstimation/ForMathlib/ConvexMinimizers.lean`) the two coincide and `atTop` is used
+  there.
 * **Attainment is derived, never hypothesized.** The conclusion asserts
   `f ω (u ω) = ⨅ v, f ω v`, i.e. that the infimum *is attained at the selected point*; it is
   forced by continuity plus coercivity and so must not appear as a hypothesis.

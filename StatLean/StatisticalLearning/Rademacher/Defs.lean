@@ -14,7 +14,7 @@ loss family evaluated on a sample, `R(ℓ∘𝓗∘S)` (SSBD Eq. (26.4)).
   (`σ : Fin n → Bool`), not an integral — no measure theory in the definition.
   The bridge to the `signVec` product-measure world of
   `ConcentrationInequalities/Symmetrization/` is
-  `Rademacher/Symmetrization.lean`'s `signAvg_eq_integral_signVec`.
+  `StatLean/StatisticalLearning/Rademacher/Symmetrization.lean`'s `signAvg_eq_integral_signVec`.
 * The sup over the class is `sSup` of an **image** (not a real `⨆ a ∈ A`,
   whose junk floor at `0` is a known trap). Edge behavior: `sSup ∅ = 0` and
   `sSup` of an unbounded image is `0` — theorems carry

@@ -341,9 +341,9 @@ function is the constant `1`, while the frozen limit at `W = 1`, `c = 1`, `u = 1
 
 The instance is built from scratch on `(ℤ → ℝ, ⊗ Rademacher)`, so the witness is
 independent of `exists_stationary_garch`. The **Rademacher** noise
-(rather than the Gaussian of `Threshold/Estimation.lean`) is forced by `lad_clt_debt`'s
-median hypothesis `hmed`: it asks the median of `ε₀²` to be `1`, which for a mean-zero
-unit-variance law means `ε₀² = 1` a.s. up to the two-sided tail balance — the two-point
+(rather than the Gaussian of `StatLean/TimeSeries/Threshold/Estimation.lean`) is forced by
+`lad_clt_debt`'s median hypothesis `hmed`: it asks the median of `ε₀²` to be `1`, which for a
+mean-zero unit-variance law means `ε₀² = 1` a.s. up to the two-sided tail balance — the two-point
 law is the simple solution, whereas a standard Gaussian has `P(ε₀² ≤ 1) ≈ 0.683 ≠ 0.317`.
 `X ≡ 0` makes strict stationarity and `L⁴` free, and makes `σ(X_s : s < t)` the trivial
 σ-algebra, so `indep_past` is `indep_bot_right`; no shift-invariance of the noise law is
@@ -604,7 +604,7 @@ are cleanly separated.
 `i`-th coordinate of `√T(θ̂_T − θ₀)` differs from `T^{−1/2} Σ_{t<T} ψ_i(t+1)` by something
 that vanishes in `L¹`. Summing against `c` gives
 `∫ |Z_T − V_T| ≤ Σ_i |c_i| · (the i-th `hlin` sequence) → 0`, and
-`‖E e^{iuZ} − E e^{iuW}‖ ≤ |u| E|Z − W|` (`Process/SampleACF.lean`'s
+`‖E e^{iuZ} − E e^{iuW}‖ ≤ |u| E|Z − W|` (`StatLean/TimeSeries/Process/SampleACF.lean`'s
 `norm_charFun_map_sub_le`, `private` there) transports the limit. **This step is now
 CLOSED**, as the reusable brick `tendsto_charFun_map_of_l1` just below, together with the
 `norm_charFun_map_sub_le` it needs. What remains of (S1) is the two-line integrability
@@ -613,8 +613,8 @@ side condition, which is *derivable* rather than assumed: `hK` compact makes `es
 linear combination of `L²` variables.
 
 **(S2) The martingale CLT for `V_T` — `mds_clt_sequence`, three of four inputs free.**
-Instantiate `ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`'s `mds_clt_sequence` at
-`ξ t := Σ_i c_i ψ_i(t+1)` and `G t := sigmaLT X ((t : ℤ) + 1)`:
+Instantiate `StatLean/TimeSeries/ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`'s
+`mds_clt_sequence` at `ξ t := Σ_i c_i ψ_i(t+1)` and `G t := sigmaLT X ((t : ℤ) + 1)`:
 * `hle`/`hmono` — `IsGARCH.measurableX` and `sigmaLT` monotonicity;
 * `hadapted` — `hpsiAdapted`; `hmds` — `hpsiMDS`, both linear in `c`;
 * `hL2` — `hpsiL2`, finite linear combination;
@@ -640,8 +640,8 @@ different in the two cases:
 * **Whittle (GR 2001).** `hlin` comes from a Taylor expansion of `garchWhittle` in `θ`
   plus a **CLT for a weighted quadratic form of the squared process**,
   `T^{−1/2} Σ_{j,k} w_{j−k} (Y_j − EY)(Y_k − EY)`. The reduction of the periodogram average
-  to such a quadratic form is *available*: `Spectral/DFT.lean`'s Parseval layer (proved) does
-  exactly that. The quadratic-form CLT for a non-linear, non-Gaussian,
+  to such a quadratic form is *available*: `StatLean/TimeSeries/Spectral/DFT.lean`'s Parseval layer
+  (proved) does exactly that. The quadratic-form CLT for a non-linear, non-Gaussian,
   long-memory-capable process is the open piece; GR get it from their own
   `Σ_h |Cov(Y_0, Y_h)| < ∞` bookkeeping plus a fourth-cumulant condition — which is why
   `hL4` is there and why `B ≠ A` in their sandwich.
@@ -678,7 +678,8 @@ private lemma integrable_cexp_mul_I' [IsFiniteMeasure μ] {f : Ω → ℝ} (hf :
   simp [Complex.norm_exp]
 
 /-- **The `L¹` charFun comparison**: `‖E e^{iuZ} − E e^{iuW}‖ ≤ |u| E|Z − W|`. (The same
-brick as `Process/SampleACF.lean`'s `norm_charFun_map_sub_le`, which is `private` there.) -/
+brick as `StatLean/TimeSeries/Process/SampleACF.lean`'s `norm_charFun_map_sub_le`, which is
+`private` there.) -/
 private lemma norm_charFun_map_sub_le [IsProbabilityMeasure μ] {Z W : Ω → ℝ}
     (hZ : Measurable Z) (hW : Measurable W)
     (hint : Integrable (fun ω => |Z ω - W ω|) μ) (u : ℝ) :

@@ -22,9 +22,9 @@ Also here: the transition kernel `nlARKernel` of the vectorized nonlinear autore
 the fact that an ergodic kernel has *only one* invariant law.
 
 **FY Theorem 2.4(ii)** — the drift/contraction criterion for geometric ergodicity of that
-chain — is **proved** in `ForMathlib/Markov/HarrisTheorem.lean`, which is where the Harris
-engine it consumes lives; see the comment at the foot of this file. (§2.1.4 is excluded from
-the formalization scope, but its Theorem 2.4 is the certificate that §2.1.5's remark and
+chain — is **proved** in `StatLean/TimeSeries/ForMathlib/Markov/HarrisTheorem.lean`, which is where
+the Harris engine it consumes lives; see the comment at the foot of this file. (§2.1.4 is excluded
+from the formalization scope, but its Theorem 2.4 is the certificate that §2.1.5's remark and
 §4.1's TAR stationarity claims consume.)
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.1.4:

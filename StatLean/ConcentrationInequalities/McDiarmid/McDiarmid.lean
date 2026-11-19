@@ -26,14 +26,15 @@ harmless normalization, since a difference bound is vacuous for negative $c_k$.
 Theorem 5.1 (McDiarmid Inequality).
 
 **Proof formalization notes.** The proof is a pure Chernoff bound on the sub-Gaussian MGF
-already established in `McDiarmid/DoobDecomposition.lean`:
+already established in `StatLean/ConcentrationInequalities/McDiarmid/DoobDecomposition.lean`:
 `mgf_sub_expectation_le` gives `HasSubgaussianMGF (f(X) − E[f(X)]) σ² μ` with proxy
 `σ² = ∑ₖ (‖cₖ‖₊/2)² = (∑ₖ cₖ²)/4`. Mathlib's
 `ProbabilityTheory.HasSubgaussianMGF.measure_ge_le` then yields the right-tail bound
 `μ.real {t ≤ ·} ≤ exp(−t²/(2σ²))`, and `−t²/(2σ²) = −t²/(2·(∑cₖ²)/4) = −2t²/(∑cₖ²)`.
-The `μ.real → ENNReal` bridge mirrors `SubGaussian/TailBounds.lean`. For the two-sided
-form, `t < |Y|` splits as `t < Y ∨ t < −Y`; the left tail is the right tail of `−Y` via
-`HasSubgaussianMGF.neg`, and the two are combined by `measure_union_le`.
+The `μ.real → ENNReal` bridge mirrors
+`StatLean/ConcentrationInequalities/SubGaussian/TailBounds.lean`. For the two-sided form, `t < |Y|`
+splits as `t < Y ∨ t < −Y`; the left tail is the right tail of `−Y` via `HasSubgaussianMGF.neg`, and
+the two are combined by `measure_union_le`.
 
 The strict inequality `<` on the event is faithful to the book; the brick gives `≤`, and
 the slack is absorbed via the inclusion `{t < y} ⊆ {t ≤ y}`.

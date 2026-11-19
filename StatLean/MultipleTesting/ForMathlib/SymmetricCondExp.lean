@@ -11,7 +11,8 @@ conditional expectation of the indicator of *one* coordinate `i₀`, given the *
 
 Mathlib has **no** exchangeability / de Finetti / Pólya / hypergeometric conditional-expectation
 support, so this is built from scratch. It is the single Mathlib-absent ingredient the knock-off
-FDR proof (`count_condExp`, `Knockoff/Step.lean`) consumes — and is independently upstreamable.
+FDR proof (`count_condExp`, `StatLean/MultipleTesting/Knockoff/Supermartingale.lean`) consumes — and
+is independently upstreamable.
 
 ## Proof route
 

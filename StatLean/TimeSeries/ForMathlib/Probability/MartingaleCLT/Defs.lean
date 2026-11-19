@@ -14,8 +14,9 @@ vanishing conditional mean given `𝓕_{n,i}`.
 
 The **conditional variance process** is `V_n = Σ_{i<k_n} E[X_{n,i}² | 𝓕_{n,i}]`; the
 Brown conditions (`V_n →p σ²` + conditional Lindeberg) and the CLT live in
-`MartingaleCLT/BrownCLT.lean`; the conditional characteristic-function calculus in
-`MartingaleCLT/CondCharFun.lean`.
+`StatLean/TimeSeries/ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`; the conditional
+characteristic-function calculus in
+`StatLean/TimeSeries/ForMathlib/Probability/MartingaleCLT/CondCharFun.lean`.
 
 **Reference.** B. M. Brown, *Martingale central limit theorems*, Ann. Math. Statist.
 **42** (1971), 59–66; P. Hall and C. C. Heyde, *Martingale Limit Theory and Its

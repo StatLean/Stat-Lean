@@ -531,8 +531,8 @@ volatility recursion into an ARCH(∞) one: the coefficients `d_i = garchInfCoef
 are nonnegative (`garchInfCoeffs_nonneg`) with `Σ_i d_i = (Σ b)/(1 − Σ a)`
 (`tsum_garchInfCoeffs`), which is `< 1` exactly under `hsum`. So `bc j = d_{j+1}` and
 `ā = c₀/(1 − Σ a)` satisfy the hypotheses of `exists_stationary_archInf`
-(`Stationarity/ARCH.lean`) over the noise `ξ_t = ε_t²`, which returns the solution
-`Y ≃ X²` *together with its path functional*: `Y_t = G(ξ_{·+t})` for one fixed measurable
+(`StatLean/TimeSeries/Stationarity/ARCH.lean`) over the noise `ξ_t = ε_t²`, which returns the
+solution `Y ≃ X²` *together with its path functional*: `Y_t = G(ξ_{·+t})` for one fixed measurable
 `G` that reads its argument only at coordinates `≤ 0`. The GARCH pair is then two
 readings of the same ARCH(∞) volatility:
 
@@ -1326,7 +1326,8 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
 
 The construction is packaged as a fixed measurable functional of the *innovation path*, so
 that strict stationarity is a transport along the shift-invariance of the path law — the
-pattern of `Stationarity/ARCH.lean`. Everything is nonnegative, so the series lives in
+pattern of `StatLean/TimeSeries/Stationarity/ARCH.lean`. Everything is nonnegative, so the series
+lives in
 `ℝ≥0∞` and no summability side condition is carried through the definitions. -/
 
 /-- The innovation path seen from time `t`. -/
@@ -1578,7 +1579,8 @@ private lemma ofReal_pow_le_nelProd {b1 a1 : ℝ} (hb1 : 0 ≤ b1) (ha1 : 0 ≤ 
   have := mul_nonneg hb1 (sq_nonneg (p (-1 - (i : ℤ))))
   linarith
 
-/-! #### σ-algebra bookkeeping (local copies of the `Stationarity/ARCH.lean` bricks) -/
+/-! #### σ-algebra bookkeeping (local copies of the `StatLean/TimeSeries/Stationarity/ARCH.lean`
+bricks) -/
 
 private lemma indep_last_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
     (hi : iIndepFun ε μ) (t : ℤ) :

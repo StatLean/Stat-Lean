@@ -16,10 +16,10 @@ influence-function lifts) of vdV §25.6.
 
 **Scope honesty.** `IsCoarseningAtRandom` is a *single-measure* predicate, and on standard
 Borel carriers a single-measure CAR disintegration exists for essentially any mechanism (see
-the remark in `Operators/CAR.lean`) — so the Prop alone does not isolate MAR. Moreover the
-kernel built here (`carKernel Q`) depends on the outcome law `Q` through `Q.condKernel`, so
-it is *not* θ-free in a parametric reading. The value of this theorem is the explicit,
-slice-wise reconstruction kernel — deterministic recovery on complete cases, a `Y ∣ X`
+the remark in `StatLean/AsymptoticStatistics/Operators/CAR.lean`) — so the Prop alone does not
+isolate MAR. Moreover the kernel built here (`carKernel Q`) depends on the outcome law `Q` through
+`Q.condKernel`, so it is *not* θ-free in a parametric reading. The value of this theorem is the
+explicit, slice-wise reconstruction kernel — deterministic recovery on complete cases, a `Y ∣ X`
 redraw on incomplete ones — whose correctness on the incomplete slice is exactly what MAR
 buys. The substantive family-level bridge (one θ-free reconstruction kernel serving every
 outcome law simultaneously, the form the semiparametric theory actually consumes) is not

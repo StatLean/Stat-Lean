@@ -358,7 +358,7 @@ artefact one can quotient away:
   `p_{θ₀} x · exp (Real.log 0) = p_{θ₀} x`.
 
 So the minimal repair is the two-sided condition — the `HasCommonSupport` pattern of
-`PointEstimation/InformationInequality/Basic.lean`, spelled out inline here to avoid an
+`StatLean/PointEstimation/InformationInequality/Basic.lean`, spelled out inline here to avoid an
 import — and it is the same defect, with the same repair, as the one already carried by
 `TrinityChiSquared.logLR_affine_sub_scoreDiff_tendstoInMeasure`. It is *not* a positivity
 assumption on the model (`∀ θ x, 0 < p_θ x` would be false for many standard models); it says
@@ -787,7 +787,7 @@ theorem weak_limit_estimator_under_fixed_local_alternative
 of its square.** A packaging of `MemLp.eLpNorm_eq_integral_rpow_norm` at `p = 2`, so that
 the `eLpNorm`-shaped Hellinger bounds of
 `AsymptoticStatistics.ForMathlib.HellingerProduct` can be fed the `∫ (·)²`-shaped limits
-that `DQM/Properties.lean` produces. -/
+that `StatLean/AsymptoticStatistics/DQM/Properties.lean` produces. -/
 private lemma eLpNorm_two_toReal_eq_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω]
     {ν : Measure Ω} {f : Ω → ℝ} (hf : MemLp f 2 ν) :
     (eLpNorm f 2 ν).toReal = Real.sqrt (∫ x, f x ^ 2 ∂ν) := by

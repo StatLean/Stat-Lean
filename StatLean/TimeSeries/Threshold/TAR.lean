@@ -11,8 +11,8 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 /-!
 # Threshold autoregression: structure and stationarity (FY §4.1.1, Definition 4.1)
 
-The `k`-regime TAR model is `Models/Defs.lean`'s `IsTAR` (FY eq. (4.1)). This file
-carries the §4.1.1 structural facts:
+The `k`-regime TAR model is `StatLean/TimeSeries/Models/Defs.lean`'s `IsTAR` (FY eq. (4.1)). This
+file carries the §4.1.1 structural facts:
 
 * **SETAR** (`IsSETAR`): the interval-partition special case
   `A_i = (r_{i−1}, r_i]` with `−∞ = r_0 < ⋯ < r_k = +∞`, and the fact that a SETAR
@@ -22,7 +22,7 @@ carries the §4.1.1 structural facts:
   (b) `max_i Σ_j |b_{ij}| < 1`, a strictly stationary solution exists. FY delegates
   this entirely to §2.1.4's Theorem 2.4 + Example 2.1, so we state it as a corollary
   of the Markov-layer theorem `nlARKernel_geometricallyErgodic` (proved in
-  `ForMathlib/Markov/HarrisTheorem.lean`): the TAR autoregression
+  `StatLean/TimeSeries/ForMathlib/Markov/HarrisTheorem.lean`): the TAR autoregression
   function is the `nlARKernel`
   drift function, and the contraction condition (b) is the Lyapunov input;
 * the **canonical toy instance** eq. (4.2), `X_t = ∓0.7 X_{t−1} + ε_t` according to the
@@ -502,7 +502,7 @@ private lemma chainWindowLaw_one {S : Type*} [MeasurableSpace S] [StandardBorelS
 kernel, a two-sided strictly stationary realization of the recursion driven by
 standardized iid innovations.
 
-The path space is now available: `ForMathlib/Markov/Markov/TwoSidedChain.lean`'s
+The path space is now available: `StatLean/TimeSeries/ForMathlib/Markov/TwoSidedChain.lean`'s
 `exists_twoSided_stationary_chain` builds the two-sided stationary
 chain by the *natural extension* — the time-reversed kernel obtained by disintegration
 plus two Ionescu–Tulcea trajectories glued at the shared time-`0` value — so no

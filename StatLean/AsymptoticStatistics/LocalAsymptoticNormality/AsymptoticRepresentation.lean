@@ -310,7 +310,7 @@ The four `clt_finDim` iid hypotheses are discharged internally:
 * **Zero mean**: `integral_map` + `integral_withDensity_eq_integral_toReal_smul` to translate
   `∫ ⟪u, Y 0 ω⟫ dP` into `∫ ⟪u, ℓ x⟫ * density θ₀ x dμ`; then
   `AsymptoticStatistics.score_mean_zero` (which needs `dqm_fisher_integrable` and
-  `dqm_residual_eventually_memLp` from `DQM/Properties.lean`).
+  `dqm_residual_eventually_memLp` from `StatLean/AsymptoticStatistics/DQM/Properties.lean`).
 * **Covariance**: same translation, then the definition of `fisherInformation` plus `hJ`.
 * **L²**: `MemLp (Y 0) 2 P` via `memLp_map_measure_iff` + `MemLp ℓ 2 ν`; the latter reduces
   via `memLp_two_iff_integrable_sq_norm` + `integrable_withDensity_iff` to integrability of

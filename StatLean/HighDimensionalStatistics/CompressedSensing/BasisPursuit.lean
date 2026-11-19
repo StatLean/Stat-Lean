@@ -29,9 +29,10 @@ Theorem 9.1) both rely on:
 * `unique_basisPursuit_of_cone_trivial` — if `C(S) ∩ Null(X) = {0}` then `β*` is the
   unique basis-pursuit solution (the sufficiency core, shared by both theorems).
 
-Concept-layer (theorem-agnostic); the cone `C(S)` is `reCone S 1` from `Lasso/Defs.lean`.
-The condition $C(S) \cap \mathrm{Null}(X) = \{0\}$ is the support-restricted form of the
-null-space property of compressed sensing.
+Concept-layer (theorem-agnostic); the cone `C(S)` is `reCone S 1` from
+`StatLean/HighDimensionalStatistics/Lasso/Defs.lean`. The condition
+$C(S) \cap \mathrm{Null}(X) = \{0\}$ is the support-restricted form of the null-space property of
+compressed sensing.
 
 **Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
 (ISBN 978-3-032-03160-0). Chapter 8 (Compressive Sensing), §8.2, Theorem 8.1 (perfect

@@ -15,7 +15,7 @@ pushforward of the standard Gaussian under the scalar multiplication
 `x ↦ τ • x`.  Equivalently, scaling a standard Gaussian by `τ` yields
 the Gaussian with covariance `τ² • I`.
 
-Used in `LowerBounds/T7_AndersonClosure/DiscreteToContinuousPriorBridge.lean`
+Used in `StatLean/AsymptoticStatistics/LowerBounds/GaussianConeBayes.lean`
 (B2 brick): the change-of-variables `Δ ↦ τΔ` translates the standard
 multivariate Gaussian `N(0, I)` to `N(0, τ² · I)`, which is the prior
 side of the τ-Gaussian Bayes risk.

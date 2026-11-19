@@ -34,9 +34,10 @@ Vectors live in `EuclideanSpace ℝ (Fin ·)` (the ℓ²/inner-product space use
 throughout the library). The design matrix acts as the linear map
 `Matrix.toEuclideanLin X : EuclideanSpace ℝ (Fin d) →ₗ[ℝ] EuclideanSpace ℝ (Fin n)`.
 These are concept-layer, theorem-agnostic definitions consumed by
-`OLS/MSEExpectation.lean` and `OLS/MSEHighProb.lean`. The book's design rank
-$r = \mathrm{rank}(X)$ is the dimension of the column space $C(X)$ (the range of
-the design map); here `designRank` is taken as `Matrix.rank X`.
+`StatLean/HighDimensionalStatistics/OLS/MSEExpectation.lean` and
+`StatLean/HighDimensionalStatistics/OLS/MSEHighProb.lean`. The book's design rank
+$r = \mathrm{rank}(X)$ is the dimension of the column space $C(X)$ (the range of the design map);
+here `designRank` is taken as `Matrix.rank X`.
 
 **Bibliographic comments.**
 The fixed-design linear model and ordinary least squares are classical and

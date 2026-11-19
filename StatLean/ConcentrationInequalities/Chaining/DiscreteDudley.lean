@@ -372,8 +372,9 @@ theorem discrete_dudley_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set 
           rw [heq]
           exact mul_le_mul_of_nonneg_left hwin (by positivity)
 
-/-- Integrability of the anchored supremum, exported for `Chaining/Dudley.lean`
-and the countable lift (derived from the increment tails, never
+/-- Integrability of the anchored supremum, exported for
+`StatLean/ConcentrationInequalities/Chaining/Dudley.lean` and the countable lift (derived from the
+increment tails, never
 hypothesized). -/
 lemma integrable_biSup_sub {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1

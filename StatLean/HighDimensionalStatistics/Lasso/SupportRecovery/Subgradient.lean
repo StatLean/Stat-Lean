@@ -47,7 +47,7 @@ Theorem 7.21 is split as:
 
 Matrix-free except `pdw_unique`, whose strict-convexity step uses the (A3) `LowerEigenvalue`
 quadratic-form bound on support-difference vectors. Reuses the Hölder bound
-`abs_inner_le_l1Norm_mul_linfNorm` (`ForMathlib/VecNorms.lean`).
+`abs_inner_le_l1Norm_mul_linfNorm` (`StatLean/HighDimensionalStatistics/ForMathlib/VecNorms.lean`).
 
 **Bibliographic comments.** The primal–dual-witness method formalized here originates with
 M. J. Wainwright, "Sharp thresholds for high-dimensional and noisy sparsity recovery using

@@ -70,10 +70,11 @@ of the chi-squared test) and Lemma 16.3.1 (the noncentral chi-squared tail funct
   `χ²_k(c, ∞) = α`, and in the growing-`k` lemma as a family `c : ℕ → ℝ` with that
   property at each `k`; no quantile function is introduced.
 * Clauses (ii) and (iii) of the tail lemma consume the large-`k` results of the sibling
-  brick `ForMathlib/NoncentralChiSquared.lean` — `tendsto_chiSquared_quantile_standardized`
-  for `(c_k − k)/√(2k) → z`, and `weakConverges_noncentralChiSquared_standardized` for
-  `(χ²_k(l_k) − k)/√(2k) ⇒ N(γ, 1)` — so they are assembly, not new analysis. Clause (i)
-  is independent of both and rests on the monotone likelihood ratio of the family.
+  brick `StatLean/HypothesisTesting/ForMathlib/NoncentralChiSquared.lean` —
+  `tendsto_chiSquared_quantile_standardized` for `(c_k − k)/√(2k) → z`, and
+  `weakConverges_noncentralChiSquared_standardized` for `(χ²_k(l_k) − k)/√(2k) ⇒ N(γ, 1)` — so they
+  are assembly, not new analysis. Clause (i) is independent of both and rests on the monotone
+  likelihood ratio of the family.
 * Clause (i) of the tail lemma (`noncentralTail_antitone`) rests on the *monotone likelihood
   ratio* of `χ²_k(λ)` in `λ`, which stochastic ordering does not give.  That MLR is proved in
   the private `MLR` section of this file, directly from the Gaussian definition and without

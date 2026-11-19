@@ -30,7 +30,7 @@ are related by
 ```
 
 This is the central tensorisation step for the LAN-locality argument of same-score
-`QMDPath`s (see `LowerBounds/RegularEstimatorNarrow.lean`,
+`QMDPath`s (see `StatLean/AsymptoticStatistics/LowerBounds/RegularEstimatorNarrow.lean`,
 `hellinger_locality_for_qmdpath_same_score`).
 
 ## Mathematical content

@@ -30,7 +30,7 @@ of the quasi-score.
   residual sum of squares is a stationary martingale-difference sequence against the
   noise filtration (`armaScore_condexp_zero`) with conditional variance proportional
   to `hannanVarZ` in the limit — the inputs Brown's CLT needs
-  (`ARMA/MLEAsymptotics.lean` assembles).
+  (`StatLean/TimeSeries/ARMA/MLEAsymptotics.lean` assembles).
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §3.3.2,
 eq. (3.14) and Theorem 3.2 remarks (pp. 96–99); proof route from E. J. Hannan, *The
@@ -454,7 +454,7 @@ lemma maCrossACVF_self_neg (ψ : ℕ → ℝ) (k : ℤ) :
 (`q = 0`) the forward and backward Grams coincide: only the AR–AR block survives, and an
 autocovariance is even. Hence the two `q = 0` members of the Hannan chain — the sample-PACF
 linearization and the LS = YW = MLE equivalence, both since removed from
-`ARMA/MLEAsymptotics.lean` — were unaffected by finding 26. -/
+`StatLean/TimeSeries/ARMA/MLEAsymptotics.lean` — were unaffected by finding 26. -/
 theorem hannanVarZ_eq_back_of_pure_ar {p : ℕ} (b : Fin p → ℝ) :
     hannanVarZ b (Fin.elim0 : Fin 0 → ℝ) = hannanVarZBack b (Fin.elim0 : Fin 0 → ℝ) := by
   ext s t
@@ -1592,7 +1592,7 @@ private lemma measurable_sigmaLT {Z : ℤ → Ω → ℝ} {s t : ℤ} (hst : s <
     (comap_le_sigmaLT hst) le_rfl
 
 /-- **One-vs-past independence of i.i.d. noise**: `ε_t` is independent of
-`σ(ε_s : s < t)` (the `Stationarity/ARCH.lean` pull, replayed here). -/
+`σ(ε_s : s < t)` (the `StatLean/TimeSeries/Stationarity/ARCH.lean` pull, replayed here). -/
 lemma indep_noise_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
     (hi : iIndepFun ε μ) (t : ℤ) :
     Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT ε t) μ := by

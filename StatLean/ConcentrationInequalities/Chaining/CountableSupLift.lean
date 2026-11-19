@@ -22,9 +22,9 @@ bounds into **countable-supremum** bounds, in the junk-free carriers:
   `exists_pair_lt_of_lt_biSup_real` absorbing the `Real.sSup` junk value.
 
 These generalize the two lifts previously inlined in
-`dudley_inequality_countable` (`Chaining/Dudley.lean`) and
-`dudley_tail_three_term_countable` (`Chaining/DudleyTail.lean`), and the
-class-specific `integral_biSup_le_of_forall_finset` of the VC cluster.
+`dudley_inequality_countable` (`StatLean/ConcentrationInequalities/Chaining/Dudley.lean`) and
+`dudley_tail_three_term_countable` (`StatLean/ConcentrationInequalities/Chaining/DudleyTail.lean`),
+and the class-specific `integral_biSup_le_of_forall_finset` of the VC cluster.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, Remark 7.2.1 and the p. 227 footnote ("the

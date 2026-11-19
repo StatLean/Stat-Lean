@@ -23,8 +23,8 @@ with the book's group size `k = 1`, so `r = n + 1` groups):
 The statistic is passed as a *pair* `(T, T')` — its full-sample and
 reduced-sample versions — because a "statistic defined for every sample size"
 is not a single Lean function; the bias-reduction theorem in
-`Resampling/JackknifeBias.lean` constrains the pair through its moment
-hypotheses.
+`StatLean/ComputationalStatistics/Resampling/JackknifeBias.lean` constrains the pair through its
+moment hypotheses.
 
 **Reference.** James E. Gentle, *Elements of Computational Statistics*, Springer,
 2002 (ISBN 0-387-95489-9), §3.3 (jackknife methods, eqs. (3.5)–(3.12)).
@@ -34,7 +34,7 @@ hypotheses.
 
 * Everything in this file is finite algebra over `Fin (n+1)`-indexed sums —
   no measure theory; the probabilistic statements live in
-  `Resampling/JackknifeBias.lean`.
+  `StatLean/ComputationalStatistics/Resampling/JackknifeBias.lean`.
 * Deletion is `Fin.succAbove`, avoiding `n − 1` arithmetic; the key sum
   identity is `Fin.sum_univ_succAbove`.
 * Edge behaviour: at `n = 0` the reduced sample is empty and `T'` is evaluated

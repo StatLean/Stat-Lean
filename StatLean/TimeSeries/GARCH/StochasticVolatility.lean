@@ -9,8 +9,8 @@ import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
 # Stochastic volatility models (FY §4.2.9, eqs. (4.60)–(4.62))
 
 The SV model `X_t = ε_t g(h_t)` with latent AR(1) log-volatility
-`h_t = a₀ + a₁ h_{t−1} + e_t` is `Models/Defs.lean`'s `IsSV`. This file carries the
-three in-text results, all elementary once the AR(1) facts and the lognormal moment
+`h_t = a₀ + a₁ h_{t−1} + e_t` is `StatLean/TimeSeries/Models/Defs.lean`'s `IsSV`. This file carries
+the three in-text results, all elementary once the AR(1) facts and the lognormal moment
 formula are available:
 
 * **eq. (4.60)**: `|a₁| < 1` ⇒ the latent process is (strictly) stationary with
@@ -33,7 +33,7 @@ FY §4.2.9 and is not formalized.
   (`iteratedDeriv_id_mul`), which gives `f^{(n+1)}(0) = n f^{(n−1)}(0)`.
 * Four hypotheses implicit in FY's §4.2.9 are **supplied explicitly** in the Lean statements.
   Each carries a `Statement strengthening (documented)` paragraph in the style of
-  `ForMathlib/Markov/GeometricErgodicity.lean`'s
+  `StatLean/TimeSeries/ForMathlib/Markov/GeometricErgodicity.lean`'s
   `nlARKernel_geometricallyErgodic`, together with the witness showing the statement is
   false or unprovable without it. They are: the **causal representation** `hcausal` of
   the latent AR(1) chain (`IsSV` alone does not force `σ{ε} ⟂ σ{h}` — the recursion

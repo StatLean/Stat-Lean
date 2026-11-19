@@ -11,8 +11,8 @@ where `γ̂` is the divisor-`T`, mean-corrected sample ACVF (FY eq. (2.23); §2.
 free mean-centering by root-of-unity sums, then reindex `τ = t − s`).
 
 (FY Theorem 2.14 — the asymptotic distribution of the periodogram over a linear
-process — is proved in `Spectral/PeriodogramAsymptotics.lean`; its part (i) consumes the
-triangular-array CLT of `ForMathlib/Probability/TriangularCLT`.)
+process — is proved in `StatLean/TimeSeries/Spectral/PeriodogramAsymptotics.lean`; its part (i)
+consumes the triangular-array CLT of `ForMathlib/Probability/TriangularCLT`.)
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.4.2,
 Definition 2.8, Theorem 2.13 (pp. 62–63) and §2.7.5 (p. 81).
@@ -50,7 +50,8 @@ theorem sum_sq_eq_sum_periodogram {T : ℕ} (x : Fin T → ℝ) :
 The mean-corrected data extended by `0` outside the observation window, the elementary
 exponential `e^{imω}`, and the diagonal-collection lemma that groups a double sum over
 `[0,T)²` by the lag `τ = b − a` (the template is the private `sum_range_sub_eq_weighted`
-of `ForMathlib/Fourier/FejerKernel.lean`; here the coefficients are not a function of the
+of `StatLean/TimeSeries/ForMathlib/Fourier/FejerKernel.lean`; here the coefficients are not a
+function of the
 lag alone, so the fibers are re-indexed rather than counted). -/
 
 /-- The mean-corrected data, extended by `0` outside the observation window. -/

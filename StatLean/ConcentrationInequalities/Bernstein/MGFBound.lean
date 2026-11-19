@@ -40,7 +40,8 @@ variables and Bernstein's condition), Eq. (2.16)–(2.17).
 The proof route avoids `hasFPowerSeriesAt_mgf`. `bernstein_key` below covers both the
 integrability of $e^{\lambda X}$ and the MGF bound. Rather than fight the
 `FormalMultilinearSeries.radius` bookkeeping of `hasFPowerSeriesAt_mgf`, we use the elementary
-monotone-convergence route enabled by the `∫⁻` form of the moment bound (`Bernstein/Defs.lean`):
+monotone-convergence route enabled by the `∫⁻` form of the moment bound
+(`StatLean/ConcentrationInequalities/Bernstein/Defs.lean`):
 
 * Expand `exp(|l|·|X|) - 1 - |l|·|X| = ∑_{k≥0} (|l|·|X|)^{k+2}/(k+2)!` pointwise, push through
   `MeasureTheory.lintegral_tsum` (Tonelli), pull constants out with `lintegral_const_mul`, and

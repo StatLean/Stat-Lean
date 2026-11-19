@@ -750,9 +750,9 @@ which the proof of `harris_theorem` already establishes internally (the step `hb
 then discards when it packages the weaker pointwise-rate statement `IsGeometricallyErgodic`.
 The affine-in-`V` envelope is exactly what a `π`-**integrable** dominating constant needs:
 combined with `∫ V dπ < ∞` (which is *not* an output of Harris' theorem — see
-`Mixing/Relations.lean`'s `lintegral_lyap_le_of_isErgodicWithRate`, which derives it from
-the ergodic limit) it supplies the integrable envelope `A` of FY eq. (2.59) and of
-`Mixing/Relations.lean`'s `HasGeometricStateChain`.
+`StatLean/TimeSeries/Mixing/Relations.lean`'s `lintegral_lyap_le_of_isErgodicWithRate`, which
+derives it from the ergodic limit) it supplies the integrable envelope `A` of FY eq. (2.59) and of
+`StatLean/TimeSeries/Mixing/Relations.lean`'s `HasGeometricStateChain`.
 
 Concretely the proof returns `b = β`, `r = ᾱ` (the Harris contraction parameters of
 `harris_contraction`) and `c = 2 + β V(x₀) + C`, where `x₀` is the arbitrary base point and
@@ -1831,7 +1831,7 @@ positive lower bound on a compact window (`{g ≥ 1/n}` may have measure zero on
 interval for every fixed `n` only up to null sets, and the natural repair — restricting the
 *noise* rather than the *value* — makes the `p+1`-step window law depend on the starting
 state, which destroys the minorization). Every consumer of this theorem in the project
-already supplies continuity: `Threshold/TAR.lean`'s `exists_stationary_tar` and
+already supplies continuity: `StatLean/TimeSeries/Threshold/TAR.lean`'s `exists_stationary_tar` and
 `exists_stationary_toy_setar` both hypothesize `∃ g, Continuous g ∧ (∀ x, 0 < g x) ∧ …`.
 The mean-zero hypothesis `hmean` is not needed by the proof and is kept only because it is
 part of the frozen FY statement. -/

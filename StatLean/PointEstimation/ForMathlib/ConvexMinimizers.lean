@@ -38,8 +38,8 @@ integral criteria on the line. (`TPE2 §3.1 Thm 1.10, Cor 1.11`.)
   `ℝ → ℝ` defined on all of `ℝ` is automatically continuous, so assuming continuity would be
   assuming something forced by the other hypotheses. Coercivity is `Tendsto g (cocompact ℝ)
   atTop`, which for an `ℝ`-valued objective is the intended "blows up at infinity"; the
-  `ℝ≥0∞`-valued counterpart lives in `ForMathlib/MeasurableArgmin.lean`, where the target
-  filter must be `𝓝 ⊤` instead (in `ℝ≥0∞`, `atTop = pure ⊤`).
+  `ℝ≥0∞`-valued counterpart lives in `StatLean/PointEstimation/ForMathlib/MeasurableArgmin.lean`,
+  where the target filter must be `𝓝 ⊤` instead (in `ℝ≥0∞`, `atTop = pure ⊤`).
 * **`integral_sq_sub_mean_le` hypothesizes only the second moment.** Integrability of `X`
   itself is *derived* from `MemLp X 2 μ` on a probability measure, so listing it as a
   hypothesis would be laundering a forced condition. The same applies to integrability of

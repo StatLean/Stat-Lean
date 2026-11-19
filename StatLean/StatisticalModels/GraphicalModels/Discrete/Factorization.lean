@@ -8,9 +8,9 @@ import Mathlib.Combinatorics.SimpleGraph.Clique
 Lauritzen's fourth Markov-type property: a mass function **factorizes** over an undirected
 graph `G` when it is a product of non-negative factors, one for each complete vertex set, each
 depending on the configuration only through its own coordinates. Together with
-`Discrete/CondIndep.lean` (which supplies the graphoid calculus) this closes the discrete
-chain (F) ⇒ (G) ⇒ (L) ⇒ (P) of Lauritzen's Proposition 3.8, and carries the
-Hammersley–Clifford theorem.
+`StatLean/StatisticalModels/GraphicalModels/Discrete/CondIndep.lean` (which supplies the graphoid
+calculus) this closes the discrete chain (F) ⇒ (G) ⇒ (L) ⇒ (P) of Lauritzen's Proposition 3.8, and
+carries the Hammersley–Clifford theorem.
 
 * `completeSubsets G` — the `Finset` of complete vertex sets, assembled from Mathlib's
   `SimpleGraph.IsClique`;
@@ -21,7 +21,8 @@ Hammersley–Clifford theorem.
 * `exists_factorization_of_separates` — the product splits across a separator into a factor on
   `A ∪ S` and a factor on `B ∪ S`;
 * **`factorizesOver_implies_globalMarkov`** — Lauritzen **Proposition 3.8**, p. 35, (F) ⇒ (G),
-  stated against the abstract `IsGlobalMarkov` of `Undirected/Markov.lean` instantiated at
+  stated against the abstract `IsGlobalMarkov` of
+  `StatLean/StatisticalModels/GraphicalModels/Undirected/Markov.lean` instantiated at
   `CondIndepMass`;
 * `factorizesOver_implies_localMarkov` / `factorizesOver_implies_pairwiseMarkov` — the rest of
   Proposition 3.8, by composition with the hierarchy;
@@ -47,11 +48,12 @@ p. 28 that on a discrete space every function is continuous (`Lauritzen §3.2`).
    `SimpleGraph.IsClique` means *complete*, not maximal, so `FactorizesOver` is (3.11)
    verbatim, with `completeSubsets` — the filter of `Finset.univ : Finset (Finset V)` by
    `IsClique` — as its index family.
-2. **The potentials are functions of the whole configuration.** As in `Discrete/CondIndep.lean`,
-   `ψ c : (V → α) → ℝ≥0∞` with the constraint `DependsOn (ψ c) ↑c` (Mathlib's `DependsOn`),
-   rather than a function on the subtype `↥c → α`. The two readings are interchangeable by
-   `dependsOn_iff_exists_comp`; keeping a single type is what makes the product
-   `∏ c ∈ completeSubsets G, ψ c x` a plain `Finset.prod` in `ℝ≥0∞`.
+2. **The potentials are functions of the whole configuration.** As in
+   `StatLean/StatisticalModels/GraphicalModels/Discrete/CondIndep.lean`, `ψ c : (V → α) → ℝ≥0∞` with
+   the constraint `DependsOn (ψ c) ↑c` (Mathlib's `DependsOn`), rather than a function on the
+   subtype `↥c → α`. The two readings are interchangeable by `dependsOn_iff_exists_comp`; keeping a
+   single type is what makes the product `∏ c ∈ completeSubsets G, ψ c x` a plain `Finset.prod` in
+   `ℝ≥0∞`.
 3. **No normalisation, no finiteness in (F) ⇒ (G).** Lauritzen's `f` is a density; ours is a
    bare `ℝ≥0∞`-valued mass. `factorizesOver_implies_globalMarkov` needs neither: it splits a
    product and then applies the division-free half of the criterion (3.6).
@@ -234,9 +236,10 @@ theorem exists_factorization_of_separates [DecidableRel G.Adj] {p : (V → α) �
 /-- **Lauritzen Proposition 3.8**, p. 35: **(F) ⇒ (G)**. A mass function that factorizes over
 `G` is globally Markov with respect to `G`.
 
-Stated against the abstract `IsGlobalMarkov` of `Undirected/Markov.lean` instantiated at the
-discrete relation `CondIndepMass p`, so that the rest of the hierarchy — (G) ⇒ (L) ⇒ (P),
-Lauritzen Proposition 3.4 — is obtained by composition.
+Stated against the abstract `IsGlobalMarkov` of
+`StatLean/StatisticalModels/GraphicalModels/Undirected/Markov.lean` instantiated at the discrete
+relation `CondIndepMass p`, so that the rest of the hierarchy — (G) ⇒ (L) ⇒ (P), Lauritzen
+Proposition 3.4 — is obtained by composition.
 
 *No finiteness or positivity hypothesis.* Both halves of the argument are division-free — the
 product split and the `mpr` half of the criterion (3.6) — and the final shrinking step, (C2),

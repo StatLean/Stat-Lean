@@ -8,7 +8,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.L2
 /-!
 Differentiability-in-quadratic-mean (DQM), Fisher information, and mutual
 absolute continuity for the multi-dim parametric submodel `paramSubmodel`
-constructed in `Parametric/SubmodelFromScores.lean`.
+constructed in `StatLean/AsymptoticStatistics/ParametricFamily/SubmodelFromScores.lean`.
 
 These results supply the analytic submodel ingredients used by finite-dimensional
 lower-bound arguments.

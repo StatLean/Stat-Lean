@@ -174,40 +174,41 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
 * `n^{-1/2}` is written `(Real.sqrt n)⁻¹` rather than as a real power, to keep the statements
   inside the square-root API.
 * **`edgeworth_mean_uniform` is proved**; the two *studentized* results are not
-  formalized. Its supporting chain: `ForMathlib/EsseenSmoothing.lean` proves
-  Esseen's smoothing inequality at the level of distribution functions
+  formalized. Its supporting chain: `StatLean/HypothesisTesting/ForMathlib/EsseenSmoothing.lean`
+  proves Esseen's smoothing inequality at the level of distribution functions
   (`abs_measure_Iic_sub_le_charFun`), with `normalCDF_sub_le` below supplying its Lipschitz
   input, **and its signed-density form** (`abs_measure_Iic_sub_densityCDF_le_charFun`), which is
-  what an Edgeworth approximant needs; `ForMathlib/BerryEsseen.lean` proves the damped expansion
-  of `(charFun F)ⁿ` to order `n⁻¹` (`norm_charFun_pow_sub_edgeworth_le`) **and the Hermite
-  Fourier identity** (`integral_hermite3_mul_cexp_mul_gaussian`) that transforms the Edgeworth
-  density; the Cramér tail's analytic input is proved here (`exists_bound_lt_one_of_cramer`,
-  transferred to the centred law by `cramerCondition_centredLaw`) and its bookkeeping in
-  `ForMathlib/EsseenSmoothing.lean` (`setIntegral_mul_esseenWeight_tail_le`,
-  `exists_pow_mul_geometric_le`). The assembly itself is here: the law of the root
-  (`charFun_meanRootLaw`, `charFun_stdRootLaw`, `meanRootCDF_eq_stdRootLaw`, and the moments and
-  integrability of `centredLaw`), the comparison density (`edgeworthDensity`, `edgeworthCDF`,
-  `densityCDF_edgeworthDensity`, `abs_edgeworthDensity_le`,
-  `setIntegral_abs_edgeworthDensity_le`, `charFunDensity_edgeworthDensity`,
-  `norm_charFunDensity_edgeworthDensity_le`, `abs_edgeworthCDF_le`), the window estimate
-  (`window_conditions`, `edgeworth_approx_eq`, `exists_window_core`, `exists_window_bound`), the
-  outer range (`edgeworthCharFun_tail_le`, `edgeworthGap_tail_le`) and the glue
-  (`esseen_split`, `abs_meanRootCDF_sub_edgeworthCDF_le`). See the status note (E1)–(E4) on that
-  theorem.
+  what an Edgeworth approximant needs; `StatLean/HypothesisTesting/ForMathlib/BerryEsseen.lean`
+  proves the damped expansion of `(charFun F)ⁿ` to order `n⁻¹` (`norm_charFun_pow_sub_edgeworth_le`)
+  **and the Hermite Fourier identity** (`integral_hermite3_mul_cexp_mul_gaussian`) that transforms
+  the Edgeworth density; the Cramér tail's analytic input is proved here
+  (`exists_bound_lt_one_of_cramer`, transferred to the centred law by `cramerCondition_centredLaw`)
+  and its bookkeeping in `StatLean/HypothesisTesting/ForMathlib/EsseenSmoothing.lean`
+  (`setIntegral_mul_esseenWeight_tail_le`, `exists_pow_mul_geometric_le`). The assembly itself is
+  here: the law of the root (`charFun_meanRootLaw`, `charFun_stdRootLaw`,
+  `meanRootCDF_eq_stdRootLaw`, and the moments and integrability of `centredLaw`), the comparison
+  density (`edgeworthDensity`, `edgeworthCDF`, `densityCDF_edgeworthDensity`,
+  `abs_edgeworthDensity_le`, `setIntegral_abs_edgeworthDensity_le`,
+  `charFunDensity_edgeworthDensity`, `norm_charFunDensity_edgeworthDensity_le`,
+  `abs_edgeworthCDF_le`), the window estimate (`window_conditions`, `edgeworth_approx_eq`,
+  `exists_window_core`, `exists_window_bound`), the outer range (`edgeworthCharFun_tail_le`,
+  `edgeworthGap_tail_le`) and the glue (`esseen_split`, `abs_meanRootCDF_sub_edgeworthCDF_le`). See
+  the status note (E1)–(E4) on that theorem.
 * The **studentized** route is set up here too, and most of its analytic steps are proved.
-  `ForMathlib/BivariateEdgeworth.lean` supplies the multivariate damped expansion — via the
-  projection identity `charFun_smul_eq_charFun_map_inner`, which makes the restriction of a
-  characteristic function to a ray a *one-dimensional* characteristic function, so that no
-  two-dimensional argument is needed — together with the expansion of the *mixed* characteristic
-  function `∫ ⟪w,b⟫e^{i⟪w,a⟫}` that the scalar route needs and that no differentiation of an
-  inequality can give (`mixCharFun_vecRootLaw`, `norm_mixCharFun_vecRootLaw_sub_le`), while
-  `studentizedRootCDF_eq_vecRootLaw` below identifies `studentizedRootCDF F n` **exactly** with
-  a set-function of the bivariate root law of `studentPair F = (X − μ, (X − μ)² − σ²)`, and
-  `abs_studentFactor_sub_taylor_le` bounds the exact statistic against its Taylor surrogate
-  uniformly. What is left is probabilistic: a truncation-based tail bound with its
-  anti-concentration companion, and the multivariate Cramér condition for the parabola-carried
-  bivariate law (the direction-uniform half of which is the `VecCramer` section below). See the
-  status note (S1)–(S2), (M1)–(M3) on `edgeworth_studentized_uniform`.
+  `StatLean/HypothesisTesting/ForMathlib/BivariateEdgeworth.lean` supplies the multivariate damped
+  expansion — via the projection identity `charFun_smul_eq_charFun_map_inner`, which makes the
+  restriction of a characteristic function to a ray a *one-dimensional* characteristic function, so
+  that no two-dimensional argument is needed — together with the expansion of the *mixed*
+  characteristic function `∫ ⟪w,b⟫e^{i⟪w,a⟫}` that the scalar route needs and that no
+  differentiation of an inequality can give (`mixCharFun_vecRootLaw`,
+  `norm_mixCharFun_vecRootLaw_sub_le`), while `studentizedRootCDF_eq_vecRootLaw` below identifies
+  `studentizedRootCDF F n` **exactly** with a set-function of the bivariate root law of
+  `studentPair F = (X − μ, (X − μ)² − σ²)`, and `abs_studentFactor_sub_taylor_le` bounds the exact
+  statistic against its Taylor surrogate uniformly. What is left is probabilistic: a
+  truncation-based tail bound with its anti-concentration companion, and the multivariate Cramér
+  condition for the parabola-carried bivariate law (the direction-uniform half of which is the
+  `VecCramer` section below). See the status note (S1)–(S2), (M1)–(M3) on
+  `edgeworth_studentized_uniform`.
 * The quantile expansion is the Cornish–Fisher inversion of the studentized expansion; it is
   stated as its own result because the coverage-error computations use the quantile form
   directly.
@@ -621,8 +622,9 @@ end VecCramer
 /-! ## The Lipschitz modulus of the normal distribution function
 
 `abs_measure_Iic_sub_le_charFun` (Esseen's smoothing inequality, proved in
-`ForMathlib/EsseenSmoothing.lean`) compares a law with an `A`-Lipschitz comparison
-distribution function. For the Gaussian comparison that Edgeworth expansions use, `A` is the
+`StatLean/HypothesisTesting/ForMathlib/EsseenSmoothing.lean`) compares a law with an `A`-Lipschitz
+comparison distribution function. For the Gaussian comparison that Edgeworth expansions use, `A` is
+the
 supremum of the normal density; the two results below supply it. -/
 
 /-- **The normal distribution function is Lipschitz with constant `(2πv)^{-1/2}`**, the
@@ -953,9 +955,9 @@ end RootLaw
 The studentized root is **not** a normalised sum, so its characteristic function is not a power
 and `norm_charFun_pow_sub_edgeworth_le` does not apply to it. What it *is* is a fixed smooth
 function of the bivariate sample mean of `Z(x) = (x − μ, (x − μ)² − σ²)`, which is a normalised
-sum in `ℝ²` and to which `ForMathlib/BivariateEdgeworth.lean` does apply. This section makes
-that reduction exact: `studentizedRootCDF F n x` is the mass, under the *bivariate* root law
-`vecRootLaw F (studentPair F) n`, of the region `{w : H_n(w) ≤ x}` with
+sum in `ℝ²` and to which `StatLean/HypothesisTesting/ForMathlib/BivariateEdgeworth.lean` does apply.
+This section makes that reduction exact: `studentizedRootCDF F n x` is the mass, under the
+*bivariate* root law `vecRootLaw F (studentPair F) n`, of the region `{w : H_n(w) ≤ x}` with
 
 `H_n(w) = w₀ / √(σ² + w₁ n^{-1/2} − w₀² n^{-1})`.
 
@@ -1122,16 +1124,17 @@ is, up to a unimodular factor, exactly a quadratic-phase integral of the centred
 
 `φ_{projLaw μ θ}(R) = e^{−i R θ₁ v} ∫ f(y) e^{i(Rθ₀ y + Rθ₁ y²)} dy`, `f = (dF/dx)(· + m)`.
 
-`ForMathlib/UniformRiemannLebesgue.lean` bounds that integral uniformly once `|t₀| + |t₁|` is
-large, for every `f ∈ L¹` — the bounded-`t₁` regime by uniform Riemann–Lebesgue on a compactly
-parametrised `L¹` family, and the `|t₁| → ∞` regime by the autocorrelation identity. On the unit
-sphere `|Rθ₀| + |Rθ₁| = R(|θ₀| + |θ₁|) ≥ R‖θ‖ = R`, so the two combine with no loss and (M3) is
-complete. For this parabola-carried law multivariate Cramér is strictly stronger than Cramér in
+`StatLean/HypothesisTesting/ForMathlib/UniformRiemannLebesgue.lean` bounds that integral uniformly
+once `|t₀| + |t₁|` is large, for every `f ∈ L¹` — the bounded-`t₁` regime by uniform
+Riemann–Lebesgue on a compactly parametrised `L¹` family, and the `|t₁| → ∞` regime by the
+autocorrelation identity. On the unit sphere `|Rθ₀| + |Rθ₁| = R(|θ₀| + |θ₁|) ≥ R‖θ‖ = R`, so the two
+combine with no loss and (M3) is complete. For this parabola-carried law multivariate Cramér is
+strictly stronger than Cramér in
 every direction, and the extra content is precisely the quadratic-phase estimate. -/
 
 /-- The density of the **centred** sampling law, as a complex-valued `L¹` function:
 `y ↦ (dF/dx)(y + m)`. This is the `f` to which the quadratic-phase estimates of
-`ForMathlib/UniformRiemannLebesgue.lean` are applied. -/
+`StatLean/HypothesisTesting/ForMathlib/UniformRiemannLebesgue.lean` are applied. -/
 noncomputable def centredDensity (F : Measure ℝ) : ℝ → ℂ :=
   fun y => ((F.rnDeriv volume (y + ∫ s, s ∂F)).toReal : ℂ)
 
@@ -2420,7 +2423,7 @@ independent summands. That inequality is in the repository: the sub-Gaussian hal
 `HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun`.
 
 Two adaptations are needed to make it usable here, and neither is deep. The cross-area import
-direction is the one `ForMathlib/DKWUniform.lean` already uses.
+direction is the one `StatLean/HypothesisTesting/ForMathlib/DKWUniform.lean` already uses.
 
 * **The product setting.** The summands here are the coordinates of a `Measure.pi`, not an
   abstract independent family; `iIndepFun_pi` is exactly the bridge, and
@@ -2581,10 +2584,10 @@ theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabil
 /-! ### The change of law: what truncating the summands costs
 
 The truncated-law replacement has two halves and they are different objects. The **moment**
-half is `ae_norm_vecRootLaw_le` of `ForMathlib/BivariateEdgeworth.lean`: once `‖Z‖ ≤ K`
-pointwise, the root's law is carried by a ball of radius `√n·K`, so every polynomial in its
-coordinates is integrable and no moment hypothesis on `F` is needed at all. The **price** half
-is here: replacing every summand by its truncation changes the law of the sample, and what it
+half is `ae_norm_vecRootLaw_le` of `StatLean/HypothesisTesting/ForMathlib/BivariateEdgeworth.lean`:
+once `‖Z‖ ≤ K` pointwise, the root's law is carried by a ball of radius `√n·K`, so every polynomial
+in its coordinates is integrable and no moment hypothesis on `F` is needed at all. The **price**
+half is here: replacing every summand by its truncation changes the law of the sample, and what it
 costs is the probability that *any one* coordinate is truncated.
 
 **That price is a union bound, not a concentration inequality**, and this is worth recording
@@ -13231,11 +13234,11 @@ easier one:
   side carries one (`hermiteAntideriv u = −φ(u)(u² − 1)`).
 * **The Fourier transform needs the `He₁` moment as well as the `He₃` one.**
   `integral_hermite3_mul_cexp_mul_gaussian` alone does not suffice; the companion
-  `integral_linear_mul_cexp_mul_gaussian` (added to `ForMathlib/BerryEsseen.lean` for this
-  purpose) is what makes the `−3He₁` slot computable. The outcome,
-  `φ_{q_n}(θ) = e^{−θ²/2}(1 + iγ(2θ³ − 3θ)n^{-1/2}/6)`, has a `+` where the mean side
-  (`charFunDensity_edgeworthDensity`, `e^{−θ²/2}(1 − iγθ³n^{-1/2}/6)`) has a `−`, and carries a
-  linear term the mean side does not.
+  `integral_linear_mul_cexp_mul_gaussian` (added to
+  `StatLean/HypothesisTesting/ForMathlib/BerryEsseen.lean` for this purpose) is what makes the
+  `−3He₁` slot computable. The outcome, `φ_{q_n}(θ) = e^{−θ²/2}(1 + iγ(2θ³ − 3θ)n^{-1/2}/6)`, has a
+  `+` where the mean side (`charFunDensity_edgeworthDensity`, `e^{−θ²/2}(1 − iγθ³n^{-1/2}/6)`) has a
+  `−`, and carries a linear term the mean side does not.
 
 Nothing else diverges. Every constant below is the mean constant recomputed with `u³ − 3u`
 replaced by `3u − 2u³` (so `1 + 66|γ|` becomes `1 + 130|γ|`, and `512π³` becomes `1030π³`), and
@@ -16286,8 +16289,8 @@ recorded below is complete: the assembly takes `δ = n⁻¹` and splits the Esse
 CDF-level (Stieltjes) Lévy/Esseen inversion — "the identity `Δ_T(x) = (2π)⁻¹ ∫_{|t| ≤ T}
 ((φ_P − φ_Q)/(−it)) e^{−itx}(1 − |t|/T) dt`" — as *the estimate that fails*, on the ground that
 the integrand is integrable at `t = 0` only through cancellation and that `F_P − F_Q` is not
-`L¹`. That is no longer the situation. `ForMathlib/EsseenSmoothing.lean` now proves,
-**without any Stieltjes-level inversion**,
+`L¹`. That is no longer the situation. `StatLean/HypothesisTesting/ForMathlib/EsseenSmoothing.lean`
+now proves, **without any Stieltjes-level inversion**,
 
 * `abs_measure_Iic_sub_le_of_integral_ramp` — the de-smoothing step ("E2"), and
 * `abs_measure_Iic_sub_le_charFun` — Esseen's smoothing inequality at CDF level:
@@ -16300,7 +16303,7 @@ transforms cancel to exactly `1/(π|ξ|)`. The Lipschitz constant `A` for the Ga
 is `normalCDF_sub_le` above.
 
 **(G2) is now CLOSED; the note that named it "the estimate that fails" is superseded.**
-`ForMathlib/BerryEsseen.lean` proves
+`StatLean/HypothesisTesting/ForMathlib/BerryEsseen.lean` proves
 
 * `norm_charFun_sub_cubic_le` — the fourth-order Taylor expansion
   `‖φ_F(u) − (1 − v u²/2 − i m₃ u³/6)‖ ≤ (E X⁴) |u|⁴/24`, retaining the third cumulant;
@@ -16332,7 +16335,7 @@ by piece, where each ingredient lives.
   `Φ(y/σ) − (γ/6)φ(y/σ)(y²/σ² − 1)n^{-1/2}` in the statement below and using
   `d/dx[φ(x)(x² − 1)] = −φ(x)(x³ − 3x)` gives a plus sign. The *statement* of the theorem is
   correct; only the note was.) The whole smoothing chain is now available for such a
-  comparison: `ForMathlib/EsseenSmoothing.lean` proves
+  comparison: `StatLean/HypothesisTesting/ForMathlib/EsseenSmoothing.lean` proves
   `abs_measure_Iic_sub_densityCDF_le_charFun`,
   `|F_P(x) − ∫_{(-∞,x]} q| ≤ ∫ ‖φ_P(−2πξ) − φ_q(−2πξ)‖ min(1/(π|ξ|), 1/(δπ²ξ²)) dξ + 2Aδ`,
   together with the intermediate `abs_integral_ramp_mul_sub_densityCDF_le`,
@@ -16350,16 +16353,16 @@ by piece, where each ingredient lives.
   only through finiteness of the right-hand side, whose weight `1/(π|ξ|)` is integrable at the
   origin exactly when `φ_P(0) = φ_q(0)`.
 * (E2) **The Fourier transform of the Edgeworth density — CLOSED.**
-  `ForMathlib/BerryEsseen.lean` proves `integral_hermite3_mul_cexp_mul_gaussian`,
+  `StatLean/HypothesisTesting/ForMathlib/BerryEsseen.lean` proves
+  `integral_hermite3_mul_cexp_mul_gaussian`,
   `∫ e^{iθu}(u³ − 3u) e^{−u²/2} du = (iθ)³ √(2π) e^{−θ²/2}`, together with
   `integral_sq_mul_cexp_mul_gaussian` and the base `integral_cexp_mul_gaussian`. Substituting
   `y = σu`, `θ = σt` gives `∫ e^{ity} q_n(y) dy = e^{−σ²t²/2}(1 − i γσ³ t³/(6√n))`, and with
   `s = t/√n`, `v = σ²`, `m₃ = γσ³` that is *literally* the approximant
-  `e^{−n v s²/2}(1 − n i m₃ s³/6)` of `norm_charFun_pow_sub_edgeworth_le`: the two agree, so
-  the statement below is the one the damped expansion estimates.
-  *A detail of the earlier route is corrected.* Two integrations by parts are not needed, and
-  neither is any boundary evaluation: for a quadratic `P`,
-  `d/du[P(u) e^{iθu − u²/2}] = (P'(u) + (iθ − u)P(u)) e^{iθu − u²/2}`, so choosing
+  `e^{−n v s²/2}(1 − n i m₃ s³/6)` of `norm_charFun_pow_sub_edgeworth_le`: the two agree, so the
+  statement below is the one the damped expansion estimates. *A detail of the earlier route is
+  corrected.* Two integrations by parts are not needed, and neither is any boundary evaluation: for
+  a quadratic `P`, `d/du[P(u) e^{iθu − u²/2}] = (P'(u) + (iθ − u)P(u)) e^{iθu − u²/2}`, so choosing
   `P(u) = −u² − iθu + (θ² + 1)` makes the bracket `u³ − 3u − (iθ)³`, and the identity is one
   application of "the integral of a derivative of an integrable function with integrable
   derivative vanishes". (`P(u) = −u − iθ` does the same for the `u²` intermediate.)
@@ -16372,12 +16375,13 @@ by piece, where each ingredient lives.
   modulus-one set is closed under integer multiples (`norm_charFun_natCast_mul_eq_one`), and
   that follows from the *equality case in* `‖∫ f‖ ≤ ∫‖f‖`, which on a probability space is
   elementary.
-  The remaining bookkeeping is now also done, in `ForMathlib/EsseenSmoothing.lean`:
+  The remaining bookkeeping is now also done, in
+  `StatLean/HypothesisTesting/ForMathlib/EsseenSmoothing.lean`:
   `setIntegral_mul_esseenWeight_tail_le` gives
-  `∫_{ρ ≤ |ξ|} f(ξ) min(1/(π|ξ|), 1/(δπ²ξ²)) dξ ≤ 2M/(δπ²ρ)` whenever `0 ≤ f ≤ M` there
-  (off the origin the flank term alone dominates the weight, and `∫ ξ⁻²` over the two tails is
-  `2/ρ`), and `exists_pow_mul_geometric_le` bounds `nᵏ cⁿ`. With `δ ≍ n⁻¹`, `ρ ≍ √n` and
-  `M = cⁿ` the outer contribution is `cⁿ · O(n^{3/2}) = o(n^{-k})` for every `k`.
+  `∫_{ρ ≤ |ξ|} f(ξ) min(1/(π|ξ|), 1/(δπ²ξ²)) dξ ≤ 2M/(δπ²ρ)` whenever `0 ≤ f ≤ M` there (off the
+  origin the flank term alone dominates the weight, and `∫ ξ⁻²` over the two tails is `2/ρ`), and
+  `exists_pow_mul_geometric_le` bounds `nᵏ cⁿ`. With `δ ≍ n⁻¹`, `ρ ≍ √n` and `M = cⁿ` the outer
+  contribution is `cⁿ · O(n^{3/2}) = o(n^{-k})` for every `k`.
 * (E4) **The assembly — CLOSED.** It is long rather than hard, and the re-derivation split it
   into four named pieces, none of which was an obstruction. All four, and the glue between
   them, are proved above.

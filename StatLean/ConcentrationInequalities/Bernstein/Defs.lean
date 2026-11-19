@@ -14,7 +14,8 @@ identity $\mathbb{E}[X^2] = \sigma^2$). Bounded variables satisfy the condition:
 if $|X| \le B$ then $X$ is Bernstein with parameter $B/3$ (Lu-BDA §6.1, Example).
 The headline use is the implication chain "Bernstein condition $\Rightarrow$
 sub-exponential $\Rightarrow$ Bernstein inequality" (assembled in
-`Bernstein/MGFBound.lean` and `Bernstein/Bernstein.lean`).
+`StatLean/ConcentrationInequalities/Bernstein/MGFBound.lean` and
+`StatLean/ConcentrationInequalities/Bernstein/Bernstein.lean`).
 
 This is a concept-layer foundation; it is theorem-agnostic.
 

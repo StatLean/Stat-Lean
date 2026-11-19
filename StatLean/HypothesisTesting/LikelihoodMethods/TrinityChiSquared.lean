@@ -214,7 +214,8 @@ private lemma measurable_scoreSum (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (h
 /-- **Gaussian quadratic form is chi-squared.** For a positive-definite `k×k` matrix `J`
 (`k > 0`), the pushforward of `N(0, J)` under the quadratic form `z ↦ ⟪z, J⁻¹ z⟫` is the
 `χ²ₖ` distribution — the exact distributional identity `Zᵀ J⁻¹ Z ∼ χ²ₖ` for `Z ∼ N(0, J)`,
-supplied by the whitening bridge of `ForMathlib/NoncentralChiSquared.lean`. -/
+supplied by the whitening bridge of
+`StatLean/HypothesisTesting/ForMathlib/NoncentralChiSquared.lean`. -/
 private lemma multivariateGaussian_map_quadratic_eq_chiSquared
     (hk : 0 < k) (J : Matrix (Fin k) (Fin k) ℝ) (hJ_pd : J.PosDef) :
     (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
@@ -1615,7 +1616,7 @@ was unprovable as stated. All of these are available at the unique call site,
 junk values: with `p_{θ̂}(x) = 0` and `p_{a+Bβ̂}(x), p_{θ₀}(x) > 0` the left side is
 `Real.log 0 = 0` while the right side is `−log(p_{a+Bβ̂}(x)/p_{θ₀}(x)) ≠ 0`. The minimal
 repair is that the densities do not vanish where `p_{θ₀}` does not — the pattern named
-`HasCommonSupport` in `PointEstimation/InformationInequality/Basic.lean`, here in its
+`HasCommonSupport` in `StatLean/PointEstimation/InformationInequality/Basic.lean`, here in its
 relative form. It is not a positivity assumption on the model (`∀ θ x, 0 < p_θ x` would be
 false for many standard models); it only says that no parameter kills a point that `θ₀`
 keeps, which is exactly what the source assumes implicitly whenever it manipulates

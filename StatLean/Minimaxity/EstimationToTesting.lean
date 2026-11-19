@@ -77,7 +77,7 @@ private lemma minimaxRisk_precomp_le {𝓨 ι : Type*} [MeasurableSpace 𝓨] [M
 measurably in `y`. Each distance `y ↦ edist (g (θfam ℓ)) y` is continuous, hence measurable; the
 argmin is built via `Nat.find` over `ℕ` (cast into `Fin M`), whose minimizer-predicate has a
 measurable witness set (a finite intersection of `{y | dₗ y ≤ d_k y}`), so `measurable_find`
-applies. Reused by `LeCam/ConvexHull.lean`. -/
+applies. Reused by `StatLean/Minimaxity/LeCam/ConvexHull.lean`. -/
 private lemma exists_measurable_nearestPoint
     [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω] {M : ℕ} [NeZero M]
     (g : Θ → Ω) (θfam : Fin M → Θ) :

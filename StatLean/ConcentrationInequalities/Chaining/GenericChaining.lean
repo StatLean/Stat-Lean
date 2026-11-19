@@ -14,8 +14,8 @@ For a mean-zero process $(X_t)_{t \in T}$ with sub-Gaussian increments
 (Eq. 8.1) on a finite metric space $(T, d)$,
 $$ \mathbb{E} \max_{t \in T} X_t \;\le\; 20\, K \,\gamma_2(T, d), $$
 where $\gamma_2$ is the Talagrand functional over admissible sequences
-(Definition 8.5.1, `Chaining/GammaTwo.lean`) and $20$ freezes the book's
-unnamed absolute constant $C$.
+(Definition 8.5.1, `StatLean/ConcentrationInequalities/Chaining/GammaTwo.lean`) and $20$ freezes the
+book's unnamed absolute constant $C$.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, §8.5.2, Theorem 8.5.2 (proof Steps 1–3,
@@ -28,8 +28,8 @@ form.
 $2^{k/2}(\sqrt{2\log 2} + 1) + u$ over the admissible-sequence levels and a
 union bound over $|T_k|\cdot|T_{k-1}| \le 2^{2^{k+1}}$ chain pairs; the
 expectation forms integrate it via
-`Chaining/TailToExpectation.lean`. **Frozen constants** (formula + numeral):
-tail threshold factor `(12 + 4u)` — the sharp canonical-anchor factor
+`StatLean/ConcentrationInequalities/Chaining/TailToExpectation.lean`. **Frozen constants** (formula
++ numeral): tail threshold factor `(12 + 4u)` — the sharp canonical-anchor factor
 `(6 + 2u)` doubled through the arbitrary-anchor triangle; expectation
 constant `20` (book's unnamed absolute `C`, from integrating the
 `(12 + 4u)` tail). The mean-zero assemblies

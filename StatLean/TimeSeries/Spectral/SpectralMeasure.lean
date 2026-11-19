@@ -15,8 +15,8 @@ semidefiniteness (FY Theorem 2.7, necessity); uniqueness is
 circle picture (a deliberate design choice); `F(π) = γ(0)` is the mass identity.
 
 (FY §2.3.1's periodic-process examples are instances of the correspondence — the
-random-phase process of `Stationarity/Gaussian.lean` realizes an arbitrary spectral
-measure — and are not separately formalized.)
+random-phase process of `StatLean/TimeSeries/Stationarity/Gaussian.lean` realizes an arbitrary
+spectral measure — and are not separately formalized.)
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.3.1
 (pp. 49–51, eqs. (2.30)–(2.34)) and §2.3.2 Theorem 2.10 (p. 51) with §2.7.4.

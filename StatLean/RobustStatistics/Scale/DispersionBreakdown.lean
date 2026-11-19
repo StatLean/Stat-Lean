@@ -381,7 +381,8 @@ theorem sampleMAD_dispersionResists {k : ℕ} (hn : n = 2 * k + 1) (hk : 1 ≤ k
 /-- **The dispersion breakdown count of the MAD is exactly `k − 1`** (`MMY §3.2.2` +
 Problem 3.3, finite-sample form): `(k−1)/(2k+1) → 1/2`, the asymptotic MAD breakdown
 point. Note the contrast with the median's location breakdown count `k`
-(`LocationScale/MedianBreakdown.lean`): the MAD pays one replacement earlier because
+(`StatLean/RobustStatistics/LocationScale/MedianBreakdown.lean`): the MAD pays one replacement
+earlier because
 implosion — impossible for a location estimator — binds first. -/
 theorem sampleMAD_dispersionBreakdownCount {k : ℕ} (hn : n = 2 * k + 1) (hk : 1 ≤ k)
     {x : Fin n → ℝ} (hinj : Function.Injective x) :

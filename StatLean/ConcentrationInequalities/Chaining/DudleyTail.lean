@@ -30,11 +30,11 @@ probability `≤ 2/(e−1)·e^{−u²} ≤ 1.17·e^{−u²} ≤ 2e^{−u²}` —
 `2exp(−u²)` is MET exactly, no deviation. Frozen core constants: event bound
 `K·(9·dudleySum + 17·diam + 12·u·diam)` (chosen with ≥ 15% slack in the
 per-level threshold algebra). The display form absorbs the bare `diam` term
-via `diam·√log2 ≤ 8·dudleyIntegral` (`Chaining/EntropySum.lean`) into the
-frozen display constant `200`. This file shares the Step-2/Step-3 event
-pattern with `Chaining/GenericChaining.lean`; the shared
+via `diam·√log2 ≤ 8·dudleyIntegral` (`StatLean/ConcentrationInequalities/Chaining/EntropySum.lean`)
+into the frozen display constant `200`. This file shares the Step-2/Step-3 event
+pattern with `StatLean/ConcentrationInequalities/Chaining/GenericChaining.lean`; the shared
 tail-integrates-to-expectation step is factored in
-`Chaining/TailToExpectation.lean`.
+`StatLean/ConcentrationInequalities/Chaining/TailToExpectation.lean`.
 
 **Bibliographic comments.** The high-probability form of Dudley's bound is a
 folklore refinement of R. M. Dudley, "The sizes of compact subsets of Hilbert

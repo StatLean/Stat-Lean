@@ -175,8 +175,9 @@ lemma integral_biSup_le_of_forall_finset {Ξ : Type*} [MeasurableSpace Ξ]
 
 /-- **Theorem 8.3.15 (VC law of large numbers), countable class** (HDP
 §8.3.6; frozen numeral `5400`, inherited — formula in
-`VC/LawOfLargeNumbers.lean`): `E sup_{S ∈ 𝒞} |μ_n(S) − μ(S)| ≤ 5400·√d/√n`
-for `vc(𝒞) ≤ d`. `Countable 𝒞` is LEAN-ONLY regularity per the sup
+`StatLean/ConcentrationInequalities/VC/LawOfLargeNumbers.lean`):
+`E sup_{S ∈ 𝒞} |μ_n(S) − μ(S)| ≤ 5400·√d/√n` for `vc(𝒞) ≤ d`. `Countable 𝒞` is LEAN-ONLY regularity
+per the sup
 policy. -/
 theorem vc_lln_countable {Ξ : Type*} [MeasurableSpace Ξ] [MeasurableSpace Ω]
     {P : Measure Ξ} [IsProbabilityMeasure P] {μ : Measure Ω}

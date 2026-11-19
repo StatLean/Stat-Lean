@@ -14,7 +14,7 @@ constants): for a family uniformly bounded by `c`, with probability `≥ 1 − �
 **Reference.** SSBD §26.1, Theorems 26.3 and 26.5, Lemma 26.4 (McDiarmid).
 
 **Formalization notes.** McDiarmid comes from
-`ConcentrationInequalities/McDiarmid/McDiarmid.lean` (bounded differences
+`StatLean/ConcentrationInequalities/McDiarmid/McDiarmid.lean` (bounded differences
 `2c/n` for both `sup_k(L_D − L_S)` and `R(𝓕∘S)` as functions of the sample;
 this forces the LEAN-ONLY `StandardBorelSpace Z`/`Nonempty Z` instances that
 the repo's McDiarmid carries). Part 3's deviation of the fixed competitor
@@ -40,7 +40,8 @@ variable {Z ι : Type*} [MeasurableSpace Z] [StandardBorelSpace Z] [Nonempty Z]
 /-! ### LEAN-ONLY toolkit: countable `sSup`-of-image, bounded integrands, coordinate
 perturbations, and the McDiarmid/Markov wrappers used by all six theorems.
 
-These mirror the private helpers of `Rademacher/Symmetrization.lean` (private
+These mirror the private helpers of `StatLean/StatisticalLearning/Rademacher/Symmetrization.lean`
+(private
 declarations are file-scoped, so the shared ones are restated here). -/
 
 /-- The `sSup`-of-image spelling as an `iSup` over the subtype — the bridge to

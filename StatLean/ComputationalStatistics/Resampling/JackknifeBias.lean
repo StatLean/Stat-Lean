@@ -32,8 +32,8 @@ power-series computation showing `Bias(J(T))` is at most of order `n⁻²`).
   consumes, and in exchange the conclusion is exact rather than `O(n⁻²)`.
   (A statistic family with genuinely higher-order terms satisfies our
   hypotheses only approximately; a later round can add the `O`-form.)
-* The marginalization step is `ForMathlib/PiMarginal.lean`; the deleted-sample
-  integrals need `T'` a.e.-strongly measurable to transport along the
+* The marginalization step is `StatLean/ComputationalStatistics/ForMathlib/PiMarginal.lean`; the
+  deleted-sample integrals need `T'` a.e.-strongly measurable to transport along the
   pushforward.
 * Integrability of `T` and `T'` are the book's implicit "the expectations
   exist" (USER-INPUT).

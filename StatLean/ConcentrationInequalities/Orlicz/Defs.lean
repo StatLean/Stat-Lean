@@ -30,11 +30,11 @@ precedent): `orliczNorm` is the `⨅`-over-gauge-set of the coercion, so it is
 *definition*; they surface only in the API lemmas. Edge behavior: for `K = 0`
 the gauge condition is excluded by `0 < K`; a.e.-zero `X` has norm `0` (every
 `K > 0` is in the gauge set once `ψ(0) = 0`); the infimum need not be attained
-— attainment under continuity/monotonicity of `ψ` is `Orlicz/Attainment.lean`.
-This file is definitions and `rfl`-level API only; all
-analytic content lives in the sibling `Orlicz/` files. The identifiers `psi` /
-`psiStar` are already taken by the log-MGF machinery in
-`SubGaussian/Chernoff.lean`, hence `psiTwo` / `psiOne`.
+— attainment under continuity/monotonicity of `ψ` is
+`StatLean/ConcentrationInequalities/Orlicz/Attainment.lean`. This file is definitions and
+`rfl`-level API only; all analytic content lives in the sibling `Orlicz/` files. The identifiers
+`psi` / `psiStar` are already taken by the log-MGF machinery in
+`StatLean/ConcentrationInequalities/SubGaussian/Chernoff.lean`, hence `psiTwo` / `psiOne`.
 
 **Bibliographic comments.** Orlicz spaces originate with W. Orlicz, "Über eine
 gewisse Klasse von Räumen vom Typus B," *Bull. Int. Acad. Pol. Ser. A* 8/9
@@ -72,7 +72,7 @@ noncomputable def orliczNorm (ψ : ℝ → ℝ) (X : Ω → ℝ)
 
 /-- The sub-Gaussian Orlicz generator `ψ₂(x) = exp(x²) − 1` (HDP §2.6).
 Named `psiTwo` because `psi` is taken by the log-MGF of
-`SubGaussian/Chernoff.lean`. -/
+`StatLean/ConcentrationInequalities/SubGaussian/Chernoff.lean`. -/
 noncomputable def psiTwo : ℝ → ℝ := fun x => Real.exp (x ^ 2) - 1
 
 /-- The sub-exponential Orlicz generator `ψ₁(x) = exp(x) − 1` (HDP §2.8). -/

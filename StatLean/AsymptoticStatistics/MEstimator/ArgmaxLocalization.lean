@@ -7,14 +7,14 @@ import Mathlib.LinearAlgebra.Matrix.PosDef
 
 This file isolates the **genuinely-new mathematical content** of the M-estimator
 asymptotic normality theorem (vdV 5.23), the part that distinguishes it from the
-Z-estimator sibling (vdV 5.21, `EmpiricalProcess/ZEstimatorNormality.lean`): the
-Z-estimator rides the *linear estimating-equation* engine (19.26), whereas the
-M-estimator is a **maximizer of a locally-quadratic criterion** and must be
-linearised by a complete-the-square argument.
+Z-estimator sibling (vdV 5.21,
+`StatLean/AsymptoticStatistics/EmpiricalProcess/ZEstimatorNormality.lean`): the Z-estimator rides
+the *linear estimating-equation* engine (19.26), whereas the M-estimator is a **maximizer of a
+locally-quadratic criterion** and must be linearised by a complete-the-square argument.
 
 Everything here is self-contained finite-dimensional linear algebra plus the
-varying-base `o_P` calculus of `ForMathlib/InProbability.lean` — no empirical
-process, no CLT.
+varying-base `o_P` calculus of `StatLean/AsymptoticStatistics/ForMathlib/InProbability.lean` — no
+empirical process, no CLT.
 
 ## The identity
 

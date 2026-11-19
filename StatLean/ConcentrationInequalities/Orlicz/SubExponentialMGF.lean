@@ -23,8 +23,8 @@ proven one). The proof splits `E e^{λX} ≤ 1 + λ·EX + (λ²/2)·E X²e^{|λX
 (`exp_le_one_add_add_sq_half_mul_exp_abs`), kills the middle term with
 `hmean`, and bounds `X²e^{|λX|}` using `sq_le_exp` on the restricted range.
 This ψ₁-norm sub-exponential coexists with the Lu-BDA α-form carrier in
-`SubExponential/Defs.lean`: our bridge lands exactly in that structure,
-discharging both of its fields (`mgf_le` and `integrable_exp_mul`).
+`StatLean/ConcentrationInequalities/SubExponential/Defs.lean`: our bridge lands exactly in that
+structure, discharging both of its fields (`mgf_le` and `integrable_exp_mul`).
 Integrability is derived, not laundered (`e^{lx} ≤ e^{|x|/K}` on the range;
 `|x|/K ≤ e^{|x|/K}`).
 

@@ -24,7 +24,7 @@ step 1.
 bound deliberately avoids `growthFunction` (whose `ℕ∞` sup is junk `0` when
 `X` has fewer than `n` points) and goes through `traceFamily` on the sample's
 instance `Finset` directly, then Sauer–Shelah
-(`ConcentrationInequalities/VC/SauerShelah.lean`).
+(`StatLean/ConcentrationInequalities/VC/SauerShelah.lean`).
 -/
 
 open MeasureTheory StatLean.ConcentrationInequalities

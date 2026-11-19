@@ -91,8 +91,8 @@ lemma le_at_zero (h : BowlShaped L) (x : E) : L 0 ≤ L x := by
 The sublevel set `{x | (L x ⊓ M) ≤ c}` equals either `{x | L x ≤ c}` (when
 `¬ M ≤ c`) or the whole space (when `M ≤ c`); both are convex.
 
-Used in `Ch8/LocalAsymptoticMinimax.lean` Step E to extend the LAM bound from bounded
-bowl-shaped `L` to general bowl-shaped `L` via monotone convergence on
+Used in `StatLean/AsymptoticStatistics/Efficiency/LocalAsymptoticMinimax.lean` Step E to extend the
+LAM bound from bounded bowl-shaped `L` to general bowl-shaped `L` via monotone convergence on
 `L = ⨆ M, L ⊓ M`. -/
 lemma truncate (h : BowlShaped L) (M : ℝ≥0∞) :
     BowlShaped (fun x => L x ⊓ M) where
@@ -229,7 +229,8 @@ purely because all of 8.11's downstream consumers feed in a bowl-shaped `L`).
 Thin wrapper over Mathlib's `lowerSemicontinuous_iff_isClosed_preimage`,
 exposing the more readable "closed sublevel" framing.
 
-Used in `Ch8/LocalAsymptoticMinimax.lean` Step B/D, where Portmanteau under weak
+Used in `StatLean/AsymptoticStatistics/Efficiency/LocalAsymptoticMinimax.lean` Step B/D, where
+Portmanteau under weak
 convergence requires an lsc integrand. -/
 lemma lowerSemicontinuous_of_isClosed_sublevel
     [TopologicalSpace E]
@@ -243,9 +244,9 @@ lemma lowerSemicontinuous_of_isClosed_sublevel
 This is the largest lsc minorant of `L` (when `L` is `ℝ≥0∞`-valued and the
 domain is a topological space).
 
-Used in `Ch8/LocalAsymptoticMinimax.lean` Steps B+D: `BowlShaped L` does not imply `L`
-lsc, but `lscEnvelope L` is lsc bowl-shaped, and the LAM bound passes through
-the envelope without loss (since `lscEnvelope L ≤ L` and the inequality is
+Used in `StatLean/AsymptoticStatistics/Efficiency/LocalAsymptoticMinimax.lean` Steps B+D:
+`BowlShaped L` does not imply `L` lsc, but `lscEnvelope L` is lsc bowl-shaped, and the LAM bound
+passes through the envelope without loss (since `lscEnvelope L ≤ L` and the inequality is
 preserved by the bound). -/
 noncomputable def lscEnvelope [TopologicalSpace E] (L : E → ℝ≥0∞) : E → ℝ≥0∞ :=
   fun x => Filter.liminf L (𝓝 x)
@@ -268,9 +269,9 @@ omit [AddCommGroup E] [Module ℝ E] [MeasurableSpace E] in
 /-- `lscEnvelope L` is lower semicontinuous — the standard result that the
 liminf-at-point map is lsc.
 
-Used in `Ch8/LocalAsymptoticMinimax.lean` Steps B/D where Portmanteau is applied to the
-lsc envelope of the bowl-shaped loss. **Crucially**, we do *not* claim the
-envelope is itself bowl-shaped: that would require additional topological
+Used in `StatLean/AsymptoticStatistics/Efficiency/LocalAsymptoticMinimax.lean` Steps B/D where
+Portmanteau is applied to the lsc envelope of the bowl-shaped loss. **Crucially**, we do *not* claim
+the envelope is itself bowl-shaped: that would require additional topological
 assumptions on `E` (`[ContinuousNeg E]`, `[ContinuousSMul ℝ E]`) that the
 Step B/D consumer does not need — only lsc of the envelope is needed for
 Portmanteau, plus `lscEnvelope_le` for the inequality chain.

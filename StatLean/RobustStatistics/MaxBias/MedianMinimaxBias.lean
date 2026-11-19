@@ -290,7 +290,8 @@ theorem medianMinimaxMinus_mem_nbhd {f₀ : ℝ → ℝ} {bε ε : ℝ}
 symmetric unimodal center `F₀` and any functional `T` that is location equivariant on a
 domain containing the witness pair, some member of the `ε`-gross-error neighbourhood of
 `F₀` has `|T| ≥ b_ε` — the median's own maximum bias (`MMY (3.68)`,
-`MaxBias/MaxBiasLocation.lean`). Equivariance gives `T(F₊) − T(F₋) = 2b_ε`, "and hence
+`StatLean/RobustStatistics/MaxBias/MaxBiasLocation.lean`). Equivariance gives
+`T(F₊) − T(F₋) = 2b_ε`, "and hence
 `|T(F₊)|` and `|T(F₋)|` cannot both be less than `b_ε`". -/
 theorem locationEquivariant_maxBias_ge_median {f₀ : ℝ → ℝ} {bε ε : ℝ}
     {T : Measure ℝ → ℝ} {𝒟 : Set (Measure ℝ)}

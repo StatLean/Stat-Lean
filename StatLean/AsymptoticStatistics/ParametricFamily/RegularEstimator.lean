@@ -22,8 +22,8 @@ optimal Gaussian limit with an arbitrary independent factor.
 
 This file contributes only the definition `RegularEstimatorSequence`; the
 Convolution Theorem itself and its assembly glue live in
-`Ch8/HajekLeCamConvolution.lean`. No additional hypotheses or constant changes
-relative to the book: the structure encodes exactly the regularity clause of
+`StatLean/AsymptoticStatistics/Efficiency/HajekLeCamConvolution.lean`. No additional hypotheses or
+constant changes relative to the book: the structure encodes exactly the regularity clause of
 vdV §8.5.
 
 **Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
@@ -35,9 +35,10 @@ Theorem 8.8.
 **Proof formalization notes.** This file states a definition, not a theorem, so
 there is no proof obligation here. Encoding details:
 * `productMeasure M μ θ n` is the $n$-fold product measure of `μ.withDensity
-  M.density θ` — i.e. $P^n_\theta$ (see `Ch7/AsymptoticRepresentation.lean`).
+  M.density θ` — i.e. $P^n_\theta$ (see
+  `StatLean/AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean`).
 * Weak convergence is the project's `WeakConverges` test-function form
-  (`ForMathlib/Contiguity.lean`).
+  (`StatLean/AsymptoticStatistics/ForMathlib/Contiguity.lean`).
 * The `limitDist` field is vdV's $L_\theta$; the `tendsto` field is vdV's
   defining convergence clause; the `isProb` field is the "probability measure"
   qualifier vdV's text states explicitly.
@@ -74,9 +75,10 @@ Crucially, `L_θ` is **independent of `h`** — that is the *regularity* part.
 
 Encoding notes:
 * `productMeasure M μ θ n` is the `n`-fold product measure of `μ.withDensity
-  M.density θ` (see `Ch7/AsymptoticRepresentation.lean`).
+  M.density θ` (see
+  `StatLean/AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean`).
 * Weak convergence is via the project's `WeakConverges` test-function form
-  (`ForMathlib/Contiguity.lean`).
+  (`StatLean/AsymptoticStatistics/ForMathlib/Contiguity.lean`).
 * The `limitDist` field is the same as vdV's `L_θ`; `tendsto` IS vdV's
   defining clause.
 

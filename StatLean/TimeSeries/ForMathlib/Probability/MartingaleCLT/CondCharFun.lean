@@ -7,7 +7,7 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 # Conditional characteristic-function calculus for MDS arrays
 
 The analytic bricks of the Brown/Hall–Heyde martingale CLT
-(`MartingaleCLT/BrownCLT.lean` assembles them):
+(`StatLean/TimeSeries/ForMathlib/Probability/MartingaleCLT/BrownCLT.lean` assembles them):
 
 * the **conditional Taylor estimate**: a.e.,
   `‖E[e^{iuX} | 𝓖] − (1 − u²/2 · E[X² | 𝓖])‖` is controlled by the conditional
@@ -192,7 +192,7 @@ square-integrable `X` with `E[X | 𝓖] = 0` and any `ε > 0`, a.e.
   ≤ u² E[X² 1_{|X| ≥ ε} | 𝓖] + |u|³ ε E[X² | 𝓖]`.
 
 Binder convention: ambient `mΩ` is a plain implicit bound after `m` and before `μ`
-(see `Mixing/Relations.lean`). -/
+(see `StatLean/TimeSeries/Mixing/Relations.lean`). -/
 theorem norm_condexp_exp_sub_one_sub_le {m mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (hm : m ≤ mΩ)
     {X : Ω → ℝ} (hX : Measurable X) (hL2 : MemLp X 2 μ)
@@ -765,7 +765,7 @@ unweighted comparison `E e^{iuS_n}` vs `E ∏ᵢψᵢ` (see the obstruction on
 The price is the two clamps: `hd` (each conditional variance `≤ d` with `u²d ≤ 1`, so
 `ψᵢ ∈ [1/2, 1]` and the inverses exist) and `hc` (the variance process `≤ c`, so the
 inverse product is bounded by `e^{u²c}`).  Both are supplied by the doubly truncated
-Hall–Heyde array in `MartingaleCLT/BrownCLT.lean`. -/
+Hall–Heyde array in `StatLean/TimeSeries/ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`. -/
 theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ]
     {k : ℕ → ℕ} {X : (n : ℕ) → Fin (k n) → Ω → ℝ}
     {F : (n : ℕ) → Fin (k n + 1) → MeasurableSpace Ω}

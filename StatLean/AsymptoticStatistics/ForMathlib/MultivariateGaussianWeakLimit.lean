@@ -17,9 +17,9 @@ import Mathlib.Analysis.LocallyConvex.Separation
 Asymptotic Statistics — Weak limits of multivariate Gaussians.
 
 Two measure-theoretic facts not supplied by the imported API are proved here as
-named theorems, allowing the Anderson chain (`ForMathlib/Anderson.lean`) to keep its public
-interface in vdV-canonical `S.PosSemidef` form (instead of strengthening to
-`S.PosDef`):
+named theorems, allowing the Anderson chain
+(`StatLean/AsymptoticStatistics/ForMathlib/Anderson.lean`) to keep its public interface in
+vdV-canonical `S.PosSemidef` form (instead of strengthening to `S.PosDef`):
 
 * `multivariateGaussian_weakly_tendsto_of_psd_perturb` — weak convergence under
   PSD perturbation `S → S + ε•I` as `ε → 0⁺`, via Lévy's continuity theorem

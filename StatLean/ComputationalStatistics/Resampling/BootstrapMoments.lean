@@ -36,13 +36,13 @@ resampling vector and its multinomial law (p. 84), bias correction
   (concept layer of another area, hence not importable here); the asymptotic
   bootstrap theory lives there, the finite-sample identities live here, and
   the two files cross-reference in prose only.
-* The identities are `ForMathlib/PiMoments.lean` at `P = empiricalMeasure x`
-  plus `Core/EmpiricalMeasure.lean` sum conversions; no new probabilistic
-  content, which is exactly the point — the empirical measure *is* a
-  probability measure and the generic i.i.d. lemmas apply verbatim.
+* The identities are `StatLean/ComputationalStatistics/ForMathlib/PiMoments.lean` at
+  `P = empiricalMeasure x` plus `StatLean/ComputationalStatistics/Core/EmpiricalMeasure.lean` sum
+  conversions; no new probabilistic content, which is exactly the point — the empirical measure *is*
+  a probability measure and the generic i.i.d. lemmas apply verbatim.
 * "Ideal bootstrap" means the exact conditional expectation `E*`, not its
   Monte Carlo approximation by `m` resamples (ECS §4.2, eq. (4.7)); the
-  Monte Carlo layer is `MonteCarlo/Estimation.lean` applied at
+  Monte Carlo layer is `StatLean/ComputationalStatistics/MonteCarlo/Estimation.lean` applied at
   `P = resampling law` and needs no new theorems.
 
 **Bibliographic comments.** B. Efron, "Bootstrap methods: another look at the
@@ -62,8 +62,8 @@ variable {𝓧 : Type*} [MeasurableSpace 𝓧] {n : ℕ} {x : Fin n → 𝓧} {g
 
 The empirical measure is a finite sum of scaled Dirac masses, so *every*
 strongly measurable function is integrable (and square-integrable) against it;
-this discharges the moment hypotheses of `ForMathlib/PiMoments.lean` without any
-growth assumption on `g`.
+this discharges the moment hypotheses of
+`StatLean/ComputationalStatistics/ForMathlib/PiMoments.lean` without any growth assumption on `g`.
 -/
 
 /-- Every strongly measurable function is integrable against the empirical

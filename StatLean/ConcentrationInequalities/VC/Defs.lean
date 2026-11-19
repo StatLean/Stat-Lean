@@ -23,8 +23,8 @@ measure/fraction).
 **Proof formalization notes.** Classes are `Set (Set Ω)` — this serves both
 the combinatorial side (the `traceFamily` bridges to Mathlib's
 `Finset.Shatters`/`Finset.shatterer`, whose Pajor lemma
-`Finset.card_le_card_shatterer` we reuse in `VC/SauerShelah.lean` rather than
-re-prove) and the probabilistic side (indicators into `ℝ` via `empFrac`).
+`Finset.card_le_card_shatterer` we reuse in `StatLean/ConcentrationInequalities/VC/SauerShelah.lean`
+rather than re-prove) and the probabilistic side (indicators into `ℝ` via `empFrac`).
 `vcDim` is `ℕ∞`-valued: `⊤` when arbitrarily large sets are shattered (HDP's
 "largest cardinality, `∞` if no largest exists"). Edge behavior: an *empty*
 class shatters nothing (not even `∅`, since no witness set exists), so

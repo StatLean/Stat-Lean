@@ -84,7 +84,7 @@ namespace StatLean.TimeSeries
 
 Two-σ-algebra statements follow the Mathlib `condExp` binder convention (ambient `mΩ`
 as a plain implicit bound after the sub-σ-algebras, before `μ`) — see
-`Mixing/Relations.lean`. -/
+`StatLean/TimeSeries/Mixing/Relations.lean`. -/
 
 section TwoAlgebras
 

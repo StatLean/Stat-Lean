@@ -6,7 +6,7 @@ Pure-`ℝ` and pure-topology utilities for the mass-method
 (point-mass) verification entry point.
 
 These three lemmas isolate the algebraic and filter-arithmetic
-content out of `Core/MassMethod.lean`'s measure-theoretic units, so
+content out of `StatLean/AsymptoticStatistics/Core/MassMethod.lean`'s measure-theoretic units, so
 that Lemma 1's QMD construction and Theorem 1's bridge proof do not
 have to fight `ENNReal.ofReal` non-negativity gymnastics or filter
 hierarchy bookkeeping inline.

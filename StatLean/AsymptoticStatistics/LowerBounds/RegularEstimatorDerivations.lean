@@ -619,9 +619,9 @@ The proof is a Prohorov-style joint-tightness argument:
    the recentered statistic weakly converges to `L`, hence its range is
    tight (`Prohorov.weakConverges_range_tight`).
 2. Marginal 2 (`scoreSum` under `P^n`) is tight: by `scoreSum_weakly_converges`
-   from `Asymptotics/LAN/AsymptoticRepresentation.lean` applied to the paramSubmodel — the
-   score sum weakly converges to `multivariateGaussian 0 I_m` (Fisher = identity
-   by `paramSubmodel_fisher_info`); the range is then tight.
+   from `StatLean/AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean`
+   applied to the paramSubmodel — the score sum weakly converges to `multivariateGaussian 0 I_m`
+   (Fisher = identity by `paramSubmodel_fisher_info`); the range is then tight.
 3. Joint tightness on `ℝ × EuclideanSpace ℝ (Fin m)` follows from
    `Prohorov.tight_prod_of_tight_marginals`.
 4. `Prohorov.extract_weak_subseq` on the Polish product space yields a
@@ -735,11 +735,11 @@ private lemma productMeasure_paramSubmodel_zero_eq_pi_P
 
 /-! ### `scoreSum` weak-conv specialisation for paramSubmodel -/
 
-/-- The `scoreSum` (from `Asymptotics/LAN/AsymptoticRepresentation.lean`) for the
-paramSubmodel score `g_P_total` weakly converges to the standard
-multivariate Gaussian on `EuclideanSpace ℝ (Fin m)` under `P^n`. The Fisher
-information at `θ = 0` is the identity, so the limit is
-`multivariateGaussian 0 (1 : Matrix _ _ ℝ)`.
+/-- The `scoreSum` (from
+`StatLean/AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean`) for the
+paramSubmodel score `g_P_total` weakly converges to the standard multivariate Gaussian on
+`EuclideanSpace ℝ (Fin m)` under `P^n`. The Fisher information at `θ = 0` is the identity, so the
+limit is `multivariateGaussian 0 (1 : Matrix _ _ ℝ)`.
 
 This is the second-marginal weak limit driving the joint-tightness argument
 in `joint_convergence_of_regular`. -/

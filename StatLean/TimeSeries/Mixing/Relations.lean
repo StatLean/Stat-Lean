@@ -9,8 +9,8 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 /-!
 # Relations between the mixing coefficients (FY §2.6.1, pp. 68–71)
 
-Basic properties of the five dependence coefficients of `Mixing/Defs.lean` and the
-classical implication chain `ψ-mixing ⇒ φ-mixing ⇒ {β-, ρ-mixing} ⇒ α-mixing`
+Basic properties of the five dependence coefficients of `StatLean/TimeSeries/Mixing/Defs.lean` and
+the classical implication chain `ψ-mixing ⇒ φ-mixing ⇒ {β-, ρ-mixing} ⇒ α-mixing`
 (FY §2.6.1 "basic facts", cited to Bradley 1986):
 
 * set-level basics: the description sets are nonempty and bounded, the coefficients
@@ -1471,10 +1471,10 @@ theorem not_isAlphaMixing_of_deterministic [IsProbabilityMeasure μ]
 
 /-! ### Mixing bounds from an explicit geometric state chain (FY §2.6.1(v), (x))
 
-**Import note.** This file imports `Mixing/MarkovBridge.lean` and the `ForMathlib/Markov`
-stack, on which every ingredient of the state-chain route below lives. A model-side
-`USER-INPUT` hypothesis such as an ARMA root condition is stated inline rather than imported
-from `Stationarity/ARMAExistence`, which is a *concept-to-concept* edge and stays closed.
+**Import note.** This file imports `StatLean/TimeSeries/Mixing/MarkovBridge.lean` and the
+`ForMathlib/Markov` stack, on which every ingredient of the state-chain route below lives. A
+model-side `USER-INPUT` hypothesis such as an ARMA root condition is stated inline rather than
+imported from `Stationarity/ARMAExistence`, which is a *concept-to-concept* edge and stays closed.
 
 ### The engine
 
@@ -1489,8 +1489,8 @@ Everything that the model statements need *outside the models themselves* is ava
   `α_X(n) ≤ α_V(n−1)` (resp. β), for `X_s` a measurable function of the state `V_{s+1}`;
 * `MarkovBridge.alphaCoeff_le_of_state_envelope` — their composite:
   `α_X(n) ≤ (∫ A dF) ρ^{n−1}`;
-* `ForMathlib/Markov/IFSMinorization.lean` — `hasMinorization_sclAR_pow`, the minorization
-  for the **multiplicative** recursion `X_t = f(𝐗) + s(𝐗)·ε_t`, the sharp ingredient a
+* `StatLean/TimeSeries/ForMathlib/Markov/IFSMinorization.lean` — `hasMinorization_sclAR_pow`, the
+  minorization for the **multiplicative** recursion `X_t = f(𝐗) + s(𝐗)·ε_t`, the sharp ingredient a
   GARCH state chain needs. (Its docstring records that ARCH(p) is covered verbatim in
   *signed* coordinates and that GARCH(p, q) with `q ≥ 1` additionally needs a two-block
   state update.)
@@ -1712,9 +1712,9 @@ Drift + minorization give an invariant probability measure `π` together with an
 The construction has two parts:
 
 * the envelope itself — `harris_theorem_envelope`, the statement-level export (added in
-  `ForMathlib/Markov/HarrisTheorem.lean`) of the step `hbound` that Harris' theorem already
-  proves internally and then discards. It returns `A` **affine in the Lyapunov function**,
-  `A x = c + b · V x`;
+  `StatLean/TimeSeries/ForMathlib/Markov/HarrisTheorem.lean`) of the step `hbound` that Harris'
+  theorem already proves internally and then discards. It returns `A` **affine in the Lyapunov
+  function**, `A x = c + b · V x`;
 * the integrability of that `A` — `integrable_lyap_of_isErgodicWithRate` above, i.e.
   `∫ V dπ < ∞`, which is *not* an output of Harris' theorem and is not reachable from drift
   plus invariance by the naive truncation (see `lintegral_lyap_le_of_isErgodicWithRate`).

@@ -25,8 +25,8 @@ proof of Theorem 8.1.4.
 **Proof formalization notes.** ALL consumption of the Orlicz bridge lemmas
 (B1 tail `measure_abs_ge_le_of_subGaussianNorm_le`, B2 MGF
 `hasSubgaussianMGF_of_subGaussianNorm_le`) is confined to this file and to
-`Chaining/PsiTwoMaximal.lean`; downstream chaining files consume only the
-lemmas here. Constants: B1 is normalized with $c = 1$ (tail
+`StatLean/ConcentrationInequalities/Chaining/PsiTwoMaximal.lean`; downstream chaining files consume
+only the lemmas here. Constants: B1 is normalized with $c = 1$ (tail
 $2\exp(-\tau^2/L^2)$) and B2 with $C = 3$ (variance proxy $3L^2$), frozen
 numerals `2` and `3`. The index set `T : Set E` is an explicit argument
 (applications only control increments on the class); `K : ℝ≥0` carries **no**
@@ -82,9 +82,10 @@ lemma SubGaussianIncrements.mono_const (h : SubGaussianIncrements X K T μ)
 
 /-- A random variable with vanishing ψ₂-norm vanishes a.e.
 
-Thin instantiation of `orliczNorm_eq_zero_iff` (`Orlicz/Attainment.lean`) at
-`ψ = psiTwo` — no independent derivation. Needed for the pseudometric
-`dist = 0` chain ends and the `K = 0` corner of chaining. Stated *without*
+Thin instantiation of `orliczNorm_eq_zero_iff`
+(`StatLean/ConcentrationInequalities/Orlicz/Attainment.lean`) at `ψ = psiTwo` — no independent
+derivation. Needed for the pseudometric `dist = 0` chain ends and the `K = 0` corner of chaining.
+Stated *without*
 `IsProbabilityMeasure`. -/
 lemma ae_eq_zero_of_subGaussianNorm_eq_zero {Y : Ω → ℝ}
     -- LEAN-ONLY: a.e.-measurability so the Orlicz zero-iff applies; HDP §8.1

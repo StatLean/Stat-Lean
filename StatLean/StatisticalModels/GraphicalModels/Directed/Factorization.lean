@@ -15,8 +15,9 @@ property is **Lemma 3.21**: it transports into the undirected setting, because `
 
 The setting is the discrete one — `V` and `α` finite, `p : (V → α) → ℝ≥0∞`, marginals
 `blockMarginal`, conditional independence `CondIndepMass` — in which the undirected
-factorization theory and the graphoid calculus of `Discrete/CondIndep.lean` are stated, so the
-directed theory is obtained from the undirected one by transport.
+factorization theory and the graphoid calculus of
+`StatLean/StatisticalModels/GraphicalModels/Discrete/CondIndep.lean` are stated, so the directed
+theory is obtained from the undirected one by transport.
 
 * `IsLocalKernelOn` / `IsLocalKernel` — Lauritzen's kernels `k^α(·, ·)` on
   `𝒳_α × 𝒳_{pa(α)}`: each depends only on the coordinates of `{v} ∪ pa(v)` and sums to `1`
@@ -56,12 +57,12 @@ conditional densities of `X_α` given `X_{pa(α)}` is on p. 46 (`Lauritzen §3.2
    the finite `α`, so it reads `∑ a : α, k_v (Function.update x v a) = 1`. Varying `x` at the
    single coordinate `v` is exactly varying `y_α` — `k_v` does not see any other coordinate of
    the update because it depends only on `{v} ∪ pa(v)` and `v ∉ pa(v)` (acyclicity).
-2. **Kernels are functions of the whole configuration.** As in `Discrete/CondIndep.lean` and
-   `Discrete/Factorization.lean`, `k v : (V → α) → ℝ≥0∞` constrained by
-   `DependsOn (k v) ↑(insert v (D.parents v))`, rather than a function on
-   `α × (↥(D.parents v) → α)`. The two readings are interchangeable
-   (`dependsOn_iff_exists_comp`); a single type is what makes `∏ v, k v x` a plain
-   `Finset.prod`.
+2. **Kernels are functions of the whole configuration.** As in
+   `StatLean/StatisticalModels/GraphicalModels/Discrete/CondIndep.lean` and
+   `StatLean/StatisticalModels/GraphicalModels/Discrete/Factorization.lean`, `k v : (V → α) → ℝ≥0∞`
+   constrained by `DependsOn (k v) ↑(insert v (D.parents v))`, rather than a function on
+   `α × (↥(D.parents v) → α)`. The two readings are interchangeable (`dependsOn_iff_exists_comp`); a
+   single type is what makes `∏ v, k v x` a plain `Finset.prod`.
 3. **A block form, `…On`, is primitive.** Lauritzen's Proposition 3.22 says the *marginal on an
    ancestral set `A`* factorizes recursively "according to `𝒢_A`". In a formalisation where the
    sub-DAG `𝒢_A` still lives on the full vertex type `V`, "recursive factorization according to
@@ -72,8 +73,9 @@ conditional densities of `X_α` given `X_{pa(α)}` is on p. 46 (`Lauritzen §3.2
    `v ∈ A`, so a `D`-local kernel family *is* a `𝒢_A`-local one on `A` and no separate notion is
    needed. `RecursivelyFactorizes D = RecursivelyFactorizesOn D Finset.univ` recovers (DF).
 4. **No positivity, no finiteness anywhere in this file.** Lemma 3.21 and Proposition 3.22 are
-   identities between products and sums; positivity enters only in `Directed/Markov.lean`, at
-   Theorem 3.27's reverse implication.
+   identities between products and sums; positivity enters only in
+   `StatLean/StatisticalModels/GraphicalModels/Directed/Markov.lean`, at Theorem 3.27's reverse
+   implication.
 5. **`sum_eq_one_of_recursivelyFactorizes` needs `[Nonempty α]`, and the book's setting supplies
    it.** If `α` is empty and `V` is not, then `V → α` is empty, every `∀ x`-condition is vacuous,
    (DF) holds of *every* `p`, and the total mass is `0`. Lauritzen's state spaces `𝒳_α` are
@@ -456,7 +458,8 @@ theorem sum_eq_one_of_recursivelyFactorizes
   simpa using h
 
 /-- A recursively factorizing mass is pointwise finite — the hypothesis `hp : ∀ y, p y ≠ ∞` that
-every lemma of `Discrete/CondIndep.lean` carries, obtained from
+every lemma of `StatLean/StatisticalModels/GraphicalModels/Discrete/CondIndep.lean` carries,
+obtained from
 `sum_eq_one_of_recursivelyFactorizes` by `Finset.single_le_sum`. -/
 theorem ne_top_of_recursivelyFactorizes
     -- LEAN-ONLY: a nonempty state space; see `sum_eq_one_of_recursivelyFactorizes`

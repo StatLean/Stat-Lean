@@ -28,10 +28,10 @@ power via the signal-to-noise ratio $\theta_n = \lVert\theta\rVert/\sqrt{2n}$).
 
 **Proof formalization notes.** The per-coordinate moments
 $\mathbb{E}[z^2]=1$, $\mathbb{E}[z^3]=0$, $\mathbb{E}[z^4]=3$, $\operatorname{Var}[z^2]=2$ come
-from the merged `ForMathlib/GaussianMoments.lean`; the sums use linearity and (for the variances)
-independence across coordinates, so the cross-covariances vanish. (The exact law $T_n \sim \chi^2_n$
-under $H_0$ is `ForMathlib/ChiSquared.map_sum_sq_eq_chiSquared`; the $n\to\infty$ CLT normal
-approximation is a separate asymptotic statement.)
+from the merged `StatLean/MultipleTesting/ForMathlib/GaussianMoments.lean`; the sums use linearity
+and (for the variances) independence across coordinates, so the cross-covariances vanish. (The exact
+law $T_n \sim \chi^2_n$ under $H_0$ is `ForMathlib/ChiSquared.map_sum_sq_eq_chiSquared`; the
+$n\to\infty$ CLT normal approximation is a separate asymptotic statement.)
 
 The variances are assembled from Mathlib's `ProbabilityTheory.IndepFun.variance_sum`
 ($\operatorname{Var}[\sum X_i] = \sum \operatorname{Var}[X_i]$ for pairwise-independent $X_i$), with

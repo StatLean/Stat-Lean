@@ -21,7 +21,8 @@ B3 (`subGaussianNorm_le_of_isSubGaussian`, factor `√6`). The book's absolute
 constant `C` is thus explicit; the deviation from any sharper constant is
 documented here. `hK : ∀ i, 0 < K i` is
 a mild LEAN-ONLY strengthening (zero bound forces `Xᵢ = 0` a.e.). Consumed by
-`Orlicz/VectorNorm.lean` (Lemma 3.4.2 upper bound, `∑ vᵢ² = ‖v‖² = 1`).
+`StatLean/ConcentrationInequalities/Orlicz/VectorNorm.lean` (Lemma 3.4.2 upper bound,
+`∑ vᵢ² = ‖v‖² = 1`).
 
 **Bibliographic comments.** The rotation-invariance-style additivity of
 sub-Gaussian norms under independent sums is classical (Hoeffding/Kahane);

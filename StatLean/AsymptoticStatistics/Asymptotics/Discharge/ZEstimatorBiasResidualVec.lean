@@ -6,7 +6,7 @@ import StatLean.AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorVec
 Vector-parameter (`θ ∈ ℝᵈ`) discharge layer for the bundled
 `asympLinear_25_59_vec` field of
 `EfficientScoreEqBiasResidualAssumptions_vec`, mirroring the scalar
-`Discharge/ZEstimatorBiasResidual.lean`.
+`StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasResidual.lean`.
 
 As in the scalar layer, the Taylor route's algebraic identity already
 absorbs vdV's explicit bias term `√n · P_{θ̂_n,η} ℓ̃_{θ̂_n,η̂_n}` into the

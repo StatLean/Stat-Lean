@@ -11,7 +11,7 @@ $$ |X| \le |Y| \text{ a.e.} \implies \|X\|_\psi \le \|Y\|_\psi, $$
 sign/abs invariance, the norm of the zero function, and abs-homogeneity
 $$ \|cX\|_\psi = |c| \, \|X\|_\psi $$
 (the second half of the B4 norm-axioms bridge; the triangle inequality is
-`Orlicz/Triangle.lean`).
+`StatLean/ConcentrationInequalities/Orlicz/Triangle.lean`).
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, Exercise 2.42 (norm axioms for `‖·‖_{ψ₂}`),
@@ -19,8 +19,8 @@ Exercise 2.43 (general Orlicz norm), §2.6.1 and §2.8.2 folklore properties.
 
 **Proof formalization notes.** Everything here is `⨅`-manipulation over the
 gauge set `orliczSet` plus pointwise integrand comparisons — no monotone
-convergence (that is `Orlicz/Attainment.lean`). Homogeneity is an exact
-gauge-set bijection `K ↦ ‖c‖₊·K`, unconditional for `c ≠ 0`; the `c = 0` edge
+convergence (that is `StatLean/ConcentrationInequalities/Orlicz/Attainment.lean`). Homogeneity is an
+exact gauge-set bijection `K ↦ ‖c‖₊·K`, unconditional for `c ≠ 0`; the `c = 0` edge
 needs `ψ 0 ≤ 0` (else the zero function might have positive norm) and is split
 off as `orliczNorm_const_mul_zero`. The witness extraction
 `exists_mem_orliczSet_lt_of_orliczNorm_lt` is the ε-free workhorse consumed by

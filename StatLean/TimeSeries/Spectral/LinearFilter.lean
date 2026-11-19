@@ -17,8 +17,8 @@ Definition 2.7 (eqs. (2.41)–(2.42)), Theorem 2.12 with in-text proof (pp. 55�
 (`FY §2.3.3 Def 2.7, Thm 2.12`.)
 
 **Proof formalization notes.** Well-definedness (existence of the `L²`-limits) mirrors
-the one-sided `Process/LinearProcess.lean` development with two-sided symmetric partial
-sums `Σ_{|k| ≤ N}`; the ACVF convolution passes `L²`-continuity of covariance through
+the one-sided `StatLean/TimeSeries/Process/LinearProcess.lean` development with two-sided symmetric
+partial sums `Σ_{|k| ≤ N}`; the ACVF convolution passes `L²`-continuity of covariance through
 the double series (Fubini for absolutely convergent double sums,
 `Summable.tsum_comm`-family); the density identity is the triple-series rearrangement of
 FY's proof, executed on the series side of `spectralDensityOf`.

@@ -127,9 +127,10 @@ noncomputable def smoothStat {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (X : Fin 
 
 /-! #### Vectorised scores and the multivariate CLT brick
 
-The null-limit proof mirrors `GoodnessOfFit/ChiSquaredMultinomial.lean`. The score functions
-are already centred in `L²(P₀)` (`E₀ψⱼ = 0`) with covariance the identity (`∫ψᵢψⱼ = δᵢⱼ`),
-so the per-observation vector `psiVec x = (ψ₁ x, …, ψ_k x)` has mean zero and covariance
+The null-limit proof mirrors `StatLean/HypothesisTesting/GoodnessOfFit/ChiSquaredMultinomial.lean`.
+The score functions are already centred in `L²(P₀)` (`E₀ψⱼ = 0`) with covariance the identity
+(`∫ψᵢψⱼ = δᵢⱼ`), so the per-observation vector `psiVec x = (ψ₁ x, …, ψ_k x)` has mean zero and
+covariance
 `Iₖ`; the standardised sum converges to `N(0, Iₖ)` and the squared norm is `Sₙ`. -/
 
 /-- The per-observation score vector `x ↦ (ψ₁ x, …, ψ_k x)` in `EuclideanSpace ℝ (Fin k)`.

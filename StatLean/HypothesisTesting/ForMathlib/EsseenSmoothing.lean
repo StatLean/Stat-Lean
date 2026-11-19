@@ -18,9 +18,9 @@ quantitative facts underlie that route: the normalisation `∫ K_T = 1`, which r
 compact support is what truncates the inversion integral.
 
 Neither the sinc integral nor the Dirichlet integral `∫ sin x/x = π/2` is in Mathlib v4.29.1,
-and `ForMathlib/BerryEsseen.lean` originally recorded both facts as hard obstructions. They are
-**not** obstructions: this file proves them, by Fourier inversion applied to the triangle
-function rather than by contour integration.
+and `StatLean/HypothesisTesting/ForMathlib/BerryEsseen.lean` originally recorded both facts as hard
+obstructions. They are **not** obstructions: this file proves them, by Fourier inversion applied to
+the triangle function rather than by contour integration.
 
 ## Contents
 
@@ -80,7 +80,7 @@ longer a Fourier-inversion gap but a **characteristic-function** gap: `BerryEsse
 Gaussian damping factor**, and an undamped bound is not integrable against the `1/|ξ|` weight at
 the rate needed. The missing estimate is the damped one,
 `‖φ_F(t/(σ√n))ⁿ − e^{−t²/2}‖ ≤ C|t|³ e^{−t²/4}/√n` on `|t| ≤ c√n`. See the status note on
-`edgeworth_mean_uniform` in `Bootstrap/Edgeworth.lean`.
+`edgeworth_mean_uniform` in `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`.
 -/
 
 open MeasureTheory intervalIntegral
@@ -1304,12 +1304,13 @@ theorem abs_measure_Iic_sub_densityCDF_le_charFun {P : Measure ℝ} [IsProbabili
 
 The last quantitative ingredient of an Edgeworth assembly is the estimate off the window: on
 `ρ ≤ |ξ|` the characteristic-function difference is bounded by a constant `c < 1` raised to the
-`n`-th power (`exists_bound_lt_one_of_cramer` in `Bootstrap/Edgeworth.lean`), and what has to be
-checked is that the *weight* contributes only a power of `n`. It does: off the origin the flank
-term `1/(δπ²ξ²)` alone dominates the weight, and `∫_{ρ ≤ |ξ|} ξ⁻² dξ = 2/ρ`, so the whole tail
-contributes `2M/(δπ²ρ)`. With the assembly's choices `δ ≍ n⁻¹` and `ρ ≍ √n` that is
-`cⁿ · O(n^{3/2})`, and `exists_pow_mul_geometric_le` turns geometric decay against a polynomial
-into a bound of any order — in particular `o(n⁻¹)`.
+`n`-th power (`exists_bound_lt_one_of_cramer` in
+`StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`), and what has to be checked is that the
+*weight* contributes only a power of `n`. It does: off the origin the flank term `1/(δπ²ξ²)` alone
+dominates the weight, and `∫_{ρ ≤ |ξ|} ξ⁻² dξ = 2/ρ`, so the whole tail contributes `2M/(δπ²ρ)`.
+With the assembly's choices `δ ≍ n⁻¹` and `ρ ≍ √n` that is `cⁿ · O(n^{3/2})`, and
+`exists_pow_mul_geometric_le` turns geometric decay against a polynomial into a bound of any order —
+in particular `o(n⁻¹)`.
 
 This is item (E3) of the programme recorded on `edgeworth_mean_uniform`, whose analytic content
 (`exists_bound_lt_one_of_cramer`) is already proved; what is added here is only the

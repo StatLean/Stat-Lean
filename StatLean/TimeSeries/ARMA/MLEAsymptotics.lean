@@ -11,8 +11,8 @@ import Mathlib.Probability.Independence.InfinitePi
 
 `hannan_sigma2_consistent` proves consistency of the profiled innovation-variance
 estimate, using the quadratic-form LLN and local stochastic equicontinuity from
-`ARMA/Consistency.lean`. The module also defines the sample partial autocorrelation
-`samplePACF` and proves the measurability facts used by that construction.
+`StatLean/TimeSeries/ARMA/Consistency.lean`. The module also defines the sample partial
+autocorrelation `samplePACF` and proves the measurability facts used by that construction.
 
 The white-noise counterexample `ls_yw_mle_equivalent_debt_false` shows why a
 measurable estimator cannot be substituted for an actual least-squares, Yule–Walker
@@ -20,8 +20,8 @@ or maximum-likelihood estimator when asserting their asymptotic equivalence.
 
 **Scope.** The Hannan parameter CLT (FY Theorem 3.2: `√T (θ̂_T − θ₀) →d N(0, W)` with
 `W = (hannanVarZBack b₀ a₀)⁻¹`, the inverse covariance of the *backward* score vector — see
-FINDING 26 in `ARMA/ScoreAnalysis.lean`), the PACF CLT (FY Proposition 3.1) and the general
-equivalence of least-squares, Yule–Walker and maximum-likelihood estimators (B&D
+FINDING 26 in `StatLean/TimeSeries/ARMA/ScoreAnalysis.lean`), the PACF CLT (FY Proposition 3.1) and
+the general equivalence of least-squares, Yule–Walker and maximum-likelihood estimators (B&D
 Thm 10.8.2) are not formalized here.
 Variance consistency uses the LLN for `S_T/T` itself: the logarithmic criterion
 alone loses information at `S_T = 0`, because `Real.log 0 = 0`.
@@ -88,9 +88,9 @@ private lemma armaContrastVar_self {p q : ℕ} (b0 : Fin p → ℝ) (a0 : Fin q 
 
 /-- **The quadratic-form LLN at the truth**: `T⁻¹ xᵀ Γ_T(θ₀)⁻¹ x →p σ²`.
 
-This specializes `armaProfileS_tendstoInProb` from `ARMA/Consistency.lean` to `θ = θ₀`,
-where the contrast variance is `1` (`armaContrastVar_self`, above — the coprimality-free half of
-`armaContrastVar_eq_one_iff`). The public `criterion_tendsto_contrast` is **strictly
+This specializes `armaProfileS_tendstoInProb` from `StatLean/TimeSeries/ARMA/Consistency.lean` to
+`θ = θ₀`, where the contrast variance is `1` (`armaContrastVar_self`, above — the coprimality-free
+half of `armaContrastVar_eq_one_iff`). The public `criterion_tendsto_contrast` is **strictly
 weaker** than what is needed here: it controls `log(S_T/T) + T⁻¹ log det Γ_T`, and
 `Real.log` is not injective at Lean's junk value (`Real.log 0 = 0`), so at `σ² = 1` the
 degenerate event `{S_T = 0}` is invisible at the `log` level and the `exp`-transfer back
@@ -115,8 +115,8 @@ private theorem armaProfileS_atTruth_tendstoInProb [IsProbabilityMeasure μ] {p 
 `θ ↦ T⁻¹ S_T(θ)` over a small ball around `θ₀` is uniformly (in `T`) negligible in
 probability.
 
-This is `armaProfileS_locallyEquicontinuous` from `ARMA/Consistency.lean`, where the
-estimate is carried out. Its proof uses the locally uniform geometric bound
+This is `armaProfileS_locallyEquicontinuous` from `StatLean/TimeSeries/ARMA/Consistency.lean`, where
+the estimate is carried out. Its proof uses the locally uniform geometric bound
 `Consistency.exists_uniform_geometric_bound_arma` and the `ℓ¹` modulus of continuity
 `Consistency.exists_armaPi_l1_modulus` of the inversion filter on a compact parameter set.
 The Gram-tail correction `T⁻¹uᵀG_T(θ)u` is `o_p(1)` uniformly in `θ`, by the `θ`-free

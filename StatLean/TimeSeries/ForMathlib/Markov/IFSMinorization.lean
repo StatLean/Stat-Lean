@@ -6,8 +6,8 @@ import StatLean.TimeSeries.ForMathlib.Markov.HarrisTheorem
 /-!
 # Minorization for random-coefficient (iterated-function-system) autoregressions
 
-`ForMathlib/Markov/HarrisTheorem.lean` supplies the Harris engine and, as its worked
-instance, the **additive** nonlinear autoregression `X_t = f(𝐗_{t−1}) + ε_t`
+`StatLean/TimeSeries/ForMathlib/Markov/HarrisTheorem.lean` supplies the Harris engine and, as its
+worked instance, the **additive** nonlinear autoregression `X_t = f(𝐗_{t−1}) + ε_t`
 (`nlARKernel`, `hasMinorization_nlAR_pow`). The conditionally heteroscedastic models of
 FY §4.2 are **not** of that shape: their innovation enters *multiplicatively*, through a
 state-dependent scale. This file builds the corresponding brick for
@@ -42,8 +42,8 @@ autoregression, whose kernel is `sclARKernel f s ν`.
   * `hslo : ∀ x, s₀ ≤ s x` with `0 < s₀` — a **uniform positive floor** for the scale.
     Without it the value density `g(·)/s(𝐱)` degenerates (the one-step law collapses onto a
     point as `s(𝐱) → 0`) and no minorization of a fixed window is possible; this is the
-    formal counterpart of the "collapse region" recorded in `Mixing/Relations.lean`'s
-    GARCH obstruction note.
+    formal counterpart of the "collapse region" recorded in
+    `StatLean/TimeSeries/Mixing/Relations.lean`'s GARCH obstruction note.
   * `hsup : ∀ x, s x ≤ λ_s (⨆ᵢ |xᵢ|) + c_s` — **linear growth** of the scale, which is what
     bounds `1/s` away from `0` *from below* on the box and hence produces a positive `δ`.
 
@@ -76,8 +76,8 @@ argument gives contraction `θ + λ_s E|ε| θ^{−p}`, which is `≥ θ` and ca
 by choosing `θ`. The correct Lyapunov function for a multiplicative recursion is the
 *squared* weighted sup-norm `⨆ᵢ θⁱ xᵢ²` (equivalently `‖·‖₁` on the squared state), under
 which the drift becomes the second-moment contraction `Σᵢ bᵢ + Σⱼ aⱼ < 1` of
-Basrak–Davis–Mikosch — which is exactly what `Mixing/Relations.lean`'s `hsum` supplies.
-Recording this here because the naive transfer of `hasLyapunovDrift_nlAR` is a real trap:
+Basrak–Davis–Mikosch — which is exactly what `StatLean/TimeSeries/Mixing/Relations.lean`'s `hsum`
+supplies. Recording this here because the naive transfer of `hasLyapunovDrift_nlAR` is a real trap:
 it typechecks up to the final inequality and then fails.
 
 **Bibliographic comments.** Random-coefficient/iterated-function-system minorization:

@@ -12,7 +12,7 @@ Rademacher complexity by more than the factor `ρ`:
 **Reference.** SSBD §26.1, Lemma 26.9.
 
 **Formalization notes.** This is **not** the coefficient contraction already in
-`ConcentrationInequalities/Symmetrization/Contraction.lean` (HDP Thm 6.6.1,
+`StatLean/ConcentrationInequalities/Symmetrization/Contraction.lean` (HDP Thm 6.6.1,
 `E‖∑ aᵢεᵢxᵢ‖ ≤ E‖∑ εᵢxᵢ‖`) — the SSBD lemma contracts a *Lipschitz
 composition inside a sup* and is proved coordinate-by-coordinate: condition on
 the signs off coordinate `i`, write the `σᵢ`-average of sups as an average of

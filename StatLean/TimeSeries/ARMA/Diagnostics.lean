@@ -1416,9 +1416,9 @@ private lemma integral_scaledCross_sq_le [IsProbabilityMeasure μ] (hiid : IsIID
 
 `√T ρ̂_ε(k) →d N(0, 1)` for i.i.d. `ε` with `0 < σ² < ∞` and `k ≥ 1`.
 
-**Why it is not citable from what exists.** `Process/SampleACF.lean` had two statements
-of this shape — its FY Thm 2.8(iii) Bartlett statement and FY eq. (2.27), whose `q = 0` case is
-exactly this, both since removed — but **both required a finite fourth
+**Why it is not citable from what exists.** `StatLean/TimeSeries/Process/SampleACF.lean` had two
+statements of this shape — its FY Thm 2.8(iii) Bartlett statement and FY eq. (2.27), whose `q = 0`
+case is exactly this, both since removed — but **both required a finite fourth
 moment** (`MemLp (ε 0) 4 μ`), and the frozen residual-correlogram statement supplies only
 `IsIIDNoise ε σ2 μ`, i.e. two moments. The fourth moment is genuinely unnecessary, which
 is why the proof is the martingale route of the block above:
@@ -3194,8 +3194,8 @@ hand and only item 1 above is new mathematics.
 re-derivation, not by a relocation: the recursion
 `Σ_{k≤n}(maPoly a)_k π_{n−k} = (arPoly b)_n` and the continuity of `(b,a) ↦ armaPi b a n`
 are re-proved locally from the public `Stationarity.arPoly_conv_armaPsi`, so no
-un-`private`ing of `ARMA/Consistency.lean` is needed for this file after all — the note's
-"must be re-derived here or they must be un-`private`d" is answered by the first branch,
+un-`private`ing of `StatLean/TimeSeries/ARMA/Consistency.lean` is needed for this file after all —
+the note's "must be re-derived here or they must be un-`private`d" is answered by the first branch,
 at a cost of about forty mechanical lines: the only content is that `armaPi` satisfies a
 *finite* recursion with `(maPoly a)_0 = 1` — no analysis, no invertibility, no `𝓑`.
 
@@ -3440,8 +3440,9 @@ to the reading recorded above, both detailed at the residues:
   makes the conclusion true: under mere `O_p(T^{−1/2})` it is FALSE, and not by the
   "strictly finer" Box–Pierce correction alone — the limit law is then not determined by
   the rate at all, since it depends on the limit law of `√T(θ̂_T − θ₀)`;
-* residue (A) could not cite `Process/SampleACF.lean`'s Bartlett statement or its FY eq. (2.27)
-  corollary (both since removed): both demanded a finite fourth moment, which `IsIIDNoise`
+* residue (A) could not cite `StatLean/TimeSeries/Process/SampleACF.lean`'s Bartlett statement or
+  its FY eq. (2.27) corollary (both since removed): both demanded a finite fourth moment, which
+  `IsIIDNoise`
   does not supply and which the martingale-difference route does not need. -/
 theorem residual_acf_asymptotically_standard_debt {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {p q : ℕ}

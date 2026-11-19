@@ -39,7 +39,7 @@ with $\lambda = 4BC\{\sqrt{\log d/n} + \delta\}$.
 `P(‖scoreVec‖∞ > t) ≤ 2d·exp(−t²/(2B²C²/n))`; choosing `λ = 4BC{√(log d/n) + δ}` and `t = λ/2` makes
 this `≤ 2exp(−2nδ²)`, using `(√a + δ)² ≥ a + δ²` (drop the nonnegative cross term) and
 `d·exp(−2 log d) = 1/d ≤ 1`. Structurally identical
-to `Lasso/RandomNoise.lean` (`linfNorm_noise_tail`
+to `StatLean/HighDimensionalStatistics/Lasso/RandomNoise.lean` (`linfNorm_noise_tail`
 + the good-event split of `lasso_random_rate`). The mean-zero identity `∫ scoreCoord M j = 0` is
 re-derived here from the constitutive MGF identity `M.hmgf` (via `E[yᵢ] = ψ'(ηᵢ)`).
 

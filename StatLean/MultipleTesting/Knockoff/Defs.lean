@@ -44,7 +44,8 @@ supermartingale step (`count_condExp`) consumes; conditioning only on the magnit
 `sgnReal` uses the convention $\operatorname{sign}(W_j) = +1$ when $W_j \ge 0$ and $-1$ otherwise;
 under the no-ties assumption $W_j \ne 0$ a.s. (supplied as a theorem hypothesis downstream) this
 agrees with the genuine sign. The `meas` field records that each $W_j$ is measurable, needed for the
-natural filtration / adaptedness / integrability machinery in `Knockoff/Supermartingale.lean`.
+natural filtration / adaptedness / integrability machinery in
+`StatLean/MultipleTesting/Knockoff/Supermartingale.lean`.
 
 **Bibliographic comments.** The fixed-design knock-off filter and its key distributional engine —
 for null features, the contrast statistics $W_j$ are symmetric about zero with signs that are i.i.d.
@@ -92,7 +93,8 @@ structure KnockoffScore (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (μ :
       μ
   /-- Constitutive (Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)): a knock-off *score* is a
   statistic, so each `Wⱼ` is measurable. Needed for the martingale construction (natural filtration,
-  adaptedness, integrability, conditional expectation) in `Knockoff/Supermartingale.lean`. -/
+  adaptedness, integrability, conditional expectation) in
+  `StatLean/MultipleTesting/Knockoff/Supermartingale.lean`. -/
   meas : ∀ j, Measurable (W j)
 
 end StatLean.MultipleTesting

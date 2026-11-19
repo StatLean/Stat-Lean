@@ -9,7 +9,8 @@ largest fraction `m*/n` of observations that can be replaced by arbitrary values
 estimate stays bounded (`MMY §3.2.5`, eq. (3.24)–(3.25); Donoho–Huber 1983). Replacement
 contamination is measured by the Hamming distance `hammingDist x y = #{i : xᵢ ≠ yᵢ}`
 (Mathlib's `hammingDist`), which must not be conflated with the population ε-mixture of
-`Core/Contamination.lean` — the two contamination models get separate primitives.
+`StatLean/RobustStatistics/Core/Contamination.lean` — the two contamination models get separate
+primitives.
 
 * `Resists T x m` — the estimate stays uniformly bounded over all `m`-replacements of `x`.
 * `BreaksUnder T x m` — some `m`-replacement drives `|T|` beyond any bound.
@@ -188,7 +189,7 @@ theorem locEquivariant_not_resists (hT : PointEstimation.IsLocEquivariant T)
 
 /-- **The maximal finite-sample breakdown bound** (`MMY §3.2.5`, eq. (3.26)): every
 location-equivariant estimator has `m* ≤ ⌊(n-1)/2⌋`. The sample median attains this bound
-(`LocationScale/MedianBreakdown.lean`). -/
+(`StatLean/RobustStatistics/LocationScale/MedianBreakdown.lean`). -/
 theorem locEquivariant_breakdownCount_le (hT : PointEstimation.IsLocEquivariant T)
     (hn : 0 < n) : breakdownCount T x ≤ (n - 1) / 2 := by
   refine csSup_le (resistsSet_nonempty (T := T) (x := x)) fun b hb => ?_
