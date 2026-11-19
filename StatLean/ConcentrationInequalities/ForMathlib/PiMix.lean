@@ -16,9 +16,9 @@ from Mathlib at our pin; the file has Mathlib-only imports and is a candidate up
 
 The second argument ranges over the *whole* product rather than over `∀ j : S, 𝓧 j`; the
 coordinates outside `S` are simply discarded. This costs nothing (the extra marginals
-integrate to one) and keeps every object in a single type, which avoids the subtype
-products and `Function.updateFinset` coercions that `Mathlib/MeasureTheory/Integral/
-Marginal.lean` needs for its `ℝ≥0∞`-valued `lmarginal`.
+integrate to one) and keeps every object in a single type, which avoids the subtype products
+and `Function.updateFinset` coercions that `Mathlib/MeasureTheory/Integral/Marginal.lean`
+needs for its `ℝ≥0∞`-valued `lmarginal`.
 
 The payoff is `integral_integral_mixAt`: averaging a block of coordinates does not change
 an expectation. With `avgOn` (see
